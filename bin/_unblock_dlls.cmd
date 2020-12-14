@@ -1,0 +1,1 @@
+powershell.exe -Command "get-childitem " %CD% " | unblock-file"
