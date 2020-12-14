@@ -1,0 +1,229 @@
+﻿<!--Freeform Rigging and Animation Tools
+Copyright (C) 2020  Micah Zahm
+
+Freeform Rigging and Animation Tools is free software: you can redistribute it 
+and/or modify it under the terms of the GNU General Public License as published 
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Freeform Rigging and Animation Tools is distributed in the hope that it will 
+be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Freeform Rigging and Animation Tools.  
+If not, see <https://www.gnu.org/licenses/>.-->
+
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:v1="clr-namespace:HelixResources.Style;assembly=HelixResources" 
+        xmlns:local="clr-namespace:Freeform.Rigging.AnimMirror"
+        x:Class="Freeform.Rigging.AnimMirror.AnimMirror" 
+        WindowStartupLocation="CenterScreen"
+        Title="Animation Mirror Setup" 
+        Height="330"
+        MinHeight="200"
+        Width="400"
+        MinWidth="400"
+        WindowStyle="ToolWindow">
+    <Window.Resources>
+        <ResourceDictionary>
+            <v1:StyleConverter  x:Key="StyleConverter"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/HelixResources;component/Style/V1ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid>
+        <Grid.Resources>
+            <v1:BindingProxy x:Key="dataContextProxy" Data="{Binding}"/>
+        </Grid.Resources>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Expander Style="{StaticResource SubExpander}" 
+                  Header="Mirror Mapping" 
+                  IsExpanded="True" 
+                  ExpandDirection="Down" 
+                  Grid.Row="0">
+            <Border BorderBrush="{StaticResource LightTextColor}" 
+                    BorderThickness="1,1,1,1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                  HorizontalScrollBarVisibility="Disabled" 
+                                  Height="110" 
+                                  Grid.Row="0">
+                        <ItemsControl HorizontalContentAlignment="Stretch" 
+                                      ItemsSource="{Binding MirrorPairList}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Text="Region:" 
+                                               Margin="10,2,2,2" 
+                                               Grid.Column="0"/>
+                                        <TextBox Text="{Binding Side}" 
+                                             Width="100" 
+                                             Margin="4,2" 
+                                             Grid.Column="1"/>
+                                        <TextBlock Text="Mirror:" 
+                                               Margin="2,2" 
+                                               Grid.Column="2"/>
+                                        <TextBox Text="{Binding MirrorSide}" 
+                                             Width="100" 
+                                             Margin="4,2" 
+                                             Grid.Column="3"/>
+
+                                        <Button Command="{Binding Data.RemoveMirrorPairCommand, Source={StaticResource dataContextProxy}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="4,2"
+                                                Width="20"
+                                                Style="{StaticResource ForegroundButton}"
+                                                Grid.Column="4">
+                                            <Image Source="pack://application:,,,/HelixResources;component/Resources/remove.ico"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Content="Add Map Pair" 
+                                Command="{Binding AddMirrorPairCommand}"
+                                Margin="6"
+                                Grid.Column="0"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Expander>
+
+        <Grid Margin="4,10,4,0" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Axis: "
+                       Style="{StaticResource HighlightTextBlock}"
+                       Margin="10,4,0,4"
+                       Width="40"
+                       Grid.Column="0"/>
+            <RadioButton Content="X" 
+                         IsChecked="{Binding XAxis}"
+                         GroupName="mirrorAxis" 
+                         Margin="4,2"
+                         Grid.Column="1"/>
+            <RadioButton Content="Y" 
+                         IsChecked="{Binding YAxis}"
+                         GroupName="mirrorAxis" 
+                         Margin="4,2"
+                         Grid.Column="2"/>
+            <RadioButton Content="Z" 
+                         IsChecked="{Binding ZAxis}"
+                         GroupName="mirrorAxis" 
+                         Margin="4,2"
+                         Grid.Column="3"/>
+
+            <CheckBox Content="Single Direction"
+                      IsChecked="{Binding SingleDirection}"
+                      Margin="55,2,4,2"
+                      Grid.Column="4"/>
+        </Grid>
+
+        <Grid Margin="4,0" Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Space: "
+                       Style="{StaticResource HighlightTextBlock}"
+                       Margin="10,4,0,4"
+                       Width="40"
+                       Grid.Column="0"/>
+            <RadioButton Content="Character" 
+                         IsChecked="{Binding CharacterMirror}"
+                         GroupName="worldSetting" 
+                         Margin="4,2"
+                         Grid.Column="1"/>
+            <RadioButton Content="World" 
+                         IsChecked="{Binding WorldMirror}"
+                         IsEnabled="False"
+                         GroupName="worldSetting" 
+                         Margin="4,2"
+                         Grid.Column="2"/>
+
+            <CheckBox Content="Full Component"
+                      IsChecked="{Binding FullComponent}"
+                      Margin="20,2,4,2"
+                      Grid.Column="3"/>
+        </Grid>
+
+        <Grid Margin="4,0" Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Mirror: "
+                       Style="{StaticResource HighlightTextBlock}"
+                       Margin="10,4,0,4"
+                       Width="40"
+                       Grid.Column="0"/>
+            <RadioButton Content="Pose" 
+                         IsChecked="{Binding MirrorPose}"
+                         GroupName="mirrorType" 
+                         Margin="4,2"
+                         Grid.Column="1"/>
+            <RadioButton Content="Animation" 
+                         IsChecked="{Binding MirrorAnimation}"
+                         GroupName="mirrorType" 
+                         Margin="4,2"
+                         Grid.Column="2"/>
+        </Grid>
+
+        <Button Content="Mirror Selected"
+                Style="{StaticResource TrimButton}"
+                Command="{Binding MirrorCharacterCommand}"
+                Width="200"
+                Height="26"
+                Margin="10,6"
+                Grid.Row="4"/>
+    </Grid>
+</Window>
