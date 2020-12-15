@@ -22,7 +22,7 @@ class DestructionCreator(object):
     '''
 
     def __init__(self):
-        preset_item_list = v1_core.json_utils.read_json(os.path.join(v1_core.environment.get_tools_root(), "V1.Python\\UnrealEditor\\resources\\UnrealPresets.json"))["DestructibleMesh"].keys()
+        preset_item_list = v1_core.json_utils.read_json(os.path.join(v1_core.environment.get_tools_root(), "V1DCCTools\V1.Python\\UnrealEditor\\resources\\UnrealPresets.json"))["DestructibleMesh"].keys()
 
         preset_list = System.Collections.Generic.List[str]()
         for preset_item in preset_item_list:
@@ -71,5 +71,5 @@ class DestructionCreator(object):
             vm (UnrealTools.UE4AssetCreator.DestructionCreatorVM): C# view model object sending the command
             event_args (CreateDestructibleEventArgs): C# EventArgs to pass over Blueprint, MeshPath, ApexPath, and preset to use
         '''
-        preset_data = v1_core.json_utils.read_json(os.path.join(v1_core.environment.get_tools_root(), "V1.Python\\UnrealEditor\\resources\\UnrealPresets.json"))["DestructibleMesh"]
+        preset_data = v1_core.json_utils.read_json(os.path.join(v1_core.environment.get_tools_root(), "V1DCCTools\V1.Python\\UnrealEditor\\resources\\UnrealPresets.json"))["DestructibleMesh"]
         automation.destructible.add_destructible_to_bp(event_args.BlueprintPath, event_args.MeshPath, event_args.ApexPath, preset_data[event_args.Preset])

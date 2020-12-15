@@ -28,7 +28,7 @@ import Queue
 
 sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'FreeformTools', 'Freeform.Python', 'V1PyCore'))
 sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'FreeformTools', 'Freeform.Python', 'Freeform.Rigging', 'Maya'))
-sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'V1.Python', 'Maya'))
+sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'V1DCCTools', 'V1.Python', 'Maya'))
 
 
 import smtplib
@@ -70,8 +70,8 @@ def _load_animation_tools(tools_root):
     '''
     Loads/Initializes 3rd party animation tools
     '''
-    mel_path = os.path.join(tools_root, r"V1.Python\Maya\mel\cometScripts")
-    os.environ["MAYA_SCRIPT_PATH"] += os.pathsep + mel_path
+    mel_path = os.path.join(tools_root, r"V1DCCTools\V1.Python\Maya\mel\cometScripts")
+    os.environ["MAYA_SCRIPT_PATH"] += ";" + mel_path
 
     cmds.GER(l=True)
     mel.eval('source "cometmenu.mel"')
