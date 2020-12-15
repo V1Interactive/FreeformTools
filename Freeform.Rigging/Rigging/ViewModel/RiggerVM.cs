@@ -28,10 +28,11 @@ namespace Freeform.Rigging
     using System.ComponentModel;
     using System.IO;
     using System.Linq;
+    using System.Windows;
     using System.Windows.Data;
     using System.Windows.Forms;
-
-
+    using System.Windows.Input;
+    using System.Windows.Media;
 
     class RiggerVM : ViewModelBase
     {
@@ -115,6 +116,8 @@ namespace Freeform.Rigging
         public RelayCommand UnloadCharacterCommand { get; set; }
         public RelayCommand AddQuickSearchCommand { get; set; }
         public RelayCommand RemoveQuickSearchCommand { get; set; }
+
+        public RelayCommand HelpCommand { get; set; }
         #endregion
 
 
@@ -763,6 +766,8 @@ namespace Freeform.Rigging
             AddQuickSearchCommand = new RelayCommand(AddQuickSearchCall);
             RemoveQuickSearchCommand = new RelayCommand(RemoveQuickSearchCall);
 
+            HelpCommand = new RelayCommand(HelpCall);
+
             FilterComponentText = "";
             FilterRegionText = "";
             TargetCharacter = null;
@@ -798,6 +803,50 @@ namespace Freeform.Rigging
 
 
         #region Event Calls
+        public void HelpCall(object sender)
+        {
+            var item = VisualTreeHelper.HitTest((UIElement)sender, Mouse.GetPosition((UIElement)sender)).VisualHit;
+            while (item != null && !(item is System.Windows.Controls.Button) && !(item is System.Windows.Controls.MenuItem)
+                && !(item is System.Windows.Controls.Expander))
+                item = VisualTreeHelper.GetParent(item);
+
+            string helpPage = "https://sites.google.com/view/v1freeformtools/home/rigging";
+            string pageName = "";
+
+            
+            if (item != null && item is System.Windows.Controls.Button)
+            {
+                System.Windows.Controls.Button buttonObject = (System.Windows.Controls.Button)item;
+                
+                if (buttonObject.DataContext is ComponentSelectButton)
+                {
+                    ComponentSelectButton buttonContext = (ComponentSelectButton)buttonObject.DataContext;
+                    pageName = "/" + buttonContext.Name;
+                }
+                else if(buttonObject.DataContext is RigBarButton)
+                {
+                    RigBarButton buttonContext = (RigBarButton)buttonObject.DataContext;
+                    pageName = string.Format("/toolbar-buttons/{0}", buttonContext.Name);
+                }
+                else
+                {
+                    pageName = "/" + buttonObject.Tag;
+                }
+            }
+            else if (item != null)
+            {
+                FrameworkElement itemElement = (FrameworkElement)item;
+                pageName = "/" + itemElement.Tag;
+            }
+
+
+            // Fixup UI valid names to webpage valid names
+            pageName = pageName == "/" ? "" : pageName;
+            pageName = pageName.Replace("__", "/").Replace("_", "-").Replace(" ", "-");
+            helpPage = helpPage + pageName.ToLower();
+            System.Diagnostics.Process.Start(helpPage);
+        }
+
         public void OpenCharacterImporterCall(object sender)
         {
             OpenCharacterImporterHandler?.Invoke(this, null);

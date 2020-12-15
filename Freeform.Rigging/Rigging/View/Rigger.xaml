@@ -40,6 +40,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
         </ResourceDictionary>
     </Window.Resources>
 
+    <Window.InputBindings>
+        <KeyBinding Key="H" Modifiers="Shift" Command="{Binding HelpCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+    </Window.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="40"/>
@@ -59,7 +63,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                 </Grid.ColumnDefinitions>
                 
                 <Menu DockPanel.Dock="Top" Height="24" Grid.Column="0">
-                    <MenuItem Header="_Settings" Margin="4,0,0,0">
+                    <MenuItem Header="_Settings" 
+                              Margin="4,0,0,0" 
+                              Tag="menu_bar__settings_menu">
                         <MenuItem Header="Load File..." 
                                   Command="{Binding Data.LoadSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
@@ -93,7 +99,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
                         
                     </MenuItem>
-                    <MenuItem Header="_Rigging" Margin="4,0,0,0">
+                    <MenuItem Header="_Rigging" 
+                              Margin="4,0,0,0" 
+                              Tag="menu_bar__rigging_menu">
                         <MenuItem Header="Load File..." Command="{Binding Data.LoadRiggingCommand, Source={StaticResource dataContextProxy}}"/>
 
                         <MenuItem Header="_Load Profile" ItemsSource="{Binding Data.RiggingMenuItems, Source={StaticResource dataContextProxy}, UpdateSourceTrigger=PropertyChanged}">
@@ -113,7 +121,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <MenuItem Header="_Save" Command="{Binding Data.SaveRiggingCommand, Source={StaticResource dataContextProxy}}"/>
                     </MenuItem>
 
-                    <MenuItem Header="_Exporter" Margin="4,0,0,0" Command="{Binding Data.ExporterUICommand, Source={StaticResource dataContextProxy}}">
+                    <MenuItem Header="_Exporter" 
+                              Margin="4,0,0,0" 
+                              Tag="menu_bar__exporter_menu"
+                              Command="{Binding Data.ExporterUICommand, Source={StaticResource dataContextProxy}}">
                         <!--<MenuItem Header="_Open UI" Command="{Binding Data.ExporterUICommand, Source={StaticResource dataContextProxy}}"/>-->
                     </MenuItem>
                 </Menu>
@@ -122,6 +133,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="35"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     
                     <Border BorderBrush="{x:Null}" Grid.Column="0">
@@ -136,10 +148,29 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <Button Command="{Binding UpdateCommand}" 
                             HorizontalAlignment="Left" 
                             VerticalAlignment="Center" 
-                            Width="24" Margin="4,0" 
+                            Width="24" 
+                            Margin="4,0" 
+                            Tag="menu_bar__update_ui"
                             Grid.Column="1">
                         <Image Source="pack://application:,,,/HelixResources;component/Resources/refresh.ico"/>
                     </Button>
+                    <TextBlock Style="{StaticResource HighlightTextBlock}"
+                               Text="?"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="2,0,4,0"
+                               Grid.Column="2">
+                        <TextBlock.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource HighlightTextBlock}">
+                                           Pressing Shift+H with the UI in focus will open the <LineBreak/>
+                                           documentation website to the relevant page based on <LineBreak/>
+                                           what UI is under the mouse.
+                                </TextBlock>
+                            </ToolTip>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
                 </Grid>
             </Grid>
         </DockPanel>
@@ -160,6 +191,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <MenuItem Header="_Tools" 
                               Margin="2,0,0,0" 
                               Width="52"
+                              Tag="toolbar_buttons"
                               ItemsSource="{Binding Data.RigCategoryList, Source={StaticResource dataContextProxy}, UpdateSourceTrigger=PropertyChanged}">
                         <MenuItem.ItemTemplate>
                             <DataTemplate>
@@ -218,11 +250,15 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <ItemsControl Style="{StaticResource ForegroundItemsControl}" ItemsSource="{Binding RigCategoryList}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Expander Style="{StaticResource SubExpander}" IsExpanded="True" ExpandDirection="Down" Grid.Row="3">
+                                        <Expander Style="{StaticResource SubExpander}" 
+                                                  IsExpanded="True" 
+                                                  ExpandDirection="Down" 
+                                                  Tag="toolbar_buttons"
+                                                  Grid.Row="3">
                                             <Expander.Header>
                                                 <Image Source="{Binding ImagePath}" 
-                                                   Height="16"
-                                                   Width="16"/>
+                                                       Height="16"
+                                                       Width="16"/>
                                             </Expander.Header>
                                             <ItemsControl Style="{StaticResource ForegroundItemsControl}" ItemsSource="{Binding RigButtonList}">
                                                 <ItemsControl.ItemTemplate>
@@ -310,7 +346,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         
                         <TextBox Text="{Binding FilterComponentText, UpdateSourceTrigger=PropertyChanged}" Margin="2,2,0,2" Height="20" Grid.Column="0"/>
                         <TextBlock Text="{Binding ActiveCharacter.Name}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Grid.Column="1"/>
-                        <Button Content="Export All" Command="{Binding ExportCommand}" Margin="10,4" Grid.Column="2"/>
+                        <Button Content="Export All" 
+                                Command="{Binding ExportCommand}" 
+                                Margin="10,4" 
+                                Tag="menu_bar__export_all"
+                                Grid.Column="2"/>
                     </Grid>
 
                     <Grid Grid.Row="1">
@@ -319,7 +359,13 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <ColumnDefinition Width="70"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Button Command="{Binding AddQuickSearchCommand}" VerticalAlignment="Center" Height="18" Width="18" Margin="6,5,2,5" Grid.Column="0">
+                        <Button Command="{Binding AddQuickSearchCommand}" 
+                                VerticalAlignment="Center" 
+                                Height="18" 
+                                Width="18" 
+                                Margin="6,5,2,5"
+                                Tag="menu_bar__quick_search"
+                                Grid.Column="0">
                             <Image Source="pack://application:,,,/HelixResources;component/Resources/add_rig.ico"/>
                             <Button.ToolTip>
                                 <TextBlock Style="{StaticResource HighlightTextBlock}" Text="Add Quick Selection Set"/>
@@ -429,6 +475,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                             Height="22" 
                                                             Width="22"
                                                             Margin="0" 
+                                                            Tag="component_view__component_buttons"
                                                             IsEnabled="{Binding IsEnabled}">
                                                         <Grid>
                                                             <Image Source="{Binding ImagePath}" Stretch="Fill"/>
@@ -459,6 +506,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                     Command="{Binding ToggleVisibilityComponentCommand}" 
                                                     Height="18" 
                                                     Margin="0" 
+                                                    Tag="component_view__visibility_toggle"
                                                     Grid.Row="0">
                                                 <Image Source="{Binding VisibleIcon}"/>
                                                 <Button.ToolTip>
@@ -474,6 +522,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                     Command="{Binding ToggleSelectionLockCommand}" 
                                                     Height="18" 
                                                     Margin="0" 
+                                                    Tag="component_view__selection_lock"
                                                     Grid.Row="1">
                                                 <Image Source="{Binding SelectionLockIcon}"/>
                                                 <Button.ToolTip>
@@ -495,7 +544,13 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         
-                                        <Button Command="{Binding Path=DataContext.SelectGroupCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" CommandParameter="{Binding}" Height="22" Width="22" Margin="4,0" Grid.Column="0">
+                                        <Button Command="{Binding Path=DataContext.SelectGroupCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
+                                                CommandParameter="{Binding}" 
+                                                Height="22" 
+                                                Width="22" 
+                                                Margin="4,0" 
+                                                Tag="component_view"
+                                                Grid.Column="0">
                                             <Image Source="pack://application:,,,/HelixResources;component/Resources/pick.ico"/>
                                         </Button>
 
@@ -514,6 +569,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                               HorizontalAlignment="Stretch" 
                                               IsExpanded="True" 
                                               ExpandDirection="Down" 
+                                              Tag="component_view"
                                               Grid.Row="0">
                                         <Grid Style="{StaticResource SubGrid}">
                                             <ListBox ScrollViewer.CanContentScroll="False" 
@@ -550,6 +606,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                           Header="Prop Attachments" 
                           IsExpanded="False" 
                           ExpandDirection="Down" 
+                          Tag="props"
                           Grid.Row="1">
                     <Grid>
                         <TabControl ItemsSource="{Binding ActiveCharacter.PropAttachmentList}" 
@@ -634,6 +691,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                     Content="Swap" 
                                                     Width="50" 
                                                     Margin="4,0" 
+                                                    Tag="props"
                                                     Grid.Column="5"/>
                                         </Grid>
                                     </Grid>
@@ -647,6 +705,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                           Header="Regions" 
                           IsExpanded="False" 
                           ExpandDirection="Down" 
+                          Tag="regions"
                           Grid.Row="2">
                     <Grid Style="{StaticResource SubGrid}">
                         <Grid.RowDefinitions>
@@ -672,9 +731,21 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Text="{Binding FilterRegionText, UpdateSourceTrigger=PropertyChanged}" Margin="10,2,0,2" Height="20" Grid.Column="0"/>
-                                    <ComboBox Height="24" Margin="10,2,0,2" ItemsSource="{Binding ActiveCharacter.RegionViewSource.View}" DisplayMemberPath="Name" SelectedValue="{Binding ActiveCharacter.SelectedRegion, Mode=TwoWay}" Grid.Column="1"/>
-                                    <ComboBox Height="24" Margin="10,2,0,2" ItemsSource="{Binding RigTypes}" SelectedValue="{Binding SelectedRigType, Mode=TwoWay}" Grid.Column="2"/>
+                                    <TextBox Text="{Binding FilterRegionText, UpdateSourceTrigger=PropertyChanged}" 
+                                             Margin="10,2,0,2" 
+                                             Height="20" 
+                                             Grid.Column="0"/>
+                                    <ComboBox Height="24" 
+                                              Margin="10,2,0,2" 
+                                              ItemsSource="{Binding ActiveCharacter.RegionViewSource.View}" 
+                                              DisplayMemberPath="Name" 
+                                              SelectedValue="{Binding ActiveCharacter.SelectedRegion, Mode=TwoWay}" 
+                                              Grid.Column="1"/>
+                                    <ComboBox Height="24" 
+                                              Margin="10,2,0,2" 
+                                              ItemsSource="{Binding RigTypes}" 
+                                              SelectedValue="{Binding SelectedRigType, Mode=TwoWay}" 
+                                              Grid.Column="2"/>
                                 </Grid>
 
                                 <Grid Margin="10,0,0,0" Grid.Row="1">
@@ -682,7 +753,12 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <CheckBox Content="World Space" Height="20" Margin="0" IsChecked="{Binding IsWorldSpace}" VerticalAlignment="Center" Grid.Column="0"/>
+                                    <CheckBox Content="World Space" 
+                                              Height="20" 
+                                              Margin="0" 
+                                              IsChecked="{Binding IsWorldSpace}" 
+                                              VerticalAlignment="Center" 
+                                              Grid.Column="0"/>
                                 </Grid>
                             </Grid>
 
@@ -691,8 +767,18 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <Button Content="Rig Region" Command="{Binding RigRegionCommand}" Height="26" Margin="10,6,6,2" VerticalAlignment="Center" Grid.Row="0"/>
-                                <CheckBox Content="Filtered" Height="20" Margin="10,2" IsChecked="{Binding ActiveCharacter.RigAllFiltered}" VerticalAlignment="Center" Grid.Row="1"/>
+                                <Button Content="Rig Region" 
+                                        Command="{Binding RigRegionCommand}" 
+                                        Height="26" 
+                                        Margin="10,6,6,2" 
+                                        VerticalAlignment="Center"
+                                        Grid.Row="0"/>
+                                <CheckBox Content="Filtered" 
+                                          Height="20" 
+                                          Margin="10,2" 
+                                          IsChecked="{Binding ActiveCharacter.RigAllFiltered}" 
+                                          VerticalAlignment="Center" 
+                                          Grid.Row="1"/>
                             </Grid>
 
                         </Grid>
@@ -702,12 +788,24 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Button Style="{StaticResource TrimButton}" Content="Region Editor..." Command="{Binding OpenRegionEditorCommand}" Height="26" Margin="10,0" HorizontalAlignment="Stretch" Grid.Column="0"/>
+                            <Button Style="{StaticResource TrimButton}" 
+                                    Content="Region Editor..." 
+                                    Command="{Binding OpenRegionEditorCommand}" 
+                                    Height="26" 
+                                    Margin="10,0" 
+                                    HorizontalAlignment="Stretch" 
+                                    Tag="regions__region_editor"
+                                    Grid.Column="0"/>
                         </Grid>
                     </Grid>
                 </Expander>
 
-                <Expander Style="{StaticResource SubExpander}" Header="Helix Settings" IsExpanded="False" ExpandDirection="Down" Grid.Row="3">
+                <Expander Style="{StaticResource SubExpander}" 
+                          Header="Helix Settings" 
+                          IsExpanded="False" 
+                          ExpandDirection="Down" 
+                          Tag="user_settings"
+                          Grid.Row="3">
                     <Grid Style="{StaticResource SubGrid}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="24"/>
@@ -944,6 +1042,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                             CommandParameter="{Binding}" 
                                             Height="40" 
                                             Width="75" 
+                                            Tag="character_view"
                                             Margin="5,4">
                                         <Button.Style>
                                             <MultiBinding Converter="{StaticResource StyleConverter}">
@@ -1056,6 +1155,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             Command="{Binding OpenCharacterImporterCommand}" 
                             Width="Auto" 
                             Margin="5,4" 
+                            Tag="character_view__character_picker"
                             Grid.Column="2">
                         <Image Source="pack://application:,,,/HelixResources;component/Resources/add_rig.ico" Margin="8"/>
                     </Button>

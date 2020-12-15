@@ -1138,7 +1138,8 @@ class HelixRigger:
         for i, control in enumerate(sorted_control_list):
             control_property_network = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
 
-            new_button = Freeform.Rigging.RigBarButton()
+            new_button = Freeform.Rigging.ComponentSelectButton()
+            new_button.Name = "component_view__component_control_select"
             new_button.Index = control_property_network.get('ordered_index') + 1
 
             self.set_control_button_icon(control_property_network, new_button, i + 1)

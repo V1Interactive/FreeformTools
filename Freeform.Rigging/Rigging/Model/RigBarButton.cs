@@ -245,4 +245,9 @@ namespace Freeform.Rigging
             InvokeCommand(null);
         }
     }
+
+    public class ComponentSelectButton : RigBarButton
+    {
+        // Used for distinguishing by type
+    }
 }
