@@ -806,34 +806,37 @@ namespace Freeform.Rigging
         public void HelpCall(object sender)
         {
             var item = VisualTreeHelper.HitTest((UIElement)sender, Mouse.GetPosition((UIElement)sender)).VisualHit;
-            while (item != null && !(item is System.Windows.Controls.Button) && !(item is System.Windows.Controls.MenuItem)
-                && !(item is System.Windows.Controls.Expander))
+            
+            while (item != null)
+            {
+                // Exit if we find a valid Tag or a Button that we want to use the DataContext of
+                if ((item is FrameworkElement itemElement && itemElement.Tag != null) ||
+                    (item is System.Windows.Controls.Button buttonObject && (buttonObject.DataContext is ComponentSelectButton || buttonObject.DataContext is RigBarButton)))
+                    break;
                 item = VisualTreeHelper.GetParent(item);
+            }
 
             string helpPage = "https://sites.google.com/view/v1freeformtools/home/rigging";
             string pageName = "";
 
-            
-            if (item != null && item is System.Windows.Controls.Button)
+            if (item == null)
             {
-                System.Windows.Controls.Button buttonObject = (System.Windows.Controls.Button)item;
-                
-                if (buttonObject.DataContext is ComponentSelectButton)
-                {
-                    ComponentSelectButton buttonContext = (ComponentSelectButton)buttonObject.DataContext;
-                    pageName = "/" + buttonContext.Name;
-                }
-                else if(buttonObject.DataContext is RigBarButton)
-                {
-                    RigBarButton buttonContext = (RigBarButton)buttonObject.DataContext;
-                    pageName = string.Format("/toolbar-buttons/{0}", buttonContext.Name);
-                }
-                else
-                {
-                    pageName = "/" + buttonObject.Tag;
-                }
+                // Do Nothing with the page name
             }
-            else if (item != null)
+            else if (item is System.Windows.Controls.Button buttonObject)
+            {
+                if (buttonObject.DataContext is ComponentSelectButton selectButtonContext)
+                    pageName = "/" + selectButtonContext.Name;
+                else if (buttonObject.DataContext is RigBarButton buttonContext)
+                    pageName = string.Format("/toolbar-buttons/{0}", buttonContext.Name);
+                else
+                    pageName = "/" + buttonObject.Tag;
+            }
+            else if (item is System.Windows.Controls.ComboBox comboBoxObject)
+            {
+                pageName = string.Format("/{0}__{1}", comboBoxObject.Tag, comboBoxObject.Text);
+            }
+            else
             {
                 FrameworkElement itemElement = (FrameworkElement)item;
                 pageName = "/" + itemElement.Tag;
@@ -842,6 +845,7 @@ namespace Freeform.Rigging
 
             // Fixup UI valid names to webpage valid names
             pageName = pageName == "/" ? "" : pageName;
+            pageName = pageName.Replace(" - ", "-");
             pageName = pageName.Replace("__", "/").Replace("_", "-").Replace(" ", "-");
             helpPage = helpPage + pageName.ToLower();
             System.Diagnostics.Process.Start(helpPage);
