@@ -345,7 +345,7 @@ class HelixRigger:
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.ik_fk_switch
-        new_button.Name = "FK/IK Switch"
+        new_button.Name = "FK-IK Switch"
         new_button.ImagePath = "../../Resources/fk_ik_switch.ico"
         new_button.Tooltip = "Toggle the component between IK and FK rigging"
         component_category.AddButton(new_button)

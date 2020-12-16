@@ -453,6 +453,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
 
                                         <ItemsControl ItemsSource="{Binding ComponentButtonList}" 
                                                       Margin="10,0"
+                                                      Tag="component_view__component_buttons"
                                                       Grid.Column="1">
                                             <ItemsControl.Style>
                                                 <MultiBinding Converter="{StaticResource StyleConverter}">
@@ -475,7 +476,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                             Height="22" 
                                                             Width="22"
                                                             Margin="0" 
-                                                            Tag="component_view__component_buttons"
                                                             IsEnabled="{Binding IsEnabled}">
                                                         <Grid>
                                                             <Image Source="{Binding ImagePath}" Stretch="Fill"/>
@@ -546,10 +546,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                         
                                         <Button Command="{Binding Path=DataContext.SelectGroupCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
                                                 CommandParameter="{Binding}" 
-                                                Height="22" 
-                                                Width="22" 
-                                                Margin="4,0" 
-                                                Tag="component_view"
+                                                Height="22"
+                                                Width="22"
+                                                Margin="4,0"
                                                 Grid.Column="0">
                                             <Image Source="pack://application:,,,/HelixResources;component/Resources/pick.ico"/>
                                         </Button>
@@ -744,8 +743,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                     <ComboBox Height="24" 
                                               Margin="10,2,0,2" 
                                               ItemsSource="{Binding RigTypes}" 
-                                              SelectedValue="{Binding SelectedRigType, Mode=TwoWay}" 
-                                              Grid.Column="2"/>
+                                              SelectedValue="{Binding SelectedRigType, Mode=TwoWay}"
+                                              Tag="rig_components"
+                                              Grid.Column="2">
+                                    </ComboBox>
                                 </Grid>
 
                                 <Grid Margin="10,0,0,0" Grid.Row="1">
@@ -1028,7 +1029,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <ColumnDefinition Width="60"/>
                     </Grid.ColumnDefinitions>
 
-                    <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Margin="5,4,0,4" Grid.Column="0">
+                    <ScrollViewer VerticalScrollBarVisibility="Disabled" 
+                                  HorizontalScrollBarVisibility="Auto" 
+                                  Margin="5,4,0,4" 
+                                  Tag="character_view"
+                                  Grid.Column="0">
                         <ItemsControl ItemsSource="{Binding CharacterList}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -1040,9 +1045,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                     <Button Content="{Binding Name}" 
                                             Command="{Binding Path=DataContext.SetCharacterCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" 
                                             CommandParameter="{Binding}" 
-                                            Height="40" 
-                                            Width="75" 
-                                            Tag="character_view"
+                                            Height="40"
+                                            Width="75"
                                             Margin="5,4">
                                         <Button.Style>
                                             <MultiBinding Converter="{StaticResource StyleConverter}">
