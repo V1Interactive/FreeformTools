@@ -206,13 +206,36 @@ class MetaNode(object):
 
 
     @abstractmethod
-    def __init__(self, node_name, node = None, namespace = ""):
+    def __init__(self, node_name, node = None, namespace = "", **kwargs):
         if node:
             self.node = node
+            
+            for attr_name, (value, value_type) in kwargs.iteritems():
+                # Remove old attributes that may not match the new attribute type
+                if self.node.hasAttr(attr_name):
+                    attr_type = type(self.node.getAttr(attr_name))
+                    # Value types from getAttr don't necessarily match up to default value type, even though
+                    # they are compatiable assignment types in Python.  So we convert types
+                    if attr_type == unicode: # Convert unicode to string
+                        attr_type = str
+                    elif attr_type == pm.dt.Vector: # Convert Vector to list
+                        attr_type = list
+
+                    if attr_type != type(value):
+                        self.node.deleteAttr(attr_name)
+                # Add any new attributes
+                else:
+                    self.add_attr(attr_name, value_type)
         else:
             self.node = pm.createNode('network', name = namespace + node_name.split(":")[-1])
             self.set('meta_type', str(self.__class__))
             self.set('guid', System.Guid.NewGuid().ToString())
+
+            data_dict = {}
+            for attr_name, (value, value_type) in kwargs.iteritems():
+                data_dict[attr_name] = value
+                self.add_attr(attr_name, value_type)
+            self.data = data_dict
 
     def __eq__(self, other):
         if other and self and self.get('guid') == other.get('guid'):
@@ -253,7 +276,9 @@ class MetaNode(object):
         if not hasattr(self.node, attr_name):
             self.add_attr(attr_name, value_type)
 
-        getattr(self.node, attr_name).set(value)
+        set_attr = getattr(self.node, attr_name)
+        if set_attr.get(type=True) != 'message':
+            set_attr.set(value)
 
     def add_attr(self, attr_name, value_type):
         '''
@@ -263,9 +288,10 @@ class MetaNode(object):
             attr_name (string): Name of the attribute to set
             value_type (string): Type name of the attribute
         '''
-        self.node.addAttr(attr_name, type=value_type)
+        if not self.node.hasAttr(attr_name):
+            self.node.addAttr(attr_name, type=value_type)
 
-    def get_connections(self, node_type = None):
+    def get_connections(self, node_type = None, get_attribute = None):
         '''
         Get all connections from the network node's message attribute, excluding 'nodeGraphEditorInfo' type nodes
 
@@ -277,8 +303,9 @@ class MetaNode(object):
         '''
         return_list = []
         if self.node.exists():
-            filter_out = pm.listConnections( self.node.message, type = 'nodeGraphEditorInfo' )
-            all_connections = pm.listConnections( self.node.message, type = node_type ) if node_type else pm.listConnections( self.node.message )
+            get_attribute = get_attribute if get_attribute else self.node.message
+            filter_out = pm.listConnections( get_attribute, type = 'nodeGraphEditorInfo' )
+            all_connections = pm.listConnections( get_attribute, type = node_type ) if node_type else pm.listConnections( get_attribute )
             return_list = [x for x in all_connections if x not in filter_out]
         return return_list
 
@@ -304,7 +331,7 @@ class MetaNode(object):
         for node in node_list:
             self.connect_node(node)
 
-    def connect_node(self, node):
+    def connect_node(self, node, connect_attribute = None):
         '''
         Connect a single node to this network node, .message to the first available .affectedBy[]
 
@@ -315,7 +342,7 @@ class MetaNode(object):
             pm.addAttr(node, ln='affectedBy', dt='stringArray', m=True)
 
         # Only connect nodes that aren't already connected
-        if node not in self.get_connections():
+        if node not in self.get_connections(get_attribute = connect_attribute):
             # find the first empty affectedBy slot, if none then attach to the last entry(which is always open)
             connect_attr = node.affectedBy[len(node.affectedBy.get())]
             for x in range(len(node.affectedBy.get())):
@@ -323,7 +350,10 @@ class MetaNode(object):
                     connect_attr = node.affectedBy[x]
                     break
 
-            self.node.message >> connect_attr
+            if not connect_attribute:
+                self.node.message >> connect_attr
+            else:
+                connect_attribute >> connect_attr
 
     def disconnect_node(self, node):
         '''
@@ -514,8 +544,8 @@ class Core(MetaNode):
     Attributes:
         node (PyNode): The scene network node that represents the property
     '''
-    def __init__(self, node_name = 'network_core', node = None, namespace = ""):
-        super(Core, self).__init__(node_name, node, namespace)
+    def __init__(self, node_name = 'network_core', node = None, namespace = "", **kwargs):
+        super(Core, self).__init__(node_name, node, namespace, **kwargs)
 
 
 class DependentNode(MetaNode):
@@ -544,8 +574,8 @@ class DependentNode(MetaNode):
         '''
         return self.get_first_connection(node_type = 'transform')
 
-    def __init__(self, parent = None, node_name = 'dependent_node', node = None, namespace = ""):
-        super(DependentNode, self).__init__(node_name, node, namespace)
+    def __init__(self, parent = None, node_name = 'dependent_node', node = None, namespace = "", **kwargs):
+        super(DependentNode, self).__init__(node_name, node, namespace, **kwargs)
         if not node:
             parent_node = parent if parent else self.get_network_core()
             parent_network = MetaNode.create_from_node(parent_node)
@@ -707,8 +737,23 @@ class JointsCore(DependentNode):
     '''
     dependent_node = SkeletonCore
 
-    def __init__(self, parent = None, node_name = 'joints_core', node = None, namespace = ""):
-        super(JointsCore, self).__init__(parent, node_name, node, namespace)
+    @property
+    def root(self):
+        '''
+        Transform node that is the scene group object for this node
+        '''
+        return_root = get_first_or_default(pm.listConnections( self.node.root_joint, type = pm.nt.Joint ))
+        return_root = return_root if return_root else self.get_root(self.group)
+        return return_root
+
+    def __init__(self, parent = None, node_name = 'joints_core', node = None, namespace = "", root_jnt = None):
+        super(JointsCore, self).__init__(parent, node_name, node, namespace, root_joint = (None, 'message'))
+        if not node:
+            self.connect_node(root_jnt, self.node.root_joint)
+
+    def get_root(self, obj):
+        parent = get_first_or_default(pm.listRelatives( obj, parent=True, type='joint' ))
+        return self.get_root(parent) if parent else obj
 
 class RegionsCore(DependentNode):
     '''
@@ -741,11 +786,27 @@ class RigCore(DependentNode):
     '''
     dependent_node = CharacterCore
 
-    def __init__(self, parent = None, node_name = 'rig_core', node = None, namespace = "", root_jnt = None):
+    @property
+    def group(self):
+        '''
+        Transform node that is the scene group object for this node
+        '''
+        # Fix for old setup where RigCore stored the skeleton root
+        return_node = self.get_first_connection(node_type = 'transform')
+        if type(return_node) == pm.nt.Joint:
+            self.disconnect_node(return_node)
+
+            character_network = self.get_upstream(CharacterCore)
+            return_node = pm.group(empty = True, name = "Rigging_Components", parent = character_network.group)
+            self.connect_node(return_node)
+
+        return return_node
+
+    def __init__(self, parent = None, node_name = 'rig_core', node = None, namespace = "", character_group = None):
         super(RigCore, self).__init__(parent, node_name, node, namespace)
         if not node:
             pm.select(None)
-            rig_grp = root_jnt if root_jnt else pm.joint(name= "root")
+            rig_grp = pm.group(empty = True, name = "Rigging_Components", parent = character_group)
             self.connect_node(rig_grp)
 
 
@@ -764,8 +825,8 @@ class RigComponent(DependentNode):
     __metaclass__ = ABCMeta
     dependent_node = None
 
-    def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = ""):
-        super(RigComponent, self).__init__(parent, node_name, node, namespace)
+    def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = "", **kwargs):
+        super(RigComponent, self).__init__(parent, node_name, node, namespace, **kwargs)
 
 class ComponentCore(RigComponent):
     '''

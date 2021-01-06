@@ -114,10 +114,7 @@ class FK(rigging.rig_base.Rig_Component):
         self.create_controls(control_chain, side, region, 'fk', control_holder_list)
         control_chain = self.get_ordered_controls()
         
-        if world_space == False:
-            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=True)
-        else:
-            pm.parentConstraint(self.network['rig_core'].group, self.network['component'].group, mo=True)
+        self.attach_component(world_space, True)
 
         return control_chain
 
@@ -255,7 +252,7 @@ class Aim_FK(FK):
         control_list = self.get_ordered_controls()
         maya_utils.baking.BakeQueue().add_bake_command(control_list[:1], {'translate' : translate, 'rotate' : True, 'scale' : scale, 'simulation' : simulation})
         maya_utils.baking.BakeQueue().add_bake_command(control_list[1:], {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
-        maya_utils.baking.BakeQueue().add_post_process(self.attach_and_bake_post_process, post_process_kwargs)
+        maya_utils.baking.BakeQueue().add_post_process(self.attach_component, post_process_kwargs)
 
     def rig_setup(self, side, region, world_space, reverse, control_holder_list):
         control_grp = self.create_control_grp(side, region)
@@ -280,7 +277,7 @@ class Aim_FK(FK):
         if world_space == False:
             pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=True)
         else:
-            pm.parentConstraint(self.network['rig_core'].group, self.network['component'].group, mo=True)
+            pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=True)
 
         return control_chain
 

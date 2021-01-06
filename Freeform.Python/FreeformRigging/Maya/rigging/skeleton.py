@@ -48,9 +48,9 @@ def setup_joint(jnt, joints_core):
     '''
     joints_core.connect_node(jnt)
     metadata.meta_properties.add_property(jnt, metadata.meta_properties.ExportProperty)
-    if not pm.hasAttr(jnt, 'bind_translate'):
+    if not jnt.hasAttr('bind_translate'):
         pm.addAttr(jnt, ln='bind_translate', dt='double3')
-    if not pm.hasAttr(jnt, 'bind_rotate'):
+    if not jnt.hasAttr('bind_rotate'):
         pm.addAttr(jnt, ln='bind_rotate', dt='double3')
     jnt.bind_translate.set(jnt.translate.get())
     jnt.bind_rotate.set(jnt.rotate.get())
@@ -123,6 +123,7 @@ def get_skeleton_dict(jnt):
     character_network = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
     regions_network = character_network.get_downstream(metadata.network_core.RegionsCore)
     skeleton_dict = {}
+    # Fast search for new characters
     if regions_network and regions_network.get_connections():
         region_markup_node_list = regions_network.get_connections()
         for region_markup_node in region_markup_node_list:
@@ -130,6 +131,7 @@ def get_skeleton_dict(jnt):
             skeleton_dict.setdefault(side, {})
             skeleton_dict[side].setdefault(region_markup_node.region.get(), {})
             skeleton_dict[side][region_markup_node.region.get()][region_markup_node.tag.get()] = pm.listConnections(region_markup_node.message, type='joint')[0]
+    # slow search for old characters
     else:
         root_joint = get_root_joint(jnt)
         joint_list = [root_joint] + pm.listRelatives(root_joint, ad=True, type='joint')

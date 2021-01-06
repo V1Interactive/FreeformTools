@@ -229,27 +229,7 @@ class PropertyNode(metadata.network_core.MetaNode):
 
 
     def __init__(self, node_name = 'property_node_temp', node = None, namespace = "", **kwargs):
-        super(PropertyNode, self).__init__(node_name, node, namespace)
-        if not node:
-            data_dict = {}
-            for attr_name, (value, value_type) in kwargs.iteritems():
-                data_dict[attr_name] = value
-                self.add_attr(attr_name, value_type)
-            self.data = data_dict
-        else:
-            # Remove old attributes that may not match the new attribute type
-            for attr_name, (value, value_type) in kwargs.iteritems():
-                if self.node.hasAttr(attr_name):
-                    attr_type = type(self.node.getAttr(attr_name))
-                    # Value types from getAttr don't necessarily match up to default value type, even though
-                    # they are compatiable assignment types in Python.  So we convert types
-                    if attr_type == unicode: # Convert unicode to string
-                        attr_type = str
-                    elif attr_type == pm.dt.Vector: # Convert Vector to list
-                        attr_type = list
-
-                    if attr_type != type(value):
-                        self.node.deleteAttr(attr_name)
+        super(PropertyNode, self).__init__(node_name, node, namespace, **kwargs)
 
     def compare(self, data):
         '''

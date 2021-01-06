@@ -202,7 +202,7 @@ class Component_Base(object):
         character_group = character_network.group
 
         # Disconnect character from any export groups
-        character_root = character_network.get_downstream(metadata.network_core.RigCore).group
+        character_root = character_network.get_downstream(metadata.network_core.JointsCore).root
         if character_root:
             anim_asset_network_list = metadata.meta_properties.get_properties([character_root], metadata.meta_properties.CharacterAnimationAsset)
             for obj in anim_asset_network_list:
@@ -687,9 +687,9 @@ class Component_Base(object):
         control_list = self.network['controls'].get_connections()
         maya_utils.baking.BakeQueue().add_bake_command(control_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale,
                                                                       'simulation' : simulation})
-        maya_utils.baking.BakeQueue().add_post_process(self.attach_and_bake_post_process, post_process_kwargs)
+        maya_utils.baking.BakeQueue().add_post_process(self.attach_component, post_process_kwargs)
 
-    def create_controls(self, control_list, side, region, control_type, control_holder_list):
+    def create_controls(self, control_list, side, region, control_type, control_holder_list, index_offset = 0):
         '''
         Create the control objects for a rig component. Create the zero group, setup all connections, create
         materials for the controls, and import the Control_Shape file to get the correct shape for this control
@@ -719,7 +719,7 @@ class Component_Base(object):
             controller_node = pm.createNode('controller', name = "{0}{1}_tag".format(self.namespace, control.stripNamespace().split("|")[-1]))
             control.message >> controller_node.controllerObject
 
-            ordered_index = ordered_control_list.index(control)
+            ordered_index = ordered_control_list.index(control) + index_offset
             new_control_info = ControlInfo(side, region, control_type, ordered_index)
 
             self.apply_control_shape(new_control_info, control, control_holder_list)
@@ -737,7 +737,7 @@ class Component_Base(object):
 
             lock_list = root_markup_property.get('locked_list')
             is_locked = False
-            if(str(new_control_info) in lock_list):
+            if lock_list != None and (str(new_control_info) in lock_list):
                 is_locked = True
                 locked_control_list.append(control)
 
@@ -755,6 +755,7 @@ class Component_Base(object):
             if set_control in locked_control_list:
                 pm.sets(locked_shader, edit=True, forceElement=[set_control])
             else:
+                print set_control, control_shader
                 pm.sets(control_shader, edit=True, forceElement=[set_control])
 
         if import_controls:
@@ -1012,7 +1013,7 @@ class Addon_Component(Component_Base):
             Component_Base.zero_all_rigging(character_network)
 
         addon_network = self.network['addon']
-        addon_network.group.setParent(character_network.group)
+        addon_network.group.setParent(self.network['rig_core'].group)
         maya_utils.node_utils.force_align(control, addon_network.group)
 
         addon_control = get_first_or_default(pm.duplicate(control, po=True))
@@ -1329,7 +1330,7 @@ class Rig_Component(Component_Base):
         con_list = list(set(const.listConnections(type='transform')))
         target = [x for x in con_list if type(x) == pm.nt.Joint and x != self.network['component'].group]
         
-        if target and get_first_or_default(target) == self.network['rig_core'].group:
+        if target and get_first_or_default(target) == self.network['character'].group:
             return True
         return False
 
@@ -1381,7 +1382,7 @@ class Rig_Component(Component_Base):
         if world_space == False:
             maya_utils.node_utils.force_align(self.skel_root.getParent(), component_grp)
         else:
-            maya_utils.node_utils.force_align(self.network['rig_core'].group, component_grp)
+            maya_utils.node_utils.force_align(self.network['character'].group, component_grp)
         rigging_chain = rigging.skeleton.duplicate_chain(skeleton_chain, self.namespace, self.prefix)
 
         if self.exclude:
@@ -1652,13 +1653,13 @@ class Rig_Component(Component_Base):
             constraint_list = self.attach_to_skeleton(target_skeleton_dict)
             self.bake_controls()
             pm.delete(constraint_list)
-            self.attach_and_bake_post_process(world_space)
+            self.attach_component(world_space)
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
-    def attach_and_bake_post_process(self, world_space):
+    def attach_component(self, world_space, maintain_offset = False):
         '''
         Final step of attaching rig controls to a skeleton, after baking constrain the component group 
         to the correct space
@@ -1667,9 +1668,9 @@ class Rig_Component(Component_Base):
             world_space (boolean): Whether the rig should build in world or parent space
         '''
         if self.__spacetype__ == "inherit" and world_space == False:
-            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=False)
-        elif self.__spacetype__ == "inherit" and world_space == True:
-            pm.parentConstraint(self.network['rig_core'].group, self.network['component'].group, mo=False)
+            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=maintain_offset)
+        elif (self.__spacetype__ == "world") or (self.__spacetype__ == "inherit" and world_space == True):
+            pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=maintain_offset)
 
     def create_component_group(self, side, region):
         '''
@@ -1684,7 +1685,7 @@ class Rig_Component(Component_Base):
         '''
         component_grp_name = "{0}{1}_{2}_{3}_grp".format(self.namespace, self.prefix, side, region)
         component_grp = pm.group(empty=True, name=component_grp_name)
-        component_grp.setParent(self.network['character'].group)
+        component_grp.setParent(self.network['rig_core'].group)
 
         return component_grp
 

@@ -118,10 +118,7 @@ class IK(rigging.rig_base.Rig_Component):
         pm.parentConstraint( self.get_character_world(), world_grp, mo=True )
         pm.pointConstraint(get_first_or_default(control_chain), ik_handle, mo=False)
 
-        if world_space == False:
-            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=True)
-        else:
-            pm.parentConstraint(self.network['rig_core'].group, self.network['component'].group, mo=True)
+        self.attach_component(world_space, True)
 
         if rigging.skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_queue)
