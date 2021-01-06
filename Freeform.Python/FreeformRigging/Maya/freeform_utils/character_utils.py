@@ -97,30 +97,30 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     character_network.set('root_path', root_folder)
 
-    rig_core = metadata.network_core.RigCore(parent = character_network.node, namespace = character_namespace, root_jnt = character_root)
-    joints_core = metadata.network_core.JointsCore(parent = character_network.node, namespace = character_namespace)
+    rig_core = metadata.network_core.RigCore(parent = character_network.node, namespace = character_namespace, character_group = character_network.group)
+    joints_core = metadata.network_core.JointsCore(parent = character_network.node, namespace = character_namespace, root_jnt = character_root)
     regions_core = metadata.network_core.RegionsCore(parent = character_network.node, namespace = character_namespace)
 
     # if not character root we have to generated a new one.  Make sure it gets the old animation
     if not character_root:
         temp_constraint = None
         if old_root_parent and rigging.skeleton.is_animated([old_root_parent], False):
-            temp_constraint = pm.parentConstraint(old_root_parent, rig_core.group, mo=False)
-            maya_utils.baking.bake_objects([rig_core.group], True, True, True, use_settings = False, simulation = False)
+            temp_constraint = pm.parentConstraint(old_root_parent, joints_core.root, mo=False)
+            maya_utils.baking.bake_objects([joints_core.root], True, True, True, use_settings = False, simulation = False)
         pm.delete([temp_constraint, old_root_parent])
-        rig_core.group.translate.set([0,0,0])
-        rig_core.group.rotate.set([0,0,0])
-        skeleton_root.setParent(rig_core.group)
+        joints_core.root.translate.set([0,0,0])
+        joints_core.root.rotate.set([0,0,0])
+        skeleton_root.setParent(joints_core.root)
 
-    joint_list = [rig_core.group]
-    joint_list += pm.listRelatives(rig_core.group, ad=True, type='joint')
+    joint_list = [joints_core.root]
+    joint_list += pm.listRelatives(joints_core.root, ad=True, type='joint')
 
     for jnt in joint_list:
         rigging.skeleton.setup_joint(jnt, joints_core)
 
     character_network.group.rename(character_namespace + character_network.group.name())
-    rig_core.group.rename(character_namespace + rig_core.group.stripNamespace())
-    rig_core.group.setParent(character_network.group)
+    joints_core.root.rename(character_namespace + joints_core.root.stripNamespace())
+    joints_core.root.setParent(character_network.group)
 
     top_level_meshes = [x for x in pm.ls(assemblies=True) if x.getShape() and isinstance(x.getShape(), pm.nt.Mesh)]
     pm.select(top_level_meshes)
@@ -259,7 +259,7 @@ def update_rig_file():
 
         # new_root might have been deleted by characterize_skeleton if it wasn't a joint, for safety we get the root
         # connected to the character network
-        new_root = updated_character_network.get_downstream(metadata.network_core.RigCore).group
+        new_root = updated_character_network.get_downstream(metadata.network_core.JointsCore).root
         jnt_layer_list = new_root.drawOverride.listConnections()
         character_obj_list = [updated_character_network.group] + updated_character_network.group.listRelatives(ad=True)
 

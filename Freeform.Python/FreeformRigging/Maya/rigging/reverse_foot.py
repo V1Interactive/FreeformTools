@@ -106,6 +106,8 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         super(ReverseFoot, self).rig(skeleton_dict, side, region, world_space, not use_queue, **kwargs)
 
+        character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+
         control_grp = self.create_control_grp(side, region)
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
 
@@ -126,6 +128,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         toe_children = skeleton_chain[3].getChildren(type='joint')
         toe_ik_joint = get_first_or_default([x for x in toe_children if x not in skeleton_chain])
+        toe_ik_control = None
         if toe_ik_joint:
             toe_ik_control = get_first_or_default(pm.duplicate(toe_ik_joint))
             toe_ik_control.rename(self.namespace + 'control_' + toe_ik_joint.name())
@@ -136,22 +139,27 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         control_chain_end = get_last_or_default(control_chain)
 
         # Orient heel joint to world space
-        control_chain[1].setParent(None)
-        control_chain_start.setParent(None)
-        control_chain_start.jointOrient.set([0,0,0])
-        control_chain_start.rotate.set([0,0,0])
-        control_chain_start.setParent(control_grp)
-        control_chain[1].setParent(control_chain_start)
+        if character_category.world_orient_ik:
+            control_chain[1].setParent(None)
+            control_chain_start.setParent(None)
+            control_chain_start.jointOrient.set([0,0,0])
+            control_chain_start.rotate.set([0,0,0])
+            control_chain_start.setParent(control_grp)
+            control_chain[1].setParent(control_chain_start)
 
         delete_chain = rigging_chain[:3]
         rigging_chain = rigging_chain[3:]
         pm.delete(delete_chain)
 
+        # toe_ik will be inserted as index 0 (in place of the attach jonit) if it exists, if it doesn't we want to 
+        # move all control indicies up 1 since we don't allow control of the attach joint
+        index_offset = -1
         if toe_ik_joint:
+            index_offset = 0
             rigging.skeleton.force_set_attr(toe_ik_joint.visibility, False)
             rigging.skeleton.force_set_attr(toe_ik_control.visibility, True)
             self.create_controls([toe_ik_control], side, region, 'toe_ik', control_holder_list)
-        self.create_controls(control_chain, side, region, 'reverse_fk', control_holder_list)
+        self.create_controls(control_chain, side, region, 'reverse_fk', control_holder_list, index_offset)
 
         control_property = metadata.meta_properties.get_property(control_chain_start, metadata.meta_properties.ControlProperty)
         control_property.set('world_space', True, 'bool')
@@ -181,10 +189,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         self.bind_chains([control_chain_end], [rigging_chain[2]])
 
-        if world_space == False:
-            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=True)
-        else:
-            pm.parentConstraint(self.network['rig_core'].group, self.network['component'].group, mo=True)
+        self.attach_component(world_space, True)
 
         if rigging.skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_queue)
