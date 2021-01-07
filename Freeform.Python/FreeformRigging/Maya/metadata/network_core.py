@@ -738,6 +738,13 @@ class JointsCore(DependentNode):
     dependent_node = SkeletonCore
 
     @property
+    def group(self):
+        '''
+        Transform node that is the scene group object for this node
+        '''
+        return root
+
+    @property
     def root(self):
         '''
         Transform node that is the scene group object for this node
