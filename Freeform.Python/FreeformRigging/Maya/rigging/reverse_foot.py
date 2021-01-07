@@ -126,13 +126,14 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         control_chain = rigging.skeleton.sort_chain_by_hierarchy(control_chain)
         control_chain.reverse()
 
-        toe_children = skeleton_chain[3].getChildren(type='joint')
+        toe_joint = skeleton_chain[-3]
+        toe_children = toe_joint.getChildren(type='joint')
         toe_ik_joint = get_first_or_default([x for x in toe_children if x not in skeleton_chain])
         toe_ik_control = None
         if toe_ik_joint:
             toe_ik_control = get_first_or_default(pm.duplicate(toe_ik_joint))
             toe_ik_control.rename(self.namespace + 'control_' + toe_ik_joint.name())
-            toe_ik_control.setParent(get_index_or_default(control_chain, 3))
+            toe_ik_control.setParent(get_index_or_default(control_chain, -3))
             self.network['controls'].connect_node(toe_ik_control)
 
         control_chain_start = get_first_or_default(control_chain)
@@ -144,11 +145,12 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
             control_chain_start.setParent(None)
             control_chain_start.jointOrient.set([0,0,0])
             control_chain_start.rotate.set([0,0,0])
+            pm.delete(pm.aimConstraint(toe_joint, control_chain_start, aim=[0,-1,0], upVector=[0,0,1], wut="scene", mo=False))
             control_chain_start.setParent(control_grp)
             control_chain[1].setParent(control_chain_start)
 
-        delete_chain = rigging_chain[:3]
-        rigging_chain = rigging_chain[3:]
+        delete_chain = rigging_chain[:-3]
+        rigging_chain = rigging_chain[-3:]
         pm.delete(delete_chain)
 
         # toe_ik will be inserted as index 0 (in place of the attach jonit) if it exists, if it doesn't we want to 
@@ -168,11 +170,11 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
             pm.controller([control_chain[i+1], child_control], p=True)
 
         ball_ik_handle, end_effector = pm.ikHandle(sj = rigging_chain[2], ee = rigging_chain[1], sol = 'ikSCsolver', name = "{0}{1}_{2}_rv_ball_ikHandle".format(self.namespace, side, region))
-        ball_ik_handle.setParent(control_chain[4])
+        ball_ik_handle.setParent(control_chain[-2])
         rigging.skeleton.force_set_attr(ball_ik_handle.visibility, False)
 
         toe_ik_handle, end_effector = pm.ikHandle(sj = rigging_chain[1], ee = rigging_chain[0], sol = 'ikSCsolver', name = "{0}{1}_{2}_rv_toe_ikHandle".format(self.namespace, side, region))
-        ik_parent = toe_ik_control if toe_ik_joint else control_chain[3]
+        ik_parent = toe_ik_control if toe_ik_joint else control_chain[-3]
         toe_ik_handle.setParent(ik_parent)
         rigging.skeleton.force_set_attr(toe_ik_handle.visibility, False)
 
@@ -183,7 +185,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
             rigging.skeleton.force_set_attr(control.visibility, True)
 
         rigging.skeleton.force_set_attr(control_chain_end.visibility, False)
-        rigging.skeleton.force_set_attr(skeleton_chain[3].visibility, False)
+        rigging.skeleton.force_set_attr(skeleton_chain[-3].visibility, False)
 
         rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
@@ -215,7 +217,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         pm.delete( list(set(pm.listConnections(skeleton_chain[-1], type='orientConstraint', s=True, d=False))) )
         pm.orientConstraint( rigging_chain[-1], skeleton_chain[-1], mo=False )
 
-        self.bind_chains(rigging_chain[:2], skeleton_chain[3:-1])
+        self.bind_chains(rigging_chain[:2], skeleton_chain[-3:-1])
 
     @undoable
     def attach_to_skeleton(self, target_skeleton_dict):
@@ -238,19 +240,19 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         rigging.skeleton.zero_skeleton_joints(skeleton_chain)
 
         constraint_list = []
-        maya_utils.node_utils.force_align(target_chain[3], control_chain[3])
+        maya_utils.node_utils.force_align(target_chain[-3], control_chain[-3])
         constraint_list.append( pm.orientConstraint(target_chain[0], control_chain[0], mo=True) )
         constraint_list.append( pm.pointConstraint(target_chain[0], control_chain[0], mo=True) )
-        constraint_list.append( pm.orientConstraint(target_chain[3], control_chain[3], mo=True) )
-        constraint_list.append( pm.pointConstraint(target_chain[3], control_chain[3], mo=True) )
+        constraint_list.append( pm.orientConstraint(target_chain[-3], control_chain[-3], mo=True) )
+        constraint_list.append( pm.pointConstraint(target_chain[-3], control_chain[-3], mo=True) )
 
-        ik_handle, end_effector = pm.ikHandle(sj = control_chain[4], ee = control_chain[5], sol = 'ikSCsolver', name = "{0}_{1}_ball_retarget_ikHandle".format(side, region))
+        ik_handle, end_effector = pm.ikHandle(sj = control_chain[-2], ee = control_chain[-1], sol = 'ikSCsolver', name = "{0}_{1}_ball_retarget_ikHandle".format(side, region))
         constraint_list.append(ik_handle)
-        ik_handle.setParent(target_chain[5])
+        ik_handle.setParent(target_chain[-1])
 
-        ik_handle, end_effector = pm.ikHandle(sj = control_chain[3], ee = control_chain[4], sol = 'ikSCsolver', name = "{0}_{1}_toe_retarget_ikHandle".format(side, region))
+        ik_handle, end_effector = pm.ikHandle(sj = control_chain[-3], ee = control_chain[-2], sol = 'ikSCsolver', name = "{0}_{1}_toe_retarget_ikHandle".format(side, region))
         constraint_list.append(ik_handle)
-        ik_handle.setParent(target_chain[4])
+        ik_handle.setParent(target_chain[-2])
 
         return constraint_list
 

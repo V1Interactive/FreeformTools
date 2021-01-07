@@ -197,7 +197,7 @@ def get_index_or_default(a_list, index, default = None):
     Returns:
         object. Object at index or default value
     '''
-    return a_list[index] if a_list and len(a_list) > index else default
+    return a_list[index] if a_list and len(a_list) > abs(index) else default
 
 
 def get_mirror_attributes(axis):

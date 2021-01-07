@@ -936,7 +936,7 @@ class Addon_Component(Component_Base):
                     region = get_index_or_default(split_data, 1)
                     index = int(get_index_or_default(split_data, 2))
 
-                    jnt = get_first_or_default(component.network['skeleton'].get_connections())
+                    jnt = component.network['skeleton'].get_first_connection()
                     skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
                     joint_chain = rigging.skeleton.get_joint_chain(skeleton_dict[side][region]['root'], skeleton_dict[side][region]['end'])
                     joint_chain = rigging.skeleton.sort_chain_by_hierarchy(joint_chain)
