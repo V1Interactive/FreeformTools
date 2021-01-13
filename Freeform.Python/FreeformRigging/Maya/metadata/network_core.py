@@ -742,7 +742,7 @@ class JointsCore(DependentNode):
         '''
         Transform node that is the scene group object for this node
         '''
-        return root
+        return self.root
 
     @property
     def root(self):
@@ -750,7 +750,7 @@ class JointsCore(DependentNode):
         Transform node that is the scene group object for this node
         '''
         return_root = get_first_or_default(pm.listConnections( self.node.root_joint, type = pm.nt.Joint ))
-        return_root = return_root if return_root else self.get_root(self.group)
+        return_root = return_root if return_root else self.get_root(self.get_first_connection())
         return return_root
 
     def __init__(self, parent = None, node_name = 'joints_core', node = None, namespace = "", root_jnt = None):
