@@ -661,7 +661,7 @@ class HelixRigger:
         if self.vm.ActiveCharacter:
             region_editor.RegionEditor(self.vm.ActiveCharacter.NodeName).show()
         else:
-            pm.confirmDialog(title="No Character", message="No character to edit regions on", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            v1_shared.usertools.message_dialogue.open_dialogue("No character to edit regions on", title="No Character")
 
     @csharp_error_catcher
     def load_character_call(self, vm, event_args):
@@ -1243,14 +1243,13 @@ class HelixRigger:
 
             if 'fk' in control_type:
                 return_list[control_property_network.get('ordered_index') + offset] = control
-            else:
-                if control_type == 'ik_handle':
-                    return_list[1] = control
-                elif control_type == 'pv':
-                    return_list[0] = control
-                elif control_type == 'toe_ik':
-                    return_list.insert(0, control)
-                    offset += 1
+            elif control_type == 'ik_handle':
+                return_list[-1] = control
+            elif control_type == 'pv':
+                return_list[0] = control
+            elif control_type == 'toe_ik':
+                return_list.insert(0, control)
+                offset += 1
 
         return_list.reverse()
         return [x for x in return_list if x]
@@ -2335,7 +2334,7 @@ class HelixRigger:
             event_args (RigRegionEventArgs): Passes the selected region, rig type, and world space boolean from the UI
         '''
         if not event_args.skeletonRegion:
-            pm.confirmDialog( title="Unable To Rig", message="No Region Selected", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            v1_shared.usertools.message_dialogue.open_dialogue("No Region Selected", title="Unable To Rig")
             return
 
         component_type = getattr(sys.modules[event_args.rigType[0]], event_args.rigType[1])

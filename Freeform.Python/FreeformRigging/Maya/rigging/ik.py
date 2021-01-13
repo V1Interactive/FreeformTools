@@ -32,6 +32,7 @@ import rigging.rig_tools
 import rigging.overdriver
 
 import v1_core
+import v1_shared
 
 from maya_utils.decorators import undoable
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -77,7 +78,7 @@ class IK(rigging.rig_base.Rig_Component):
         ik_solved_chain_root = rigging.skeleton.get_chain_root(ik_solved_chain)
         ik_solved_chain_root.setParent( self.network['component'].group )
 
-        ik_solver = 'ikRPsolver'# if len(skeleton_chain) == 3 else 'ikSCsolver'
+        ik_solver = 'ikRPsolver' if len(rigging_chain) > 2 else 'ikSCsolver'
         ik_handle, end_effector = pm.ikHandle(sj = ik_solved_chain[-1], ee = get_first_or_default(ik_solved_chain), sol = ik_solver, name = "{0}{1}_{2}_ikHandle".format(self.namespace, side, region))
         ik_handle.setParent(world_grp)
         rigging.skeleton.force_set_attr(ik_handle.visibility, False)
@@ -102,7 +103,7 @@ class IK(rigging.rig_base.Rig_Component):
         skel_root = skeleton_dict[side][region]['root']
         skel_end = skeleton_dict[side][region]['end']
         skeleton_chain = rigging.skeleton.get_joint_chain(skel_root, skel_end)
-        if len(rigging_chain) == 3:
+        if len(rigging_chain) > 2:
             pv_position = rigging.skeleton.calculate_pole_vector_position(rigging_chain, pm.currentTime())
             pm.select(None) # select None to make sure joint doesn't parent to anything
             pv_control = pm.joint(name = "{0}control_{1}_{2}_ik_pv".format(self.namespace, side, region), position=pv_position)
@@ -283,16 +284,10 @@ class IK(rigging.rig_base.Rig_Component):
 
     def valid_check(self, skeleton_dict, side, region):
         # Check for blocking conditions on building the Component before building it
-        skel_root = skeleton_dict[side][region]['root']
-        skel_end = skeleton_dict[side][region]['end']
-        skeleton_chain = rigging.skeleton.get_joint_chain(skel_root, skel_end)
+        skeleton_chain = self.get_skeleton_chain(skeleton_dict, side, region)
 
-        skel_exclude = skeleton_dict[side][region].get('exclude')
-        if skel_exclude:
-            skeleton_chain.remove(skel_exclude)
-
-        if not (len(skeleton_chain) == 3 or len(skeleton_chain) == 2):
-            pm.confirmDialog( title="Unable To Rig", message="IK Component needs exactly 2 or 3 joints, {0} found in chain.".format(len(skeleton_chain)), button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+        if len(skeleton_chain) < 2:
+            v1_shared.usertools.message_dialogue.open_dialogue("IK Component needs at least 2 joints, {0} found in chain.".format(len(skeleton_chain)), title="Unable To Rig")
             return False
 
         return True

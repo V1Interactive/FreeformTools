@@ -652,7 +652,7 @@ class HelixExporter(object):
             pm.select(selection)
         else:
             event_args.Object = None
-            pm.confirmDialog( title="No Selection", message="Select a {0} to create an Export Asset".format(selection_type), button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            v1_shared.usertools.message_dialogue.open_dialogue("Select a {0} to create an Export Asset".format(selection_type), title="No Selection")
 
     @csharp_error_catcher
     def asset_export_toggle(self, c_asset, event_args):

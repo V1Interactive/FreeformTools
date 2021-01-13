@@ -57,7 +57,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     character_network = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
     if character_network:
-        pm.confirmDialog( title="Already Characterized", message="This Skeleton is already characterized -- {0}".format(character_network.character_name.get()), button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+        v1_shared.usertools.message_dialogue.open_dialogue("This Skeleton is already characterized -- {0}".format(character_network.character_name.get()), title="Already Characterized")
         return
 
     if not name:
@@ -280,7 +280,7 @@ def update_rig_file():
             jnt.radius.set(2)
     else:
         dialog_message = "Failed to update Rig file.  Either FBX or Settings file were invalid"
-        pm.confirmDialog( title="Failed To Update", message=dialog_message, button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+        v1_shared.usertools.message_dialogue.open_dialogue(dialog_message, title="Failed To Update")
 
 
 def mirror_rig_animation(joint, mirror_key_dict = {'left' : 'right'}, axis = 'x', world_mirror = False):

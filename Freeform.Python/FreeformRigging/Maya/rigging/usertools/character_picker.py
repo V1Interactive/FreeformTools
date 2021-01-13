@@ -172,7 +172,7 @@ class RigSwapper(CharacterPicker):
             event_args (ImportRigsEventArgs): Stores the list of selected rig files from the UI
         '''
         if len(rig_path_list) != 1:
-            pm.confirmDialog( title="Bad Selection Found", message="Please Select (1) Character.", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            v1_shared.usertools.message_dialogue.open_dialogue("Please Select (1) Character.", title="Incorrect Selection Found")
             return
 
         autokey_state = pm.autoKeyframe(q=True, state=True)
