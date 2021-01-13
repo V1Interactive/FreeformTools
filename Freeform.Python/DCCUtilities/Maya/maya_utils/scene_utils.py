@@ -267,3 +267,13 @@ def import_file_safe(file_path, **kwargs):
             import_return = import_return + import_parent.listRelatives(ad=True)
 
     return import_return
+
+def export_selected_safe(file_path, **kwargs):
+    filename, extension = os.path.splitext(file_path)
+    if extension.lower() == '.ma':
+        pm.exportSelected(file_path, force = True)
+    elif extension.lower() == '.fbx':
+        fbx_file_path = file_path.replace("\\", "\\\\")
+        maya_utils.fbx_wrapper.FBXExport(f = fbx_file_path, **kwargs)
+
+    v1_core.v1_logging.get_logger().info("export_selected_safe - {0}".format(file_path))

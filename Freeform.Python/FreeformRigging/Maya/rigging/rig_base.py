@@ -306,10 +306,22 @@ class Component_Base(object):
             str: CONTENT_ROOT relative path or None
         '''
         character_network = metadata.network_core.MetaNode.get_first_network_entry(character_obj, metadata.network_core.CharacterCore)
-        
         content_path = v1_shared.file_path_utils.relative_path_to_content(character_network.node.root_path.get())
 
         return content_path if os.path.exists(content_path) else ""
+
+    @staticmethod
+    def get_control_shape_path(character_root_path):
+        format_list = [".ma", ".fbx"]
+        path_list = [os.path.join(character_root_path, "Control_Shapes" + format) for format in format_list]
+        control_shape_path = None
+        # If neither exist, or both exist use the .fbx path, otherwise use the path that exists
+        if os.path.exists(path_list[0]) == os.path.exists(path_list[1]):
+            control_shape_path = path_list[1]
+        else:
+            control_shape_path = get_first_or_default([x for x in path_list if os.path.exists(x)])
+
+        return control_shape_path
 
     @staticmethod
     def save_control_shapes():
@@ -327,7 +339,7 @@ class Component_Base(object):
 
         first_control = get_first_or_default(control_list)
         character_root_path = Component_Base.get_character_root_directory(first_control)
-        control_shape_path = os.path.join( character_root_path, "Control_Shapes.ma" )
+        control_shape_path = Component_Base.get_control_shape_path(character_root_path)
 
         if os.path.exists(control_shape_path):
             v1_core.v1_logging.get_logger().debug("Importing File - {0}".format(control_shape_path))
@@ -368,7 +380,7 @@ class Component_Base(object):
 
         transform_list = [x for x in control_holder_list if type(x) == pm.nt.Transform]
         pm.select(transform_list)
-        pm.exportSelected(control_shape_path, force=True)
+        maya_utils.scene_utils.export_selected_safe(control_shape_path, checkout = True, s = True)
         pm.delete(transform_list)  
 
     @staticmethod
@@ -411,8 +423,9 @@ class Component_Base(object):
         Returns:
             tuple. List of all control holder groups and a list of all nodes imported
         '''
+        # Listed in order of priority.  If we find an obj first we will use it and ignore other formats.
         character_root_path = Component_Base.get_character_root_directory(character_group)
-        control_shape_path = os.path.join( character_root_path, "Control_Shapes.ma" )
+        control_shape_path = Component_Base.get_control_shape_path(character_root_path)
 
         control_holder_list = []
         import_list = []
@@ -1414,6 +1427,19 @@ class Rig_Component(Component_Base):
         '''
         return NotImplemented
 
+    def get_skeleton_chain(self, skeleton_dict, side, region):
+        '''
+
+        '''
+        skel_root = skeleton_dict[side][region]['root']
+        skel_end = skeleton_dict[side][region]['end']
+        skeleton_chain = rigging.skeleton.get_joint_chain(skel_root, skel_end)
+
+        skel_exclude = skeleton_dict[side][region].get('exclude')
+        if skel_exclude:
+            skeleton_chain.remove(skel_exclude)
+        
+        return skeleton_chain
 
     #region Class Methods
     def remove_animation(self):

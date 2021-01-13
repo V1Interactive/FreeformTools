@@ -760,10 +760,11 @@ class StaticAsset(ExportAssetProperty):
         export_directory = get_first_or_default(export_path.rsplit(os.sep, 1))
         if not os.path.exists(export_directory):
             os.makedirs(export_directory)
-        export_path = export_path.replace("\\", "\\\\")
+
         freeform_utils.fbx_presets.FBXStaticMesh().load()
         pm.select(export_geo, replace=True)
-        maya_utils.fbx_wrapper.FBXExport(checkout = True, f = export_path, s = True)
+
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
 
         if c_asset.ZeroExport:
             for asset, value_list in reset_dict.iteritems():
@@ -855,10 +856,10 @@ class CharacterAsset(ExportAssetProperty):
         export_directory = get_first_or_default(export_path.rsplit(os.sep, 1))
         if not os.path.exists(export_directory):
             os.makedirs(export_directory)
-        export_path = export_path.replace("\\", "\\\\")
+
         freeform_utils.fbx_presets.FBXAnimation().load()
         pm.select(export_geo + export_skeleton, replace=True)
-        maya_utils.fbx_wrapper.FBXExport(checkout = True, f = export_path, s = True)
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
 
         pm.autoKeyframe(state=autokey_state)
 
@@ -1088,10 +1089,10 @@ class CharacterAnimationAsset(ExportAssetProperty):
         export_directory = get_first_or_default(export_path.rsplit(os.sep, 1))
         if not os.path.exists(export_directory):
             os.makedirs(export_directory)
-        export_path = export_path.replace("\\", "\\\\")
+
         freeform_utils.fbx_presets.FBXAnimation().load()
         pm.select(export_root, replace=True)
-        maya_utils.fbx_wrapper.FBXExport(checkout = True, f = export_path, s = True)
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
 
 
 

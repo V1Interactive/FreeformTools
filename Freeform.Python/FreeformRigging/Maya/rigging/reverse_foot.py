@@ -101,6 +101,9 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
     @undoable
     def rig(self, skeleton_dict, side, region, world_space = True, control_holder_list = None, use_queue = False, additive = False, reverse = False, **kwargs):
+        if not self.valid_check(skeleton_dict, side, region):
+            return False
+
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
@@ -258,6 +261,16 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
     def get_control_joint(self, control):
         return control.getParent()
+
+    def valid_check(self, skeleton_dict, side, region):
+        # Check for blocking conditions on building the Component before building it
+        skeleton_chain = self.get_skeleton_chain(skeleton_dict, side, region)
+
+        if len(skeleton_chain) < 4:
+            v1_shared.usertools.message_dialogue.open_dialogue("Reverse Foot Component needs at least 4 joints (ankle, ball, toe, heel), {0} found in chain.".format(len(skeleton_chain)), title="Unable To Rig")
+            return False
+
+        return True
 
     def fix_attachments(self, attachment_joint_list):
         '''
