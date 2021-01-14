@@ -41,7 +41,7 @@ namespace Freeform.Rigging
 
         public string NodeName;
         public bool AllowSelectComponent;
-        public bool AllowSelectionEvents;
+        public bool AllowSelectionEvent;
         public bool AddToSelection;
 
         #region Properties
@@ -153,7 +153,7 @@ namespace Freeform.Rigging
 
                         if (value.LockedState != "locked")
                         {
-                            value.RunSelectionEvent = AllowSelectionEvents;
+                            value.RunSelectionEvent = AllowSelectionEvent;
                             value.IsSelected = true;
                             value.RunSelectionEvent = true;
                         }
@@ -291,7 +291,7 @@ namespace Freeform.Rigging
             OutOfDate = false;
             RigAllFiltered = false;
             AllowSelectComponent = true;
-            AllowSelectionEvents = false;
+            AllowSelectionEvent = true;
             AddToSelection = false;
             _selectedComponent = null;
             ButtonStyle = "TrimForegroundButton";
@@ -388,12 +388,10 @@ namespace Freeform.Rigging
             AllowSelectComponent = false;
             foreach (Component deselectComponent in SelectedComponentList)
             {
-                deselectComponent.RunSelectionEvent = AllowSelectionEvents;
+                deselectComponent.RunSelectionEvent = AllowSelectionEvent;
                 deselectComponent.IsSelected = false;
                 deselectComponent.RunSelectionEvent = true;
             }
-            if(AllowSelectionEvents == true)
-                DeselectHandler?.Invoke(this, null);
 
             AllowSelectComponent = true;
         }
@@ -430,7 +428,7 @@ namespace Freeform.Rigging
             {
                 if(item.LockedState != "locked")
                 {
-                    item.RunSelectionEvent = AllowSelectionEvents;
+                    item.RunSelectionEvent = AllowSelectionEvent;
                     item.AddToSelection = true;
                     item.IsSelected = true;
                     item.AddToSelection = false;

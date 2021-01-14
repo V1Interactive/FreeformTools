@@ -442,29 +442,35 @@ class HelixRigger:
         Args:
             selection_list (List<PyNode>): List of selected objects in the scene
         '''
-        component_network_list = []
+        component_node_list = []
 
         for obj in selection_list:
             control_property = metadata.meta_properties.get_property(obj, metadata.meta_properties.ControlProperty)
             if control_property:
-                component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.ComponentCore)
-                if component_network not in component_network_list:
-                    component_network_list.append(component_network)
+                component_node = None
+                if control_property.node.hasAttr("affectedBy"):
+                    component_node = control_property.get_first_connection(get_attribute=control_property.node.affectedBy)
+                if not component_node:
+                    component_node = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.ComponentCore).node
 
-        if not component_network_list or len(component_network_list) > 1:
+                if component_node not in component_node_list:
+                    component_node_list.append(component_node)
+
+        if not component_node_list or len(component_node_list) >= 1:
             if self.vm.ActiveCharacter != None:
                 self.vm.ActiveCharacter.DeselectAll()
 
-        if len(component_network_list) > 1:
+        if len(component_node_list) > 1:
             if self.vm.ActiveCharacter != None:
                 self.vm.ActiveCharacter.AddToSelection = True
 
-        for component_network in component_network_list:
-            if self.component_lookup.get(component_network.node):
-                c_character, c_component = self.component_lookup.get(component_network.node)
-                c_character.AllowSelectionEvent = False
-                c_character.SelectedComponent = c_component
-                c_character.AllowSelectionEvent = True
+        for component_node in component_node_list:
+            if self.component_lookup.get(component_node):
+                c_character, c_component = self.component_lookup.get(component_node)
+                if not c_component.IsSelected:
+                    c_character.AllowSelectionEvent = False
+                    c_character.SelectedComponent = c_component
+                    c_character.AllowSelectionEvent = True
 
         if self.vm.ActiveCharacter != None:
             self.vm.ActiveCharacter.AddToSelection = False
@@ -1599,7 +1605,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): Passes the character to remove animation on from the UI
         '''
         c_character = event_args.character
-        for c_component in c_character.Components:
+        for c_component in c_character.ComponentList:
             network_node = pm.PyNode(c_component.NodeName)
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(network_node)
             rig_component.remove_animation()

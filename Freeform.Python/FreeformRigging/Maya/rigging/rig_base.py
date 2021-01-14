@@ -737,7 +737,8 @@ class Component_Base(object):
 
             self.apply_control_shape(new_control_info, control, control_holder_list)
             
-            property = metadata.meta_properties.add_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_properties.add_property(control, metadata.meta_properties.ControlProperty)
+            self.network["component"].connect_node(control_property.node)
             zero_group_list.append( rigging.skeleton.create_zero_group(control) )
 
             joint_list = self.network['skeleton'].get_connections()
@@ -754,7 +755,7 @@ class Component_Base(object):
                 is_locked = True
                 locked_control_list.append(control)
 
-            property.data = {'control_type' : control_type, 'ordered_index' : ordered_index, 'zero_translate' : control.translate.get(), 
+            control_property.data = {'control_type' : control_type, 'ordered_index' : ordered_index, 'zero_translate' : control.translate.get(), 
                              'zero_rotate' : control.rotate.get(), 'locked' : is_locked}
 
         ordered_control_list.reverse()
