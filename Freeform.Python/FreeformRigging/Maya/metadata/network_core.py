@@ -309,7 +309,7 @@ class MetaNode(object):
             return_list = [x for x in all_connections if x not in filter_out]
         return return_list
 
-    def get_first_connection(self, node_type = None):
+    def get_first_connection(self, node_type = None, get_attribute = None):
         '''
         Get the first connection from the network node's message attribute, excluding 'nodeGraphEditorInfo' type nodes
 
@@ -319,7 +319,7 @@ class MetaNode(object):
         Returns:
             (list<PyNode>). List of all objects connected
         '''
-        return get_first_or_default(self.get_connections(node_type))
+        return get_first_or_default(self.get_connections(node_type, get_attribute))
 
     def connect_nodes(self, node_list):
         '''
