@@ -834,43 +834,10 @@ class RigComponent(DependentNode):
 
     def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = "", **kwargs):
         super(RigComponent, self).__init__(parent, node_name, node, namespace, **kwargs)
-
-class ComponentCore(RigComponent):
-    '''
-    Rigging Network for a single rig component
-
-    Args:
-        node_name (str): Name of the network node
-        node (PyNode): Maya scene node to initialize the property from
-
-    Attributes:
-        node (PyNode): The scene network node that represents the property
-        dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
-
-    Node Attributes:
-        component_type (str): Name of the Rig Component type of the component
-        side (str): Side of the character this component was built on
-        region (str): Region this component was built on
-        group_name (str): Group name that this rig component will sort into in the UI
-    '''
-    dependent_node = RigCore
-
-    def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):
-        super(ComponentCore, self).__init__(parent, node_name, node, namespace)
         if not node:
-            self.add_attr('component_type', 'string')
-            self.add_attr('side', 'string')
-            self.add_attr('region', 'string')
-            self.add_attr('group_name', 'string')
-            self.add_attr('selection_lock', 'string')
             pm.addAttr(self.node, ln="translate_save", multi=True, type='double')
             pm.addAttr(self.node, ln="rotate_save", multi=True, type='doubleAngle')
             pm.addAttr(self.node, ln="scale_save", multi=True, type='double')
-
-    def delete(self):
-        pm.delete(self.get_connections())
-        if self.node.exists():
-            pm.delete(self.node)
 
     def save_animation(self, joint_list):
         for j, joint in enumerate(joint_list):
@@ -910,6 +877,40 @@ class ComponentCore(RigComponent):
                     network_attr.disconnect()
                     transform_attr = getattr(joint, attr)
                     anim_curve_attr >> transform_attr
+
+class ComponentCore(RigComponent):
+    '''
+    Rigging Network for a single rig component
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): Maya scene node to initialize the property from
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
+
+    Node Attributes:
+        component_type (str): Name of the Rig Component type of the component
+        side (str): Side of the character this component was built on
+        region (str): Region this component was built on
+        group_name (str): Group name that this rig component will sort into in the UI
+    '''
+    dependent_node = RigCore
+
+    def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):
+        super(ComponentCore, self).__init__(parent, node_name, node, namespace)
+        if not node:
+            self.add_attr('component_type', 'string')
+            self.add_attr('side', 'string')
+            self.add_attr('region', 'string')
+            self.add_attr('group_name', 'string')
+            self.add_attr('selection_lock', 'string')
+
+    def delete(self):
+        pm.delete(self.get_connections())
+        if self.node.exists():
+            pm.delete(self.node)
 
 class ControlJoints(DependentNode):
     '''
@@ -1013,10 +1014,6 @@ class AddonCore(RigComponent):
             self.add_attr('target_type', 'string')
             self.add_attr('target_data', 'string')
 
-            pm.addAttr(self.node, ln="translate_save", multi=True, type='double')
-            pm.addAttr(self.node, ln="rotate_save", multi=True, type='doubleAngle')
-            pm.addAttr(self.node, ln="scale_save", multi=True, type='double')
-
             addon_grp = pm.group(empty=True, name= namespace + node_name.replace("_core", "_grp"))
             self.connect_node(addon_grp)
 
@@ -1027,45 +1024,6 @@ class AddonCore(RigComponent):
         pm.delete(self.get_connections())
         if self.node.exists():
             pm.delete(self.node)
-
-    def save_animation(self, joint_list):
-        for j, joint in enumerate(joint_list):
-            offset_index = j * 3
-            for i, attr in enumerate(['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']):
-                index = (i % 3) + offset_index
-
-                if i >= 6:
-                    network_attr = self.node.scale_save
-                elif i >= 3:
-                    network_attr = self.node.rotate_save
-                elif i >= 0:
-                    network_attr = self.node.translate_save
-                
-                connection_list = getattr(joint, attr).listConnections(p=True, c=True, d=True, s=True)
-                if connection_list:
-                    transform_attr, anim_curve_attr = connection_list[0]
-                    anim_curve_attr // transform_attr
-                    anim_curve_attr >> network_attr[index]
-
-    def load_animation(self, joint_list):
-        for j, joint in enumerate(joint_list):
-            offset_index = j * 3
-            for i, attr in enumerate(['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']):
-                index = (i % 3) + offset_index
-
-                if i >= 6:
-                    network_attr = self.node.scale_save
-                elif i >= 3:
-                    network_attr = self.node.rotate_save
-                elif i >= 0:
-                    network_attr = self.node.translate_save
-
-                connection_list = network_attr[index].listConnections(p=True, c=True, d=True, s=True)
-                if connection_list:
-                    network_attr, anim_curve_attr = connection_list[0]
-                    network_attr.disconnect()
-                    transform_attr = getattr(joint, attr)
-                    anim_curve_attr >> transform_attr
 
 
 class AddonControls(DependentNode):
