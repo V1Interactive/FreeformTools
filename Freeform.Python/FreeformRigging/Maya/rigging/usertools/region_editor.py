@@ -30,6 +30,8 @@ import metadata
 import rigging
 import scene_tools
 
+import v1_core
+
 from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
@@ -149,6 +151,26 @@ class RegionEditor(object):
             elif event_args.StringName == "end":
                 self.vm.End = selection.name()
 
+    def get_mirrored_joint(self, base_name, side_str, replace_str):
+        '''
+        Returns the mirrored joint name based on joint_name_pattern to accomodate joint side marking on either side of the name
+
+        Args:
+            base_name (string): The name of the joint to find the mirror for
+            side_str (string): The name of the side to search for in base_name
+            replace_str (string): The string to replace side_str with
+        '''
+        config_manager = v1_core.global_settings.ConfigManager()
+        joint_name_pattern = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING).get("JointNamePattern")
+
+        ending_side = True 
+        if joint_name_pattern != None:
+            for i, s in enumerate(joint_name_pattern.split("*")):
+                if s == "<side>":
+                    ending_side = True if i == 1 else False
+
+        return replace_str.join(base_name.rsplit(side_str, 1)) if ending_side else replace_str.join(base_name.split(side_str, 1))
+
     @csharp_error_catcher
     def mirror_filtered_regions(self, vm, event_args):
         '''
@@ -159,8 +181,8 @@ class RegionEditor(object):
             vm (RegionEditor.RegionEditorVM): C# view model object sending the command
             event_args (MirrorRegionEventArgs): Region to mirror and strings to replace for the mirroring
         '''
-        mirror_root_name = event_args.Region.Root.replace(event_args.JointReplace, event_args.JointReplaceWith)
-        mirror_end_name = event_args.Region.End.replace(event_args.JointReplace, event_args.JointReplaceWith)
+        mirror_root_name = self.get_mirrored_joint(event_args.Region.Root, event_args.JointReplace, event_args.JointReplaceWith)
+        mirror_end_name = self.get_mirrored_joint(event_args.Region.End, event_args.JointReplace, event_args.JointReplaceWith)
 
         mirror_root = mirror_end = None
         if pm.objExists(mirror_root_name):
@@ -175,7 +197,7 @@ class RegionEditor(object):
             self._add_rigging_properties(mirror_end, mirror_side, event_args.Region.Name, "end", event_args.Region.Group)
 
             new_region = Freeform.Rigging.RegionEditor.Region(mirror_side, event_args.Region.Name, event_args.Region.Group, mirror_root_name, mirror_end_name)
-            self.vm.RegionList.Add(new_region)
+            event_args.NewRegion = new_region
 
     @csharp_error_catcher
     def check_for_rigging(self, vm, event_args):

@@ -36,7 +36,8 @@
     },
 	"Rigging": {
 		"RigFolder": "Rigging",
-		"RigFilePattern": "*_rig.ma"
+		"RigFilePattern": "*_rig.ma",
+		"JointNamePattern": "*<side>"
 	},
 	"Tools": {
 		"RemovePycFiles": true,

@@ -1095,17 +1095,36 @@ class Addon_Component(Component_Base):
         remove(self)
         Remove the Addon component, baking it's animation back onto the control it's been overriding
         '''
+        character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+        revert_animation = character_settings.revert_animation
+        if revert_animation:
+            self.load_animation()
+
         overdriven_control_list = self.network['overdriven_control'].get_connections()
         for control in overdriven_control_list:
             rigging.skeleton.force_set_attr(control.visibility, True)
             rigging.skeleton.force_set_attr(control.getShape().visibility, True)
 
-        if do_bake:
+        if do_bake and not revert_animation:
             maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = False)
 
         self.network['addon'].delete_all()
 
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
+
+    def save_animation(self):
+        '''
+        Save animation curve outputs onto the ComponentCore network node
+        '''
+        driven_control = self.network['overdriven_control'].get_first_connection()
+        self.network['addon'].save_animation([driven_control])
+
+    def load_animation(self):
+        '''
+        Load animation that was previously saved on the ComponentCore back onto the skeleton
+        '''
+        driven_control = self.network['overdriven_control'].get_first_connection()
+        self.network['addon'].load_animation([driven_control])
         
 
     def create_meta_network(self, component_node):
