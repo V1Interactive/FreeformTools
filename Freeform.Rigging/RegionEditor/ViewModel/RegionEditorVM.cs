@@ -501,17 +501,31 @@ namespace Freeform.Rigging.RegionEditor
 
         public void MirrorFilteredRegionCall(object sender)
         {
+            List<Region> NewRegionList = new List<Region>();
             foreach(Region region in RegionListViewSource.View)
             {
-                MirrorRegionEventArgs eventArgs = new MirrorRegionEventArgs()
+                if (region.Side.Contains(MirrorReplaceText))
                 {
-                    Region = region,
-                    Replace = MirrorReplaceText,
-                    ReplaceWith = MirrorReplaceWithText,
-                    JointReplace = JointReplaceText,
-                    JointReplaceWith = JointReplaceWithText
-                };
-                MirrorFilteredRegionsHandler?.Invoke(this, eventArgs);
+                    MirrorRegionEventArgs eventArgs = new MirrorRegionEventArgs()
+                    {
+                        Region = region,
+                        Replace = MirrorReplaceText,
+                        ReplaceWith = MirrorReplaceWithText,
+                        JointReplace = JointReplaceText,
+                        JointReplaceWith = JointReplaceWithText
+                    };
+                    MirrorFilteredRegionsHandler?.Invoke(this, eventArgs);
+
+                    if (eventArgs.NewRegion != null)
+                    {
+                        NewRegionList.Add(eventArgs.NewRegion);
+                    }
+                }
+            }
+
+            foreach(Region newRegion in NewRegionList)
+            {
+                RegionList.Add(newRegion);
             }
         }
 
@@ -571,6 +585,7 @@ namespace Freeform.Rigging.RegionEditor
             public string ReplaceWith = "";
             public string JointReplace = "";
             public string JointReplaceWith = "";
+            public Region NewRegion = null;
         }
 
         public class BoolEventArgs : EventArgs

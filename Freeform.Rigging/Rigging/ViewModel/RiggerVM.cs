@@ -391,10 +391,15 @@ namespace Freeform.Rigging
 
                     SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "bake_component", value = _bakeComponent, category = "CharacterSettings" });
 
-                    if(value)
-                        RigCategoryList.First().RigButtonList.First().StatusImagePath = "../../Resources/bake_remove_rig.ico";
+                    if (value)
+                    {
+                        GetRigCategoryList("Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/bake_remove_rig.ico";
+                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "";
+                    }
                     else if (!RevertAnimation)
-                        RigCategoryList.First().RigButtonList.First().StatusImagePath = "";
+                    {
+                        GetRigCategoryList("Remove Components").RigButtonList.First().StatusImagePath = "";
+                    }
                 }
             }
         }
@@ -419,9 +424,15 @@ namespace Freeform.Rigging
                     SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "revert_animation", value = _revertAnimation, category = "CharacterSettings" });
 
                     if (value)
-                        RigCategoryList.First().RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
+                    {
+                        GetRigCategoryList("Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
+                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
+                    }
                     else if (!BakeComponent)
-                        RigCategoryList.First().RigButtonList.First().StatusImagePath = "";
+                    {
+                        GetRigCategoryList("Remove Components").RigButtonList.First().StatusImagePath = "";
+                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "";
+                    }
                 }
             }
         }
@@ -440,9 +451,9 @@ namespace Freeform.Rigging
                     SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "force_remove", value = _forceRemove, category = "CharacterSettings" });
 
                     if (value)
-                        RigCategoryList.First().RigButtonList.First().ImagePath = "../../Resources/trashcan.png";
+                        GetRigCategoryList("Remove Components").RigButtonList.First().ImagePath = "../../Resources/trashcan.png";
                     else
-                        RigCategoryList.First().RigButtonList.First().ImagePath = "../../Resources/remove.ico";
+                        GetRigCategoryList("Remove Components").RigButtonList.First().ImagePath = "../../Resources/remove.ico";
                 }
             }
         }
@@ -879,6 +890,17 @@ namespace Freeform.Rigging
         {
             FrameRangeEnabled = BakeRange[2];
             SaveBakeRangeHandler?.Invoke(this, new BakeRangeEventArgs() { BakeRange = BakeRange });
+        }
+
+        public RigBarCategory GetRigCategoryList(string categoryName)
+        {
+            RigBarCategory returnCategory = null;
+            foreach (RigBarCategory category in RigCategoryList)
+            {
+                if (category.Name == categoryName)
+                    returnCategory = category;
+            }
+            return returnCategory;
         }
 
         public void AddQuickSearchCall(object sender)

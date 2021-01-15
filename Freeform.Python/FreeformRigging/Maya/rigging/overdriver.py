@@ -79,8 +79,10 @@ class Overdriver(rigging.rig_base.Addon_Component):
             self.run_bake(use_queue)
 
         if use_queue:
+            maya_utils.baking.BakeQueue().add_post_process(self.save_animation, {})
             maya_utils.baking.BakeQueue().add_post_process(self.bind_controls, {})
         else:
+            self.save_animation()
             self.bind_controls()
 
         pm.autoKeyframe(state=autokey_state)
