@@ -35,7 +35,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    
+
+    <Window.InputBindings>
+        <KeyBinding Key="H" Modifiers="Shift" Command="{Binding HelpCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+    </Window.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -46,30 +50,71 @@ If not, see <https://www.gnu.org/licenses/>.-->
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Style="{StaticResource SelectedGrid}" Margin="0,4" Grid.Row="0">
+        <Grid Style="{StaticResource SelectedGrid}" 
+              Margin="0,4" 
+              Tag="region_header"
+              Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Style="{StaticResource DarkTextBlock}" Text="{Binding CharacterName}" Margin="10,2,0,2" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" Grid.Column="1"/>
+            <TextBlock Style="{StaticResource DarkTextBlock}" 
+                       Text="{Binding CharacterName}" 
+                       Margin="10,2,0,2" 
+                       FontSize="16" 
+                       FontWeight="Bold" 
+                       HorizontalAlignment="Center" 
+                       Grid.Column="1"/>
         </Grid>
         
-        <Grid Margin="0,2" Grid.Row="1">
+        <Grid Margin="0,2" 
+              Tag="region_header"
+              Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Filter: " Margin="10,2,0,2" HorizontalAlignment="Left" Grid.Column="0"/>
-            <TextBox Text="{Binding RegionSearchFilter, UpdateSourceTrigger=PropertyChanged}" Margin="4,2,10,2" Grid.Column="1"/>
-            <CheckBox Content="Highlight" IsChecked="{Binding HighlightRegions}" Margin="10,2,20,2" Grid.Column="2"/>
+            <TextBlock Text="Filter: " 
+                       Margin="10,2,0,2" 
+                       HorizontalAlignment="Left" 
+                       VerticalAlignment="Center"
+                       Grid.Column="0"/>
+            <TextBox Text="{Binding RegionSearchFilter, UpdateSourceTrigger=PropertyChanged}" 
+                     Margin="4,2,10,2" 
+                     VerticalAlignment="Center"
+                     Grid.Column="1"/>
+            <CheckBox Content="Highlight" 
+                      IsChecked="{Binding HighlightRegions}" 
+                      Margin="10,2,16,2" 
+                      VerticalAlignment="Center"
+                      Grid.Column="2"/>
+            <TextBlock Style="{StaticResource HighlightTextBlock}"
+                       Text="?"
+                       FontSize="16"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"
+                       Grid.Column="3">
+                <TextBlock.ToolTip>
+                    <ToolTip>
+                        <TextBlock Style="{StaticResource HighlightTextBlock}">
+                            Pressing Shift+H with the UI in focus will open the <LineBreak/>
+                            documentation website to the relevant page based on <LineBreak/>
+                            what UI is under the mouse.
+                        </TextBlock>
+                    </ToolTip>
+                </TextBlock.ToolTip>
+            </TextBlock>
         </Grid>
 
         <Expander Style="{StaticResource SubExpander}" 
                   Header="Mirror Filtered Regions" 
                   IsExpanded="False" 
                   ExpandDirection="Down" 
+                  Tag="region_mirroring"
                   Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -147,8 +192,17 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </Grid>
         </Expander>
 
-        <ScrollViewer HorizontalContentAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,3" Grid.Row="3">
-            <ListBox HorizontalContentAlignment="Stretch" SelectionMode="Single" ItemsSource="{Binding Path=RegionListViewSource.View}" SelectedItem="{Binding Path=SelectedRegionItem, UpdateSourceTrigger=PropertyChanged}" Background="#FFE5E5E5">
+        <ScrollViewer HorizontalContentAlignment="Stretch" 
+                      VerticalScrollBarVisibility="Auto" 
+                      HorizontalScrollBarVisibility="Disabled" 
+                      Margin="0,3" 
+                      Tag="region_display"
+                      Grid.Row="3">
+            <ListBox HorizontalContentAlignment="Stretch" 
+                     SelectionMode="Single" 
+                     ItemsSource="{Binding Path=RegionListViewSource.View}" 
+                     SelectedItem="{Binding Path=SelectedRegionItem, UpdateSourceTrigger=PropertyChanged}" 
+                     Background="#FFE5E5E5">
                 <ListBox.Template>
                     <ControlTemplate>
                         <ItemsPresenter/>
@@ -168,7 +222,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border BorderBrush="{x:Null}" Height="20" HorizontalAlignment="Left" Margin="8,0" Grid.Column="0">
+                            <Border BorderBrush="{x:Null}" 
+                                    Height="20" 
+                                    HorizontalAlignment="Left" 
+                                    Margin="8,0" 
+                                    Grid.Column="0">
                                 <TextBlock VerticalAlignment="Center">
                                     <TextBlock.Text>
                                         <MultiBinding StringFormat="{}{0} {1}">
@@ -189,7 +247,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </ListBox>
         </ScrollViewer>
 
-        <Grid Grid.Row="4">
+        <Grid Tag="create_regions"
+              Grid.Row="4">
             <Grid.Style>
                 <MultiBinding Converter="{StaticResource StyleConverter}">
                     <MultiBinding.Bindings>
@@ -220,7 +279,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Side: " Margin="10,2,0,2" HorizontalAlignment="Left" Width="40" Grid.Column="0">
+                <TextBlock Text="Side: " 
+                           Margin="10,2,0,2" 
+                           HorizontalAlignment="Left" 
+                           Width="40" 
+                           Grid.Column="0">
                     <TextBlock.Style>
                         <MultiBinding Converter="{StaticResource StyleConverter}">
                             <MultiBinding.Bindings>
@@ -230,8 +293,13 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         </MultiBinding>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBox Text="{Binding Side, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="4,2" Grid.Column="1"/>
-                <TextBlock Text="Group: " Margin="10,2,0,2" HorizontalAlignment="Left" Grid.Column="2">
+                <TextBox Text="{Binding Side, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                         Margin="4,2" 
+                         Grid.Column="1"/>
+                <TextBlock Text="Group: " 
+                           Margin="10,2,0,2" 
+                           HorizontalAlignment="Left" 
+                           Grid.Column="2">
                     <TextBlock.Style>
                         <MultiBinding Converter="{StaticResource StyleConverter}">
                             <MultiBinding.Bindings>
@@ -241,7 +309,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         </MultiBinding>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBox Text="{Binding Group, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="4,2,10,2" Grid.Column="3"/>
+                <TextBox Text="{Binding Group, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                         Margin="4,2,10,2" 
+                         Grid.Column="3"/>
             </Grid>
             <Grid Grid.Row="1">
                 <Grid.Style>
@@ -256,7 +326,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Region: " Margin="10,2,0,2" HorizontalAlignment="Left" Width="40" Grid.Column="0">
+                <TextBlock Text="Region: " 
+                           Margin="10,2,0,2" 
+                           HorizontalAlignment="Left" 
+                           Width="40" 
+                           Grid.Column="0">
                     <TextBlock.Style>
                         <MultiBinding Converter="{StaticResource StyleConverter}">
                             <MultiBinding.Bindings>
@@ -266,7 +340,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         </MultiBinding>
                     </TextBlock.Style>
                 </TextBlock>
-                <TextBox Text="{Binding Region, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Margin="4,2,10,2" Grid.Column="1"/>
+                <TextBox Text="{Binding Region, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                         Margin="4,2,10,2" 
+                         Grid.Column="1"/>
             </Grid>
             <Grid Grid.Row="2">
                 <Grid.Style>
@@ -282,7 +358,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Root: " Margin="10,2,0,2" HorizontalAlignment="Left" Width="40" Grid.Column="0">
+                <TextBlock Text="Root: " 
+                           Margin="10,2,0,2" 
+                           HorizontalAlignment="Left" 
+                           Width="40" 
+                           Grid.Column="0">
                     <TextBlock.Style>
                         <MultiBinding Converter="{StaticResource StyleConverter}">
                             <MultiBinding.Bindings>
@@ -344,16 +424,35 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </Grid>
         </Grid>
 
-        <Grid Height="34" Margin="0,4" Grid.Row="5">
+        <Grid Height="34" 
+              Margin="0,4" 
+              Tag="create_regions"
+              Grid.Row="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Style="{StaticResource TrimButton}" Content="Add" Command="{Binding AddRegionCommand}" IsEnabled="{Binding RegionIsNull}" Margin="10,2" Width="60" Grid.Column="0"/>
-            <Button Style="{StaticResource TrimButton}" Content="Remove" Command="{Binding RemoveRegionCommand}" IsEnabled="{Binding RegionIsSelected}" Margin="0,2" Width="70" Grid.Column="1"/>
-            <Button Style="{StaticResource TrimButton}" Content="New Region" Command="{Binding ClearSelectionCommand}" Margin="10,2" Width="100" Grid.Column="3"/>
+            <Button Style="{StaticResource TrimButton}" 
+                    Content="Add" Command="{Binding AddRegionCommand}" 
+                    IsEnabled="{Binding RegionIsNull}" 
+                    Margin="10,2" 
+                    Width="60" 
+                    Grid.Column="0"/>
+            <Button Style="{StaticResource TrimButton}" 
+                    Content="Remove" 
+                    Command="{Binding RemoveRegionCommand}" 
+                    IsEnabled="{Binding RegionIsSelected}" 
+                    Margin="0,2" 
+                    Width="70" 
+                    Grid.Column="1"/>
+            <Button Style="{StaticResource TrimButton}" 
+                    Content="New Region" 
+                    Command="{Binding ClearSelectionCommand}" 
+                    Margin="10,2" 
+                    Width="100" 
+                    Grid.Column="3"/>
         </Grid>
         
     </Grid>

@@ -331,13 +331,15 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0">
+                <Grid Tag="component_view"
+                      Grid.Row="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"/>
                         <RowDefinition Height="34"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0">
+                    <Grid Tag="component_view__component_view_header"
+                          Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="*"/>
@@ -353,7 +355,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 Grid.Column="2"/>
                     </Grid>
 
-                    <Grid Grid.Row="1">
+                    <Grid Tag="component_view__selection_sets"
+                          Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="70"/>
@@ -415,6 +418,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                           IsEnabled="{Binding Enabled}"
                                           Height="36" 
                                           Margin="0,3" 
+                                          Tag="component_view__component_display"
                                           ToolTipService.ShowOnDisabled="True"
                                           ToolTip="{Binding ErrorMessage}"
                                           Grid.Column="0">
@@ -453,7 +457,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
 
                                         <ItemsControl ItemsSource="{Binding ComponentButtonList}" 
                                                       Margin="10,0"
-                                                      Tag="component_view__component_buttons"
                                                       Grid.Column="1">
                                             <ItemsControl.Style>
                                                 <MultiBinding Converter="{StaticResource StyleConverter}">
@@ -506,7 +509,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                     Command="{Binding ToggleVisibilityComponentCommand}" 
                                                     Height="18" 
                                                     Margin="0" 
-                                                    Tag="component_view__visibility_toggle"
                                                     Grid.Row="0">
                                                 <Image Source="{Binding VisibleIcon}"/>
                                                 <Button.ToolTip>
@@ -522,7 +524,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                     Command="{Binding ToggleSelectionLockCommand}" 
                                                     Height="18" 
                                                     Margin="0" 
-                                                    Tag="component_view__selection_lock"
                                                     Grid.Row="1">
                                                 <Image Source="{Binding SelectionLockIcon}"/>
                                                 <Button.ToolTip>
@@ -568,7 +569,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                               HorizontalAlignment="Stretch" 
                                               IsExpanded="True" 
                                               ExpandDirection="Down" 
-                                              Tag="component_view"
+                                              Tag="component_view__group_display"
                                               Grid.Row="0">
                                         <Grid Style="{StaticResource SubGrid}">
                                             <ListBox ScrollViewer.CanContentScroll="False" 
@@ -820,7 +821,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0">
+                        <Grid Tag="user_settings__baking_settings" 
+                              Grid.Row="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -831,7 +833,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Separator Background="{StaticResource HighlightColor}" Grid.Column="2"/>
                         </Grid>
 
-                        <Grid Grid.Row="1">
+                        <Grid Tag="user_settings__baking_settings" 
+                              Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -892,7 +895,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             </Grid>
                         </Grid>
 
-                        <Grid Grid.Row="2">
+                        <Grid Tag="user_settings__baking_settings" 
+                              Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="30"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -904,7 +908,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <CheckBox Content="Smart Bake" Margin="10,2" IsChecked="{Binding SmartBake}" Grid.Column="2"/>
                         </Grid>
 
-                        <Grid Grid.Row="3">
+                        <Grid Tag="user_settings__character_settings" 
+                              Grid.Row="3">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -915,7 +920,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Separator Background="{StaticResource HighlightColor}" Grid.Column="2"/>
                         </Grid>
 
-                        <Grid Grid.Row="4">
+                        <Grid Tag="user_settings__character_settings" 
+                              Grid.Row="4">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -940,7 +946,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                           Grid.Column="1"/>
                             </Grid>
 
-                            <Grid Margin="0,4,0,2" Grid.Row="1">
+                            <Grid Margin="0,4,0,2" 
+                                  Tag="user_settings__character_settings" 
+                                  Grid.Row="1">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -950,7 +958,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             </Grid>
                         </Grid>
 
-                        <Grid Grid.Row="5">
+                        <Grid Tag="user_settings__remove_component_settings" 
+                              Grid.Row="5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -961,7 +970,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Separator Background="{StaticResource HighlightColor}" Grid.Column="2"/>
                         </Grid>
 
-                        <Grid Grid.Row="6">
+                        <Grid Tag="user_settings__remove_component_settings" 
+                              Grid.Row="6">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -989,7 +999,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             </Grid>
                         </Grid>
 
-                        <Grid Grid.Row="7">
+                        <Grid Tag="user_settings__optimization_settings" 
+                              Grid.Row="7">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -1000,7 +1011,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Separator Background="{StaticResource HighlightColor}" Grid.Column="2"/>
                         </Grid>
 
-                        <Grid Grid.Row="8">
+                        <Grid Tag="user_settings__optimization_settings" 
+                              Grid.Row="8">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -1068,10 +1080,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <Separator Visibility="{Binding Path=Parent.DataContext.OutOfDate, RelativeSource={RelativeSource Self}, Converter={StaticResource booleanToVisibilityConverter}}"/>
                                                 <MenuItem Header="Swap Character" 
                                                           Command="{Binding Data.SwapCharacterCommand, Source={StaticResource dataContextProxy}}" 
-                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
-                                                <Separator/>
-                                                <MenuItem Header="Mirror Animation" 
-                                                          Command="{Binding Data.MirrorAnimationCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <Separator/>
                                                 <MenuItem Header="Zero Character" 

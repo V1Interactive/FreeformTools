@@ -24,9 +24,12 @@ namespace Freeform.Rigging.RegionEditor
     using System.Collections.ObjectModel;
     using System.ComponentModel;
     using System.Linq;
+    using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Data;
     using System.Windows.Forms;
+    using System.Windows.Input;
+    using System.Windows.Media;
     using Freeform.Core.UI;
 
     public class RegionEditorVM : ViewModelBase
@@ -48,6 +51,7 @@ namespace Freeform.Rigging.RegionEditor
         public RelayCommand RemoveRegionCommand { get; set; }
         public RelayCommand ClearSelectionCommand { get; set; }
         public RelayCommand MirrorFilteredRegionCommand { get; set; }
+        public RelayCommand HelpCommand { get; set; }
 
         bool checkRootEndConnection = true;
 
@@ -425,6 +429,7 @@ namespace Freeform.Rigging.RegionEditor
             RemoveRegionCommand = new RelayCommand(RemoveRegionEventCall);
             ClearSelectionCommand = new RelayCommand(ClearSelectionEventCall);
             MirrorFilteredRegionCommand = new RelayCommand(MirrorFilteredRegionCall);
+            HelpCommand = new RelayCommand(HelpCall);
 
             RegionList = new ObservableCollection<Region>();
             RegionListViewSource = new CollectionViewSource
@@ -527,6 +532,40 @@ namespace Freeform.Rigging.RegionEditor
             {
                 RegionList.Add(newRegion);
             }
+        }
+
+        public void HelpCall(object sender)
+        {
+            var hit = VisualTreeHelper.HitTest((UIElement)sender, Mouse.GetPosition((UIElement)sender));
+            var item = hit?.VisualHit;
+
+            while (item != null)
+            {
+                // Exit if we find a valid Tag
+                if (item is FrameworkElement itemElement && itemElement.Tag != null)
+                    break;
+                item = VisualTreeHelper.GetParent(item);
+            }
+
+            string helpPage = "https://sites.google.com/view/v1freeformtools/home/rigging/regions";
+            string pageName = "";
+
+            if (item == null)
+            {
+                // Do Nothing with the page name
+            }
+            else
+            {
+                FrameworkElement itemElement = (FrameworkElement)item;
+                pageName = "/" + itemElement.Tag;
+            }
+
+            // Fixup UI valid names to webpage valid names
+            pageName = pageName == "/" ? "" : pageName;
+            pageName = pageName.Replace(" - ", "-");
+            pageName = pageName.Replace("__", "/").Replace("_", "-").Replace(" ", "-");
+            helpPage = helpPage + pageName.ToLower();
+            System.Diagnostics.Process.Start(helpPage);
         }
 
         private void AddRegionFilter()
