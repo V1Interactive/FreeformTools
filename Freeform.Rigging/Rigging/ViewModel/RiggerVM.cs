@@ -816,7 +816,8 @@ namespace Freeform.Rigging
         #region Event Calls
         public void HelpCall(object sender)
         {
-            var item = VisualTreeHelper.HitTest((UIElement)sender, Mouse.GetPosition((UIElement)sender)).VisualHit;
+            var hit = VisualTreeHelper.HitTest((UIElement)sender, Mouse.GetPosition((UIElement)sender));
+            var item = hit?.VisualHit;
             
             while (item != null)
             {
