@@ -40,7 +40,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    
+
+    <Window.InputBindings>
+        <KeyBinding Key="H" Modifiers="Shift" Command="{Binding HelpCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+    </Window.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -571,7 +575,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                 <ColumnDefinition Width="3*" MinWidth="300"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0">
+            <Grid Tag="export_group"
+                  Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -705,7 +710,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                 </Grid>
             </Grid>
 
-            <Grid Grid.Column="1">
+            <Grid Tag="export_asset"
+                  Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -716,6 +722,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="4*" MaxWidth="180"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Filter: " Margin="10,2,0,2" HorizontalAlignment="Left" Grid.Column="0"/>
@@ -738,6 +745,24 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <Image Source="pack://application:,,,/HelixResources;component/Resources/down_icon.ico" Margin="2"/>
                         </Button>
                     </StackPanel>
+
+                    <TextBlock Style="{StaticResource HighlightTextBlock}"
+                               Text="?"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="8,0,8,0"
+                               Grid.Column="4">
+                        <TextBlock.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource HighlightTextBlock}">
+                                    Pressing Shift+H with the UI in focus will open the <LineBreak/>
+                                    documentation website to the relevant page based on <LineBreak/>
+                                    what UI is under the mouse.
+                                </TextBlock>
+                            </ToolTip>
+                        </TextBlock.ToolTip>
+            </TextBlock>
                 </Grid>
 
                 <Grid Margin="0,3" Grid.Row="1">
@@ -858,6 +883,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
         <Expander Header="Asset Details" 
                   IsExpanded="True" 
                   ExpandDirection="Down" 
+                  Tag="export_details"
                   Grid.Row="1">
             <Grid>
                 <Grid.RowDefinitions>
@@ -874,6 +900,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                   IsExpanded="True" 
                   ExpandDirection="Down" 
                   MaxHeight="120" 
+                  Tag="export_properties"
                   Grid.Row="2">
             <Expander.Header>
                 <Grid Style="{StaticResource SelectedGrid}" 
@@ -924,7 +951,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </ScrollViewer>
         </Expander>
 
-        <Grid Height="34" Grid.Row="3">
+        <Grid Height="34" 
+              Tag="exporter_run"
+              Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>

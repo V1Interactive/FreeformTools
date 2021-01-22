@@ -36,6 +36,8 @@ namespace Freeform.Rigging.DCCAssetExporter
     using Freeform.Rigging;
     using System.Windows.Data;
     using System.Windows;
+    using System.Windows.Media;
+    using System.Windows.Input;
 
     class DCCAssetExporterVM : ViewModelBase
     {
@@ -81,6 +83,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public RelayCommand MoveAssetCommand { get; set; }
         public RelayCommand SetDefinitionSortOrderCommand { get; set; }
         public RelayCommand SetAssetSortOrderCommand { get; set; }
+        public RelayCommand HelpCommand { get; set; }
 
 
         int _windowWidth;
@@ -289,6 +292,8 @@ namespace Freeform.Rigging.DCCAssetExporter
 
             SetDefinitionSortOrderCommand = new RelayCommand(SetDefinitionSortOrderCall);
             SetAssetSortOrderCommand = new RelayCommand(SetAssetSortOrderCall);
+
+            HelpCommand = new RelayCommand(HelpCall);
 
             ExportDefinitionList = new ObservableCollection<ExportDefinition>();
 
@@ -531,6 +536,40 @@ namespace Freeform.Rigging.DCCAssetExporter
             AssetListViewSource.SortDescriptions.Clear();
             AssetListViewSource.SortDescriptions.Add(new SortDescription((string)sender, ListSortDirection.Ascending));
             SaveSettingHandler?.Invoke(this, new SaveStringEventArgs() { name = "asset_sort", value = (string)sender, category = "ExporterSettings" });
+        }
+
+        public void HelpCall(object sender)
+        {
+            var hit = VisualTreeHelper.HitTest((UIElement)sender, Mouse.GetPosition((UIElement)sender));
+            var item = hit?.VisualHit;
+
+            while (item != null)
+            {
+                // Exit if we find a valid Tag
+                if (item is FrameworkElement itemElement && itemElement.Tag != null)
+                    break;
+                item = VisualTreeHelper.GetParent(item);
+            }
+
+            string helpPage = "https://sites.google.com/view/v1freeformtools/home/exporter";
+            string pageName = "";
+
+            if (item == null)
+            {
+                // Do Nothing with the page name
+            }
+            else
+            {
+                FrameworkElement itemElement = (FrameworkElement)item;
+                pageName = "/" + itemElement.Tag;
+            }
+
+            // Fixup UI valid names to webpage valid names
+            pageName = pageName == "/" ? "" : pageName;
+            pageName = pageName.Replace(" - ", "-");
+            pageName = pageName.Replace("__", "/").Replace("_", "-").Replace(" ", "-");
+            helpPage += pageName.ToLower();
+            System.Diagnostics.Process.Start(helpPage);
         }
 
         private void AdjustExportObjectIndex(int modifier, ExportObject selectedObject, List<ExportObject> objectList)

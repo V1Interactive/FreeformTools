@@ -564,7 +564,7 @@ namespace Freeform.Rigging.RegionEditor
             pageName = pageName == "/" ? "" : pageName;
             pageName = pageName.Replace(" - ", "-");
             pageName = pageName.Replace("__", "/").Replace("_", "-").Replace(" ", "-");
-            helpPage = helpPage + pageName.ToLower();
+            helpPage += pageName.ToLower();
             System.Diagnostics.Process.Start(helpPage);
         }
 
