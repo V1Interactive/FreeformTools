@@ -1,4 +1,7 @@
 # freeform-tools
+- Beta Tutorials - https://www.youtube.com/channel/UCHXLfl9y2os_gvCzhR7UFlQ
+- User Documentation - https://sites.google.com/view/v1freeformtools/home
+
 Home of an open source freeform rigging and animation toolset for Maya, made for games development.  These tools are built 
 off of my experience working with animators that wanted flexibility in their rigs so that they could animate how they wanted
 and have the rig respond to their work rather than dictate how they work.
