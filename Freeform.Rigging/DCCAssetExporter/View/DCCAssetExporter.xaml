@@ -42,7 +42,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
     </Window.Resources>
 
     <Window.InputBindings>
-        <KeyBinding Key="H" Modifiers="Shift" Command="{Binding HelpCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+        <KeyBinding Key="H" Modifiers="Alt" Command="{Binding HelpCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
     </Window.InputBindings>
 
     <Grid>
@@ -756,7 +756,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <TextBlock.ToolTip>
                             <ToolTip>
                                 <TextBlock Style="{StaticResource HighlightTextBlock}">
-                                    Pressing Shift+H with the UI in focus will open the <LineBreak/>
+                                    Pressing Alt+H with the UI in focus will open the <LineBreak/>
                                     documentation website to the relevant page based on <LineBreak/>
                                     what UI is under the mouse.
                                 </TextBlock>
