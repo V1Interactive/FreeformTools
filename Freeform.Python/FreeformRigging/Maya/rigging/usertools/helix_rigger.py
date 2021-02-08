@@ -340,6 +340,14 @@ class HelixRigger:
         new_button.Data = "Aim"
         space_category.AddButton(new_button)
 
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.switch_space
+        new_button.Name = "Dynamics - Pendulum"
+        new_button.ImagePath = "../../Resources/pendulum.png"
+        new_button.Tooltip = "Apply an Dynamic Pendulum Overdriver to a control"
+        new_button.Data = "Pendulum"
+        space_category.AddButton(new_button)
+
         component_category = self.create_category("Component Switching")
         component_category.ImagePath = "../../Resources/space_switcher.ico"
 
@@ -420,6 +428,13 @@ class HelixRigger:
         new_button.Name = "Characterize Skeleton"
         new_button.ImagePath = "../../Resources/characterize.png"
         new_button.Tooltip = "Characterize - Setup all initial character data on a skeleton"
+        misc_category.AddButton(new_button)
+
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.save_control_shapes
+        new_button.Name = "Save Control Shapes"
+        new_button.ImagePath = "../../Resources/save_control_shapes.png"
+        new_button.Tooltip = "Saves control shapes to character's Control_Shapes.fbx file"
         misc_category.AddButton(new_button)
 
 
@@ -2016,9 +2031,10 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         data = c_rig_button.Data if type(c_rig_button) != str else c_rig_button
+        space_type = getattr(rigging.overdriver, data)
 
         sel_list = pm.ls(selection=True)
-        if len(sel_list) > 1:
+        if len(sel_list) > 1 or space_type.__requires_space__ == False:
             control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
             if control_list:
                 control = control_list[-1]
@@ -2026,8 +2042,7 @@ class HelixRigger:
 
                 rig_network = rigging.skeleton.get_rig_network(control)
                 rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
-
-                space_type = getattr(rigging.overdriver, data)
+                
                 overdriver_component = rig_component.switch_space( control, space_type, space_list )
 
                 if len(space_list) > 1:
@@ -2326,6 +2341,19 @@ class HelixRigger:
         joint = get_first_or_default(pm.ls(sl=True, type='joint'))
         if joint:
             freeform_utils.character_utils.characterize_skeleton(joint)
+
+
+    def save_control_shapes(self, c_rig_button, event_args):
+        '''
+        save_control_shapes(self, c_rig_button, event_args)
+        Saves control shapes out to Control_Shapes.fbx file.
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        rigging.rig_base.Component_Base.save_control_shapes()
+
 
     @csharp_error_catcher
     @undoable

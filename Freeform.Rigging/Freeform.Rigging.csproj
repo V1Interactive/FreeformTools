@@ -385,5 +385,11 @@
   <ItemGroup>
     <Resource Include="Resources\overdriver_aim.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\save_control_shapes.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\pendulum.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

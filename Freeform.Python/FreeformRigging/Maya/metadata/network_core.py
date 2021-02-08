@@ -756,6 +756,10 @@ class JointsCore(DependentNode):
     def __init__(self, parent = None, node_name = 'joints_core', node = None, namespace = "", root_jnt = None):
         super(JointsCore, self).__init__(parent, node_name, node, namespace, root_joint = (None, 'message'))
         if not node:
+            if not root_jnt:
+                pm.select(None)
+                root_jnt = pm.joint()
+                root_jnt.rename("root")
             self.connect_node(root_jnt, self.node.root_joint)
 
     def get_root(self, obj):

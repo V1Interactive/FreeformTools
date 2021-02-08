@@ -892,7 +892,7 @@ def compare_skeleton_to_settings(character_network, settings_path):
         boolean. Whether or not the joints in the skeleton match hierarchy to the skeleton information
     '''
     joints_core = character_network.get_downstream(metadata.network_core.JointsCore)
-    root_jnt = get_root_joint(joints_core.get_first_connection())
+    root_jnt = joints_core.root
 
     load_data = v1_core.json_utils.read_json(settings_path).get('skeleton')
     children_dict = {}

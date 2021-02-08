@@ -375,6 +375,7 @@ class Rotation_Overdriver(Overdriver):
 
 class Dynamic_Driver(Overdriver):
     __metatype__ = ABCMeta
+    __simulated__ = True
 
     def __init__(self, translate = False, rotate = True):
         super(Dynamic_Driver, self).__init__(translate, rotate)
@@ -394,9 +395,10 @@ class Dynamic_Driver(Overdriver):
 
         driver_control = self.rig_setup(control, object_space)
 
-        object_space = object_space[1] if len(object_space) > 1 else object_space
+        object_space = object_space[1] if len(object_space) > 1 else object_space[0]
         self.apply_dynamics(driver_control, object_space)
 
+        self.save_animation()
         self.bind_controls()
 
         pm.autoKeyframe(state=autokey_state)
@@ -411,7 +413,7 @@ class Dynamic_Driver(Overdriver):
 
         return driver_control
 
-    def apply_dynamics(self):
+    def apply_dynamics(self, dynamic_control, object_space):
         return NotImplemented
 
 
@@ -439,13 +441,30 @@ class Aim(Dynamic_Driver):
         constraint_node = list(set(component_grp.listConnections(type='constraint')))[0]
         up_object = maya_utils.node_utils.get_constraint_driver(constraint_node)
 
-        # To find the closest matching up axis on the up object we do a local move on positive y
-        # then compare the parent space translate values to find which axis on the parent had the 
-        # most movement from the local space move
-        axis_check_obj = pm.duplicate(dynamic_control, po=True)[0]
-        axis_check_obj.setParent(up_object)
-        start_translate = axis_check_obj.translate.get()
-        pm.move(axis_check_obj, [0,10,0], r=True, os=True, wd=True)
+        aim_vector = self.get_offset_vector(object_space, dynamic_control)
+        up_vector = self.get_offset_vector(dynamic_control, up_object, True)
+
+        pm.aimConstraint(object_space, dynamic_grp, aim=aim_vector, u=[0,1,0], wuo=up_object, wu=up_vector, wut='objectrotation', mo=self.maintain_offset)
+        pm.orientConstraint(dynamic_grp, dynamic_control.getParent(), mo=self.maintain_offset)
+
+    def get_offset_vector(self, check_object, compare_object, up_vector = False):
+        '''
+        Find the closest cardinal vector from the offset between two objects
+
+        To find the closest matching up axis on the up object we do a local move on positive y
+        then compare the parent space translate values to find which axis on the parent had the 
+        most movement from the local space move
+        '''
+        axis_check_obj = pm.duplicate(check_object, po=True)[0]
+        axis_check_obj.setParent(compare_object)
+
+        # Check difference of relative motion from the compare_object
+        if up_vector:
+            start_translate = axis_check_obj.translate.get()
+            pm.move(axis_check_obj, [0,10,0], r=True, os=True, wd=True)
+        else:
+            start_translate = [0,0,0]
+
         compare_translate = axis_check_obj.translate.get()
 
         delta = compare_translate - start_translate
@@ -454,16 +473,86 @@ class Aim(Dynamic_Driver):
 
         max_index = delta.index(max_delta)
         if 0 in max_index:
-            up_vector = [move_sign,0,0]
+            return_vector = [move_sign,0,0]
         elif 1 in max_index:
-            up_vector = [0,move_sign,0]
+            return_vector = [0,move_sign,0]
         elif 2 in max_index:
-            up_vector = [0,0,move_sign]
+            return_vector = [0,0,move_sign]
 
         pm.delete(axis_check_obj)
 
-        pm.aimConstraint(object_space, dynamic_grp, aim=[1,0,0], u=[0,1,0], wuo=up_object, wu=up_vector, wut='objectrotation', mo=self.maintain_offset)
-        pm.orientConstraint(dynamic_grp, dynamic_control.getParent(), mo=True)
+        return return_vector
+
+
+class Pendulum(Aim):
+    __requires_space__ = False
+
+    def __init__(self, translate=False, rotate=True):
+        super(Pendulum, self).__init__(translate=translate, rotate=rotate)
+        self.prefix = "PendulumDynamic"
+        self.maintain_offset = False
+
+    def rig(self, component_node, control, bake_controls=False, default_space=None, use_queue=False):
+        # Create the dynamic pendulum to be used as the Aim space for the overdriver
+        self.network = self.create_meta_network(component_node)
+        self.zero_character(self.network['character'], use_queue)
+
+        dynamic_grp_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
+        pre_dynamic_group = pm.group(empty=True, name=dynamic_grp_name)
+        pre_dynamic_group.setParent(self.network['addon'].group)
+        pm.parentConstraint(self.network['character'].group, pre_dynamic_group, mo=False)
+
+        cur_namespace = pm.namespaceInfo(cur=True)
+        pm.namespace(set=":")
+        time_range = (pm.playbackOptions(q=True, min=True), pm.playbackOptions(q=True, max=True))
+
+        object_space = pm.polySphere(r=8, sx=20, sy=20, ax=[0,1,0], cuv=2, ch=1, n="pendulum")[0]
+        object_space.setParent(pre_dynamic_group)
+
+        ws_pos = pm.xform(control, q=True, ws=True, t=True)
+        pm.xform(object_space, ws=True, t=ws_pos)
+
+        rigid_body = pm.rigidBody(object_space, b=0, dp=5)
+        rigid_body_nail = pm.PyNode(pm.constrain(rigid_body, nail=True))
+        rigid_body_nail.setParent(pre_dynamic_group)
+        rigid_point_constraint = pm.pointConstraint(control, rigid_body_nail, mo=False)
+
+        pm.select(None)
+        gravity_field = pm.gravity(m=980)
+        gravity_field.setParent(pre_dynamic_group)
+        pm.connectDynamic(object_space, f=gravity_field)
+
+        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_queue=use_queue):
+            return False
+        
+        driver_control = self.network['controls'].get_first_connection()
+
+        driver_control.addAttr("damping", type='double', hidden=False, keyable=True)
+        driver_control.damping.set(rigid_body.damping.get())
+        driver_control.damping >> rigid_body.damping
+
+        driver_control.addAttr("bounciness", type='double', hidden=False, keyable=True)
+        driver_control.bounciness.set(rigid_body.bounciness.get())
+        driver_control.bounciness >> rigid_body.bounciness
+
+        driver_control.addAttr("gravity", type='double', hidden=False, keyable=True)
+        driver_control.gravity.set(gravity_field.magnitude.get())
+        driver_control.gravity >> gravity_field.magnitude
+
+        self.reset_pendulum(object_space)
+
+
+    def reset_pendulum(self, pendulum):
+        '''
+        Reset the position of the pendulum to under the overdriven control object
+        '''
+        # Evaluate the scene by setting current frame first to ensure all controls are in place
+        maya_utils.node_utils.set_current_frame()
+        driver_control = self.network['controls'].get_first_connection()
+        ws_pos = pm.xform(driver_control, q=True, ws=True, t=True)
+        ws_pos[2] = ws_pos[2] - 20
+        pm.xform(pendulum, ws=True, t=ws_pos)
+        
 
 
 class Channel_Overdriver(rigging.rig_base.Addon_Component):
