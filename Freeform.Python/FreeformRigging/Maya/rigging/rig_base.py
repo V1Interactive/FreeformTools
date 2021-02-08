@@ -906,6 +906,8 @@ class Addon_Component(Component_Base):
     '''
     __metaclass__ = ABCMeta
     __promoteselection__ = True
+    __requires_space__ = True
+    __simulated__ = False
 
     @classmethod
     def rig_from_json(cls, component, addon_component_dict, created_rigging):
@@ -1017,14 +1019,7 @@ class Addon_Component(Component_Base):
         character_network = self.network['character']
         self.namespace = character_network.group.namespace()
 
-        # Zero character before applying rigging, only zero joints that aren't rigged
-        joints_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
-        rigging.skeleton.zero_character(get_first_or_default(joints_core_network.get_connections()))
-
-        if not use_queue:
-            # If using the queue Zeroing the character should be done once before rigging is run
-            Component_Base.zero_all_overdrivers(character_network)
-            Component_Base.zero_all_rigging(character_network)
+        self.zero_character(character_network, use_queue)
 
         addon_network = self.network['addon']
         addon_network.group.setParent(self.network['rig_core'].group)
@@ -1106,11 +1101,21 @@ class Addon_Component(Component_Base):
             rigging.skeleton.force_set_attr(control.getShape().visibility, True)
 
         if do_bake and not revert_animation:
-            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = False)
+            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self.__simulated__)
 
         self.network['addon'].delete_all()
 
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
+
+    def zero_character(self, character_network, use_queue):
+        # Zero character before applying rigging, only zero joints that aren't rigged
+        joints_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
+        rigging.skeleton.zero_character(get_first_or_default(joints_core_network.get_connections()))
+
+        if not use_queue:
+            # If using the queue Zeroing the character should be done once before rigging is run from the queue
+            Component_Base.zero_all_overdrivers(character_network)
+            Component_Base.zero_all_rigging(character_network)
 
     def save_animation(self):
         '''
@@ -1140,6 +1145,11 @@ class Addon_Component(Component_Base):
             dictionary. Dictionary with all MetaNodes for this object.  Valid keys are 'character', 'addon'
                 'overdriven_control', 'rig_core', 'component', and 'controls'
         '''
+        # Some Dynamic components need to build some functionality pre rig() and will create the meta_network before
+        # Addon_Component.  So if it's already populated don't populate it again.
+        if self.network:
+            return self.network
+
         component_network = metadata.network_core.MetaNode.create_from_node(component_node)
         character_network = component_network.get_upstream(metadata.network_core.CharacterCore)
         rig_core_network = component_network.get_upstream(metadata.network_core.RigCore)
@@ -1958,15 +1968,18 @@ class Rig_Component(Component_Base):
         Returns:
             boolean. Whether or not the method ran successfully
         '''
-        object_space_list = pm.ls(selection=True) if obj_list == [] else obj_list
-        if obj_list == None:
-            object_space_list = []
+        if overdriver_type.__requires_space__:
+            object_space_list = pm.ls(selection=True) if obj_list == [] else obj_list
+            if obj_list == None:
+                object_space_list = []
 
-        if control in object_space_list:
-            object_space_list.remove(control)
+            if control in object_space_list:
+                object_space_list.remove(control)
 
-        if not object_space_list:
-            object_space_list.append(self.get_character_world())
+            if not object_space_list:
+                object_space_list.append(self.get_character_world())
+        else:
+            object_space_list = None
         
         overdriver_component = overdriver_type()
 
