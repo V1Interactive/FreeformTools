@@ -106,6 +106,7 @@ class Component_Base(object):
         network (dictionary): Dictionary of all network objects made for this rig component
     '''
     __metaclass__ = ABCMeta
+    _icon = "../../Resources/fk_icon.ico"
 
     #region Static Methods
     @staticmethod
@@ -143,7 +144,7 @@ class Component_Base(object):
         for mod in module_list:
             class_list = [x[-1] for x in inspect.getmembers(sys.modules[mod], inspect.isclass)]
             for cls in class_list:
-                if cls != Rig_Component and [x for x in inspect.getmro(cls) if "Rig_Component" in str(x)] and cls.__inherittype__ == "component":
+                if cls != Rig_Component and [x for x in inspect.getmro(cls) if "Rig_Component" in str(x)] and cls._inherittype == "component":
                     subclass_list.append(cls)
 
         return subclass_list
@@ -264,7 +265,7 @@ class Component_Base(object):
 
         Args:
             jnt (PyNode): Maya scene joint to remove rigging from
-            exclude (string): Don't remove rigging that has an __hasattachment__ property that matches this
+            exclude (string): Don't remove rigging that has an _hasattachment property that matches this
 
         Returns:
             str: The long scene name for the rig component network node, or None
@@ -275,7 +276,7 @@ class Component_Base(object):
             remove_node_list.append(component_network.node)
             current_component = Component_Base.create_from_network_node(component_network.node)
 
-            if exclude == None or current_component.__hasattachment__ != exclude:
+            if exclude == None or current_component._hasattachment != exclude:
                 current_component.bake_and_remove(use_queue=False)
 
         return remove_node_list
@@ -511,7 +512,7 @@ class Component_Base(object):
         for addon_network in component_network.get_all_downstream(metadata.network_core.AddonCore):
             addon_info = v1_shared.shared_utils.get_class_info(addon_network.node.component_type.get())
             addon_component_type = getattr(sys.modules[get_first_or_default(addon_info)], get_index_or_default(addon_info, 1))
-            if addon_component_type.__promoteselection__:
+            if addon_component_type._promoteselection:
                 addon_control_list = addon_network.get_downstream(metadata.network_core.AddonControls).get_connections()
                 
                 control_list.extend(addon_control_list)
@@ -905,9 +906,11 @@ class Addon_Component(Component_Base):
         scale (boolean): Whether or not this addon affect scale
     '''
     __metaclass__ = ABCMeta
-    __promoteselection__ = True
-    __requires_space__ = True
-    __simulated__ = False
+    _promoteselection = True
+    _requires_space = True
+    _simulated = False
+    _icon = "../../Resources/fk_icon_od.ico"
+
 
     @classmethod
     def rig_from_json(cls, component, addon_component_dict, created_rigging):
@@ -1101,7 +1104,7 @@ class Addon_Component(Component_Base):
             rigging.skeleton.force_set_attr(control.getShape().visibility, True)
 
         if do_bake and not revert_animation:
-            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self.__simulated__)
+            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self._simulated)
 
         self.network['addon'].delete_all()
 
@@ -1280,6 +1283,11 @@ class Addon_Component(Component_Base):
 
         return addon_dict
 
+
+    def get_rigger_methods(self):
+        return {}
+
+
     def create_menu(self, parent_menu, control):
         '''
         Create the context menu for any control in this component
@@ -1309,7 +1317,7 @@ class Rig_Component(Component_Base):
         skeleton_dict (dictionary): Dictionary of the skeleton regions for the skeleton this component was applied to
     '''
     __metaclass__ = ABCMeta
-    
+
     @classmethod
     def rig_from_json(cls, side, region, target_skeleton_dict, component_dict, control_holder_list):
         '''
@@ -1342,12 +1350,14 @@ class Rig_Component(Component_Base):
 
         # Check that either there is no component on the root and end, or that neither the component on the root or end are the same as this one
         if (not root_component_network or not end_component_network) or (str(comp_info) != str(root_info) and str(comp_info) != str(end_info)):
-            if cls.__hasattachment__ != 'root':
+            if cls._hasattachment != 'root':
                 rigging.rig_base.Component_Base.remove_rigging(target_skeleton_dict[side][region]['root'], exclude = 'end')
-            if cls.__hasattachment__ != 'end':
+            if cls._hasattachment != 'end':
                 rigging.rig_base.Component_Base.remove_rigging(target_skeleton_dict[side][region]['end'], exclude = 'root')
 
             kwargs_dict = {'world_orient_ik': not component_dict.get('ik_local_orient')} if component_dict.get('ik_local_orient') != None else {}
+            if component_dict.get('up_axis'):
+                kwargs_dict['up_axis'] = component_dict.get('up_axis')
             component = cls()
             component.rig(target_skeleton_dict, side, region, component_dict['world_space'], control_holder_list, True, **kwargs_dict)
             
@@ -1723,9 +1733,9 @@ class Rig_Component(Component_Base):
         Args:
             world_space (boolean): Whether the rig should build in world or parent space
         '''
-        if self.__spacetype__ == "inherit" and world_space == False:
+        if self._spacetype == "inherit" and world_space == False:
             pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=maintain_offset)
-        elif (self.__spacetype__ == "world") or (self.__spacetype__ == "inherit" and world_space == True):
+        elif (self._spacetype == "world") or (self._spacetype == "inherit" and world_space == True):
             pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=maintain_offset)
 
     def create_component_group(self, side, region):
@@ -1968,7 +1978,7 @@ class Rig_Component(Component_Base):
         Returns:
             boolean. Whether or not the method ran successfully
         '''
-        if overdriver_type.__requires_space__:
+        if overdriver_type._requires_space:
             object_space_list = pm.ls(selection=True) if obj_list == [] else obj_list
             if obj_list == None:
                 object_space_list = []
@@ -2129,6 +2139,11 @@ class Rig_Component(Component_Base):
 
     def open_rig_switcher(self):
         rigging.usertools.rig_switcher.RigSwitcher(self).show()
+
+
+    def get_rigger_methods(self):
+        return {}
+
 
     def create_menu(self, parent_menu, control):
         '''

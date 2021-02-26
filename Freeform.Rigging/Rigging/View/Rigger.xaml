@@ -260,6 +260,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                        Height="16"
                                                        Width="16"/>
                                             </Expander.Header>
+                                            <Expander.ToolTip>
+                                                <StackPanel>
+                                                    <TextBlock Style="{StaticResource LightTextBlock}" Text="{Binding Tooltip}"/>
+                                                </StackPanel>
+                                            </Expander.ToolTip>
                                             <ItemsControl Style="{StaticResource ForegroundItemsControl}" ItemsSource="{Binding RigButtonList}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>

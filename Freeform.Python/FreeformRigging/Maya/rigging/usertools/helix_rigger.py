@@ -157,6 +157,7 @@ class HelixRigger:
         scene_tools.scene_manager.SceneManager.method_list.append(self.rigger_update_character_components)
 
         scene_tools.scene_manager.SceneManager.selection_changed_list.append(self.rigger_select_component)
+        scene_tools.scene_manager.SceneManager.selection_changed_list.append(self.rigger_populate_component_category)
 
 
     def show(self):
@@ -224,6 +225,7 @@ class HelixRigger:
         scene_tools.scene_manager.SceneManager().remove_method(self.rigger_update_character_components)
 
         scene_tools.scene_manager.SceneManager.selection_changed_list.remove(self.rigger_select_component)
+        scene_tools.scene_manager.SceneManager.selection_changed_list.remove(self.rigger_populate_component_category)
 
     def create_rig_buttons(self):
         '''
@@ -231,6 +233,7 @@ class HelixRigger:
         '''
         remove_category = self.create_category("Remove Components")
         remove_category.ImagePath = "../../Resources/remove.ico"
+        remove_category.Tooltip = "Tools to remove Components from Characters"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.remove_component_call
@@ -246,8 +249,13 @@ class HelixRigger:
         new_button.Tooltip = "Remove rig component on selected controls and bake animation to joints"
         remove_category.AddButton(new_button)
 
+        method_category = self.create_category("Component Methods")
+        method_category.ImagePath = "../../Resources/fk_icon.ico"
+        method_category.Tooltip = "Tools specific to the first selected rig Component"
+
         toggle_category = self.create_category("Component Toggles")
         toggle_category.ImagePath = "../../Resources/visible.ico"
+        toggle_category.Tooltip = "Toggle tools for selected Components or scene controls"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.toggle_vis_button
@@ -286,6 +294,7 @@ class HelixRigger:
 
         space_category = self.create_category("Space Switching")
         space_category.ImagePath = "../../Resources/overdriver.ico"
+        space_category.Tooltip = "Tools for applying and removing Overdrivers"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.remove_overdriver
@@ -350,6 +359,7 @@ class HelixRigger:
 
         component_category = self.create_category("Component Switching")
         component_category.ImagePath = "../../Resources/space_switcher.ico"
+        component_category.Tooltip = "Tools for switching Components or Overdrivers to new Components or spaces"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.ik_fk_switch
@@ -374,6 +384,7 @@ class HelixRigger:
 
         lock_category = self.create_category("Selection Locks")
         lock_category.ImagePath = "../../Resources/locked.ico"
+        lock_category.Tooltip = "Toggle UI Selection Lock on controls and Components"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.set_all_unlocked
@@ -398,6 +409,7 @@ class HelixRigger:
 
         temporary_category = self.create_category("Temporary Rigging")
         temporary_category.ImagePath = "../../Resources/t_fk.png"
+        temporary_category.Tooltip = "Apply temporary rigging without defining regions"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.temporary_fk
@@ -415,6 +427,7 @@ class HelixRigger:
 
         misc_category = self.create_category("Miscellaneous")
         misc_category.ImagePath = "../../Resources/adjust.ico"
+        misc_category.Tooltip = "Miscellaneous tools to assist in rigging setup"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.build_pickwalking
@@ -449,6 +462,44 @@ class HelixRigger:
                 if button_visibility != None:
                     rig_button.IsVisible = button_visibility
 
+    def rigger_populate_component_category(self, selection_list):
+        obj = get_first_or_default(selection_list)
+        control_property = metadata.meta_properties.get_property(obj, metadata.meta_properties.ControlProperty)
+        component_network = None
+        if control_property:
+            component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.AddonCore)
+            if not component_network:
+                component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.ComponentCore)
+
+        if component_network:
+            method_category = self.vm.GetRigCategoryList("Component Methods")
+            method_category.Clear()
+
+            component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+            method_category.ImagePath = component._icon
+
+            method_dict = component.get_rigger_methods()
+            if method_dict:
+                v1_core.global_settings.GlobalSettings().create_category(self.ToolVisibilityCategory)
+                settings_dict = v1_core.global_settings.GlobalSettings().get_settings()
+                category_dict = settings_dict.get(self.ToolVisibilityCategory)
+
+                method_list = method_dict.keys()
+                method_list.sort()
+                for method in method_list:
+                    method_info = method_dict[method]
+                    new_button = Freeform.Rigging.RigBarButton()
+                    new_button.CommandHandler += method
+                    new_button.SaveSettingHandler += self.save_tool_visibility
+                    new_button.Name = method_info["Name"]
+                    new_button.ImagePath = method_info["ImagePath"]
+                    new_button.Tooltip = method_info["Tooltip"]
+
+                    button_visibility = category_dict.get(new_button.Name + ".isVisible")
+                    if button_visibility != None:
+                        new_button.IsVisible = button_visibility
+
+                    method_category.AddButton(new_button)
 
     def rigger_select_component(self, selection_list):
         '''
@@ -1262,7 +1313,7 @@ class HelixRigger:
             control_property_network = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
             control_type = control_property_network.get('control_type')
 
-            if 'fk' in control_type:
+            if 'fk' in control_type or 'ribbon' in control_type:
                 return_list[control_property_network.get('ordered_index') + offset] = control
             elif control_type == 'ik_handle':
                 return_list[-1] = control
@@ -2034,7 +2085,7 @@ class HelixRigger:
         space_type = getattr(rigging.overdriver, data)
 
         sel_list = pm.ls(selection=True)
-        if len(sel_list) > 1 or space_type.__requires_space__ == False:
+        if len(sel_list) > 1 or space_type._requires_space == False:
             control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
             if control_list:
                 control = control_list[-1]
@@ -2342,7 +2393,7 @@ class HelixRigger:
         if joint:
             freeform_utils.character_utils.characterize_skeleton(joint)
 
-
+    @csharp_error_catcher
     def save_control_shapes(self, c_rig_button, event_args):
         '''
         save_control_shapes(self, c_rig_button, event_args)
@@ -2378,9 +2429,9 @@ class HelixRigger:
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
         if character_category.remove_existing:
-            if component_type.__hasattachment__ != 'root':
+            if component_type._hasattachment != 'root':
                 removed_node_list = rigging.rig_base.Component_Base.remove_rigging(root, exclude = 'end')
-            if component_type.__hasattachment__ != 'end':
+            if component_type._hasattachment != 'end':
                 removed_node_list = rigging.rig_base.Component_Base.remove_rigging(end, exclude = 'root')
 
         skeleton_dict = rigging.skeleton.get_skeleton_dict(root)

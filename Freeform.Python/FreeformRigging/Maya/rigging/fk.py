@@ -34,14 +34,15 @@ import v1_core
 import v1_shared
 
 from maya_utils.decorators import undoable
+from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
 
 class FK(rigging.rig_base.Rig_Component):
-    __inherittype__ = "component"
-    __spacetype__ = "inherit"
-    __hasattachment__ = None
+    _inherittype = "component"
+    _spacetype = "inherit"
+    _hasattachment = None
 
 
     def __init__(self, *args, **kwargs):
@@ -74,17 +75,17 @@ class FK(rigging.rig_base.Rig_Component):
         if use_queue:
             if not additive:
                 maya_utils.baking.BakeQueue().add_post_process(self.save_animation, {})
-            maya_utils.baking.BakeQueue().add_post_process(self.rig_post_bake_process, {'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
+            maya_utils.baking.BakeQueue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
         else:
             if not additive:
                 self.save_animation()
-            self.rig_post_bake_process(skeleton_chain, control_chain, additive)
+            self.bind_chain_process(skeleton_chain, control_chain, additive)
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
-    def rig_post_bake_process(self, skeleton_chain, control_chain, additive):
+    def bind_chain_process(self, skeleton_chain, control_chain, additive):
         rigging_chain = self.network['rigging'].get_connections()
         rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
@@ -209,7 +210,8 @@ class FK(rigging.rig_base.Rig_Component):
             for attr in locked_attrs:
                 attr.lock()
 
-    def switch_to_ik(self):
+    @csharp_error_catcher
+    def switch_to_ik(self, c_rig_button, event_args):
         switch_success = self.switch_rigging()
 
         if not switch_success and len(self.network['controls'].get_connections()) == 3:
@@ -234,6 +236,12 @@ class FK(rigging.rig_base.Rig_Component):
             maya_utils.node_utils.set_current_frame()
 
         scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
+
+    def get_rigger_methods(self):
+        method_dict = {}
+        method_dict[self.switch_to_ik] = {"Name" : "(FK)Switch To IK", "ImagePath" : "../../Resources/fk_ik_switch.ico", "Tooltip" : "Bake FK to skeleton and apply IK"}
+
+        return method_dict
 
     def create_menu(self, parent_menu, control):
         logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_ik, "Context Menu (FK)")
@@ -315,6 +323,9 @@ class Aim_FK(FK):
             constraint_list.append( pm.pointConstraint(target_jnt, control, mo=maintain_offset) )
             constraint_list.append( pm.scaleConstraint(target_jnt, control, mo=maintain_offset) )
 
+    def get_rigger_methods(self):
+        return {}
+
 class Eye_FK(FK):
     '''
     FK that bakes out a locator infront of the control to use as an AIM target.
@@ -374,7 +385,8 @@ class Eye_FK(FK):
 
         return True
 
-    def switch_to_aim(self):
+    @csharp_error_catcher
+    def switch_to_aim(self, c_rig_button, event_args):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         self.zero_rigging()
 
@@ -390,7 +402,15 @@ class Eye_FK(FK):
 
         pm.autoKeyframe(state=autokey_state)
 
+    def get_rigger_methods(self):
+        method_dict = {}
+        method_dict[self.switch_to_aim] = {"Name" : "(Eye_FK)Switch To Aim", "ImagePath" : "../../Resources/overdriver_aim.png", "Tooltip" : "Switch the Eye rotate control to the Aim target"}
+
+        return method_dict
+
     def create_menu(self, parent_menu, control):
+        logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_ik, "Context Menu (Eye_FK)", None, None)
+        pm.menuItem(label="Switch To IK", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs))
         pm.menuItem(label="Switch To Aim", parent=parent_menu, command=lambda _: self.switch_to_aim())
         pm.menuItem(divider=True, parent=parent_menu)
         super(FK, self).create_menu(parent_menu, control)
