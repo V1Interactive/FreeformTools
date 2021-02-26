@@ -52,6 +52,9 @@
     <Compile Include="Maya\rigging\ik.py" />
     <Compile Include="Maya\rigging\overdriver.py" />
     <Compile Include="Maya\rigging\reverse_foot.py" />
+    <Compile Include="Maya\rigging\ribbon.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\rigging\rig_base.py" />
     <Compile Include="Maya\rigging\rig_tools.py" />
     <Compile Include="Maya\rigging\settings_binding.py" />

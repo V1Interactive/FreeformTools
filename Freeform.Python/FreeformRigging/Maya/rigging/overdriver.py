@@ -35,6 +35,7 @@ import v1_shared
 import maya_utils
 
 from maya_utils.decorators import undoable
+from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
@@ -308,11 +309,13 @@ class Overdriver(rigging.rig_base.Addon_Component):
     def open_space_switcher(self):
         rigging.usertools.space_switcher.SpaceSwitcher(self).show()
 
-    def select_constraint(self):
+    @csharp_error_catcher
+    def select_constraint(self, c_rig_button, event_args):
         component_constraint = self.get_space_constraint()
         pm.select(component_constraint, replace=True)
 
-    def select_target_control(self):
+    @csharp_error_catcher
+    def select_target_control(self, c_rig_button, event_args):
         pm.select(self.get_target_object(), replace=True)
 
     def zero_control(self, control):
@@ -331,6 +334,16 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
         super(Overdriver, self).zero_control(control)
 
+
+    def get_rigger_methods(self):
+        method_dict = {}
+        method_dict[self.select_constraint] = {"Name" : "(Overdriver)Select Constraint", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/transfer.ico", "Tooltip" : "Select the constraint maintining this Overdriver"}
+
+        method_dict[self.select_target_control] = {"Name" : "(Overdriver)Select Driven Control", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/pick.ico", "Tooltip" : "Select the control being driven by this Overdriver"}
+
+        return method_dict
+
+
     def create_menu(self, parent_menu, control):
         current_space = self.get_current_space()
         component_constraint = self.get_space_constraint()
@@ -346,10 +359,10 @@ class Overdriver(rigging.rig_base.Addon_Component):
                 pm.menuItem(label="switch - " + attr.name().split('.')[-1][:-2], parent=parent_menu, command = com)
 
         pm.menuItem(divider=True, parent=parent_menu)
-        sel_constraint_method, sel_constraint_args, sel_constraint_kwargs = v1_core.v1_logging.logging_wrapper(self.select_constraint, "Context Menu (Overdriver)")
+        sel_constraint_method, sel_constraint_args, sel_constraint_kwargs = v1_core.v1_logging.logging_wrapper(self.select_constraint, "Context Menu (Overdriver)", None, None)
         pm.menuItem(label="Select Constraint", parent=parent_menu, command=lambda _: sel_constraint_method(*sel_constraint_args, **sel_constraint_kwargs))
 
-        sel_target_method, sel_target_args, sel_target_kwargs = v1_core.v1_logging.logging_wrapper(self.select_target_control, "Context Menu (Overdriver)")
+        sel_target_method, sel_target_args, sel_target_kwargs = v1_core.v1_logging.logging_wrapper(self.select_target_control, "Context Menu (Overdriver)", None, None)
         pm.menuItem(label="Select Target Control", parent=parent_menu, command=lambda _: sel_target_method(*sel_target_args, **sel_target_kwargs))
         pm.menuItem(divider=True, parent=parent_menu)
         super(Overdriver, self).create_menu(parent_menu, control)
@@ -375,7 +388,7 @@ class Rotation_Overdriver(Overdriver):
 
 class Dynamic_Driver(Overdriver):
     __metatype__ = ABCMeta
-    __simulated__ = True
+    _simulated = True
 
     def __init__(self, translate = False, rotate = True):
         super(Dynamic_Driver, self).__init__(translate, rotate)
@@ -418,14 +431,17 @@ class Dynamic_Driver(Overdriver):
 
 
 class Aim(Dynamic_Driver):
+    _icon = "../../Resources/overdriver_aim.png"
+
     def __init__(self, translate = False, rotate = True):
         super(Aim, self).__init__(translate, rotate)
         self.prefix = "AimDynamic"
         self.space_constraint = pm.pointConstraint
         self.hold_constraint = pm.pointConstraint
-        self.maintain_offset = True
+        self.maintain_offset = False
 
     def apply_dynamics(self, dynamic_control, object_space):
+        maya_utils.node_utils.set_current_frame()
         target_data = rigging.rig_base.ControlInfo().parse_string(self.network['addon'].node.target_data.get())
         dynamic_grp_name = "{0}{1}_{2}_{3}_grp".format(self.namespace, target_data.region, target_data.side, self.prefix)
         dynamic_grp = pm.group(empty=True, name=dynamic_grp_name)
@@ -485,7 +501,8 @@ class Aim(Dynamic_Driver):
 
 
 class Pendulum(Aim):
-    __requires_space__ = False
+    _requires_space = False
+    _icon = "../../Resources/pendulum.png"
 
     def __init__(self, translate=False, rotate=True):
         super(Pendulum, self).__init__(translate=translate, rotate=rotate)
@@ -495,7 +512,7 @@ class Pendulum(Aim):
     def rig(self, component_node, control, bake_controls=False, default_space=None, use_queue=False):
         # Create the dynamic pendulum to be used as the Aim space for the overdriver
         self.network = self.create_meta_network(component_node)
-        self.zero_character(self.network['character'], use_queue)
+        #self.zero_character(self.network['character'], use_queue)
 
         dynamic_grp_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
         pre_dynamic_group = pm.group(empty=True, name=dynamic_grp_name)
@@ -521,6 +538,8 @@ class Pendulum(Aim):
         gravity_field = pm.gravity(m=980)
         gravity_field.setParent(pre_dynamic_group)
         pm.connectDynamic(object_space, f=gravity_field)
+
+        self.reset_pendulum(object_space)
 
         if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_queue=use_queue):
             return False
@@ -559,7 +578,7 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
     '''
 
     '''
-    __promoteselection__ = False
+    _promoteselection = False
 
     @classmethod
     def rig_from_json(cls, component, addon_component_dict, created_rigging):
@@ -699,7 +718,7 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
 
 class Attribute_Translator(rigging.rig_base.Addon_Component):
 
-    __promoteselection__ = False
+    _promoteselection = False
 
     @classmethod
     def rig_from_json(cls, component, addon_component_dict, created_rigging):

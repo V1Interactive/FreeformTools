@@ -113,9 +113,9 @@ def rig_region(skeleton_dict, side, region, character_network, component_type, r
 
     character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
     if character_category.remove_existing:
-        if component_type.__hasattachment__ != 'root':
+        if component_type._hasattachment != 'root':
             removed_node_list = rigging.rig_base.Component_Base.remove_rigging(root, exclude = 'end')
-        if component_type.__hasattachment__ != 'end':
+        if component_type._hasattachment != 'end':
             removed_node_list = rigging.rig_base.Component_Base.remove_rigging(end, exclude = 'root')
         
     control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)

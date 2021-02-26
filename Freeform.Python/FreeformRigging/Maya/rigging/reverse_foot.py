@@ -32,15 +32,16 @@ import metadata
 import maya_utils
 
 from maya_utils.decorators import undoable
+from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
 
 
 class ReverseFoot(rigging.rig_base.Rig_Component):
-    __inherittype__ = "component"
-    __spacetype__ = "world"
-    __hasattachment__ = "root"
+    _inherittype = "component"
+    _spacetype = "world"
+    _hasattachment = "root"
 
     def __init__(self):
         super(ReverseFoot, self).__init__()
@@ -204,18 +205,18 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         if use_queue:
             if not additive:
                 maya_utils.baking.BakeQueue().add_post_process(self.save_animation, {})
-            maya_utils.baking.BakeQueue().add_post_process(self.rig_post_bake_process, {'skeleton_chain':skeleton_chain, 'rigging_chain':rigging_chain})
+            maya_utils.baking.BakeQueue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'rigging_chain':rigging_chain})
         else:
             if not additive:
                 self.save_animation()
-            self.rig_post_bake_process(skeleton_chain, rigging_chain)
+            self.bind_chain_process(skeleton_chain, rigging_chain)
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
 
-    def rig_post_bake_process(self, skeleton_chain, rigging_chain):
+    def bind_chain_process(self, skeleton_chain, rigging_chain):
         # removing any existing rotate constraints from from the ankle joint
         pm.delete( list(set(pm.listConnections(skeleton_chain[-1], type='orientConstraint', s=True, d=False))) )
         pm.orientConstraint( rigging_chain[-1], skeleton_chain[-1], mo=False )
@@ -335,6 +336,45 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         pm.delete(del_constraint + [heel_loc, toe_rot_loc, toe_ik_pos_loc])
 
         pm.autoKeyframe(state=autokey_state)
+
+    @csharp_error_catcher
+    def select_attach_control(self, c_rig_button, event_args):
+        control_list = self.network['controls'].get_connections()
+        pm.select([x for x in control_list if "attach" in x.name()], replace=True)
+
+    @csharp_error_catcher
+    def connect_ik_leg(self, c_rig_button, event_args):
+        '''
+        If the leg above the reverse foot is rigged in IK, this will connect the IK handle to the attachment control.
+        If the leg is not rigged in IK this will do nothing.
+        '''
+        attachment_joint = self.network['attachment'].get_first_connection()
+        control_list = self.network['controls'].get_connections()
+        attachment_control = get_first_or_default([x for x in control_list if "attach" in x.name()])
+
+        leg_component_network = rigging.skeleton.get_rig_network(attachment_joint)
+        if leg_component_network and "ik" in leg_component_network.get('component_type'):
+            leg_ik_component = rigging.rig_base.Component_Base.create_from_network_node(leg_component_network.node)
+            overdriver_list = leg_ik_component.is_in_addon()
+            if overdriver_list:
+                for od in overdriver_list:
+                    od.remove()
+    
+            character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+            remove_parent_setting = character_settings.overdriver_remove_parent_space
+            character_settings.overdriver_remove_parent_space = True
+
+            ik_handle = leg_ik_component.get_control('ik_handle')
+            leg_ik_component.switch_space(ik_handle, rigging.overdriver.Overdriver, [attachment_control])
+
+            character_settings.overdriver_remove_parent_space = remove_parent_setting
+
+    def get_rigger_methods(self):
+        method_dict = {}
+        method_dict[self.select_attach_control] = {"Name" : "(ReverseFoot)Select Attach Control", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/pick.ico", "Tooltip" : "Select the attachment Controller for the Reverse Foot"}
+        method_dict[self.connect_ik_leg] = {"Name" : "(ReverseFoot)Connect Leg", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/transfer.ico", "Tooltip" : "Connect the IK Leg to the Reverse Foot if it exists"}
+
+        return method_dict
 
     def create_menu(self, parent_menu, control):
         logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(rigging.usertools.heel_fixer.HeelFixer, "Context Menu (Reverse Foot)", self)

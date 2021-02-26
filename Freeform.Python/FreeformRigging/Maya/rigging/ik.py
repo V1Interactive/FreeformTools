@@ -35,14 +35,16 @@ import v1_core
 import v1_shared
 
 from maya_utils.decorators import undoable
+from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
 
 class IK(rigging.rig_base.Rig_Component):
-    __inherittype__ = "component"
-    __spacetype__ = "inherit"
-    __hasattachment__ = None
+    _inherittype = "component"
+    _spacetype = "inherit"
+    _hasattachment = None
+    _icon = "../../Resources/ik_icon.ico"
 
     def __init__(self):
         super(IK, self).__init__()
@@ -127,17 +129,17 @@ class IK(rigging.rig_base.Rig_Component):
         if use_queue:
             if not additive:
                 maya_utils.baking.BakeQueue().add_post_process(self.save_animation, {})
-            maya_utils.baking.BakeQueue().add_post_process(self.rig_post_bake_process, {'rigging_chain':rigging_chain, 'ik_solved_chain':ik_solved_chain, 'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
+            maya_utils.baking.BakeQueue().add_post_process(self.bind_chain_process, {'rigging_chain':rigging_chain, 'ik_solved_chain':ik_solved_chain, 'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
         else:
             if not additive:
                 self.save_animation()
-            self.rig_post_bake_process(rigging_chain, ik_solved_chain, skeleton_chain, control_chain, additive)
+            self.bind_chain_process(rigging_chain, ik_solved_chain, skeleton_chain, control_chain, additive)
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
-    def rig_post_bake_process(self, rigging_chain, ik_solved_chain, skeleton_chain, control_chain, additive):
+    def bind_chain_process(self, rigging_chain, ik_solved_chain, skeleton_chain, control_chain, additive):
         rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
         rigging.skeleton.force_set_attr(ik_solved_chain[-1].visibility, False)
 
@@ -292,7 +294,8 @@ class IK(rigging.rig_base.Rig_Component):
 
         return True
 
-    def switch_to_fk(self):
+    @csharp_error_catcher
+    def switch_to_fk(self, c_rig_button, event_args):
         switch_success = self.switch_rigging()
 
         if not switch_success:
@@ -318,8 +321,14 @@ class IK(rigging.rig_base.Rig_Component):
 
         scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
 
+    def get_rigger_methods(self):
+        method_dict = {}
+        method_dict[self.switch_to_fk] = {"Name" : "(IK)Switch To FK", "ImagePath" : "../../Resources/fk_ik_switch.ico", "Tooltip" : "Bake IK to skeleton and apply FK"}
+
+        return method_dict
+
     def create_menu(self, parent_menu, control):
-        logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_fk, "Context Menu (IK)")
+        logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_fk, "Context Menu (IK)", None, None)
         pm.menuItem(label="Switch To FK", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs))
         pm.menuItem(divider=True, parent=parent_menu)
         super(IK, self).create_menu(parent_menu, control)

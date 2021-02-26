@@ -420,7 +420,10 @@ def create_zero_group(jnt):
     else:
         zero_name = "zero_" + zero_name
 
-    freeze_transform(jnt)
+    try:
+        freeze_transform(jnt)
+    except:
+        pass
 
     empty_group = pm.group(empty=True, name=zero_name)
     temp_const = pm.parentConstraint(jnt, empty_group, maintainOffset=False)
@@ -443,7 +446,14 @@ def freeze_transform(jnt):
         child.setParent(None)
 
     locked_attrs = maya_utils.node_utils.unlock_transforms(jnt)
-    pm.makeIdentity(jnt, apply=True)
+    dupe_jnt = pm.duplicate(jnt)[0]
+    pm.makeIdentity(dupe_jnt, apply=True)
+
+    jnt.jointOrient.set(dupe_jnt.jointOrient.get())
+    jnt.rotate.set(dupe_jnt.rotate.get())
+
+    pm.delete(dupe_jnt)
+
     for attr in locked_attrs:
         attr.lock()
 
@@ -501,6 +511,16 @@ def get_chain_root(jnt_chain):
         PyNode. Maya scene joint that is the top parent of the chain
     '''
     return get_first_or_default([x for x in jnt_chain if x.getParent() not in jnt_chain])
+
+def get_chain_middle(joint_chain):
+    mid_length = len(joint_chain)/2
+    middle_list = None
+    if(len(joint_chain) % 2 == 1): # Odd # of joints
+        middle_list = joint_chain[mid_length:mid_length+1]
+    else: # Even # of joints
+        middle_list = joint_chain[mid_length-1:mid_length+1]
+    
+    return middle_list
 
 def is_animated(joint_list, filter_joints = True, recursive = True):
     '''

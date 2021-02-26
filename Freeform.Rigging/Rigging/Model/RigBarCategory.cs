@@ -79,6 +79,20 @@ namespace Freeform.Rigging
             }
         }
 
+        string _tooltip;
+        public string Tooltip
+        {
+            get { return _tooltip; }
+            set
+            {
+                if (_tooltip != value)
+                {
+                    _tooltip = value;
+                    RaisePropertyChanged("Tooltip");
+                }
+            }
+        }
+
         public ObservableCollection<RigBarButton> _rigButtonList;
         public ObservableCollection<RigBarButton> RigButtonList
         {
@@ -102,6 +116,11 @@ namespace Freeform.Rigging
             RigButtonList = new ObservableCollection<RigBarButton>();
         }
 
+
+        public void Clear()
+        {
+            RigButtonList.Clear();
+        }
 
         public void AddButton(RigBarButton newButton)
         {
