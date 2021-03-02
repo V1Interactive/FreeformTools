@@ -1381,7 +1381,7 @@ class Rig_Component(Component_Base):
         '''
         const = get_first_or_default(list(set(self.network['component'].group.listConnections(type='constraint'))))
         con_list = list(set(const.listConnections(type='transform')))
-        target = [x for x in con_list if type(x) == pm.nt.Joint and x != self.network['component'].group]
+        target = [x for x in con_list if type(x) == pm.nt.Transform and x != self.network['component'].group]
         
         if target and get_first_or_default(target) == self.network['character'].group:
             return True
