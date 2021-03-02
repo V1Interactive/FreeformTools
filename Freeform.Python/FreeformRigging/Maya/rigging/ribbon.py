@@ -102,18 +102,18 @@ class Ribbon(rigging.rig_base.Rig_Component):
         if use_queue:
             if not additive:
                 maya_utils.baking.BakeQueue().add_post_process(self.save_animation, {})
-            maya_utils.baking.BakeQueue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
+            maya_utils.baking.BakeQueue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'follicle_list':follicle_list, 'additive':additive})
         else:
             if not additive:
                 self.save_animation()
-            self.bind_chain_process(skeleton_chain, control_chain, additive)
+            self.bind_chain_process(skeleton_chain, follicle_list, additive)
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
 
-    def bind_chain_process(self, skeleton_chain, control_chain, additive):
+    def bind_chain_process(self, skeleton_chain, follicle_list, additive):
         rigging_chain = self.network['rigging'].get_connections()
         rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
         rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
@@ -124,9 +124,9 @@ class Ribbon(rigging.rig_base.Rig_Component):
         rigging.skeleton.zero_skeleton_joints(skeleton_chain)
 
         self.bind_chains(rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain), additive = additive)
-        for control_joint, rig_joint in zip(control_chain, rigging_chain):
-            pm.pointConstraint(control_joint, rig_joint, mo=True)
-            pm.orientConstraint(control_joint, rig_joint, mo=True)
+        for follicle, rig_joint in zip(follicle_list, rigging_chain):
+            pm.pointConstraint(follicle.getParent(), rig_joint, mo=True)
+            pm.orientConstraint(follicle.getParent(), rig_joint, mo=True)
 
 
     def create_ribbon(self, ribbon_length, number_of_follicles):
@@ -243,3 +243,17 @@ class Ribbon(rigging.rig_base.Rig_Component):
         class_info_dict = super(Ribbon, self).create_json_dictionary()
         class_info_dict["up_axis"] = self.up_axis
         return class_info_dict
+
+    @csharp_error_catcher
+    def toggle_ribbon_visibility(self, c_rig_button, event_args):
+        world_grp = get_first_or_default([x for x in self.network['component'].group.getChildren() if "World_grp" in x.name()])
+        if world_grp:
+            ribbon_surface = get_first_or_default([x for x in world_grp.getChildren(type='transform') if x.getShape() and type(x.getShape()) == pm.nt.NurbsSurface])
+            ribbon_surface.visibility.set(not ribbon_surface.visibility.get())
+
+
+    def get_rigger_methods(self):
+        method_dict = {}
+        method_dict[self.toggle_ribbon_visibility] = {"Name" : "(Ribbon)Toggle Ribbon Display", "ImagePath" : "../../Resources/visible.ico", "Tooltip" : "Toggle Visibility of the Ribbon"}
+
+        return method_dict
