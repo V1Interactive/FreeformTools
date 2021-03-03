@@ -254,6 +254,6 @@ class Ribbon(rigging.rig_base.Rig_Component):
 
     def get_rigger_methods(self):
         method_dict = {}
-        method_dict[self.toggle_ribbon_visibility] = {"Name" : "(Ribbon)Toggle Ribbon Display", "ImagePath" : "../../Resources/visible.ico", "Tooltip" : "Toggle Visibility of the Ribbon"}
+        method_dict[self.toggle_ribbon_visibility] = {"Name" : "(Ribbon)Toggle Ribbon Display", "ImagePath" : "../../Resources/visible_ribbon.png", "Tooltip" : "Toggle Visibility of the Ribbon"}
 
         return method_dict

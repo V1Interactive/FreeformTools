@@ -391,5 +391,16 @@
   <ItemGroup>
     <Resource Include="Resources\pendulum.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\visible_ribbon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\pick_constraint.png" />
+    <Resource Include="Resources\pick_control.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\fk_switch.png" />
+    <Resource Include="Resources\ik_switch.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

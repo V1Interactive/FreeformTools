@@ -323,7 +323,7 @@ class IK(rigging.rig_base.Rig_Component):
 
     def get_rigger_methods(self):
         method_dict = {}
-        method_dict[self.switch_to_fk] = {"Name" : "(IK)Switch To FK", "ImagePath" : "../../Resources/fk_ik_switch.ico", "Tooltip" : "Bake IK to skeleton and apply FK"}
+        method_dict[self.switch_to_fk] = {"Name" : "(IK)Switch To FK", "ImagePath" : "../../Resources/fk_switch.png", "Tooltip" : "Bake IK to skeleton and apply FK"}
 
         return method_dict
 
