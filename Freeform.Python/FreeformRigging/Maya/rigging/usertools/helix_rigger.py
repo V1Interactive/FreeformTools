@@ -1023,7 +1023,6 @@ class HelixRigger:
         skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
         for side, region_dict in skeleton_dict.iteritems():
             for region, tag_dict in region_dict.iteritems():
-                print side, region
                 new_reg = Freeform.Rigging.SkeletonRegion(side, region, tag_dict['root'].longName(), tag_dict['end'].longName())
                 c_character.RegionList.Add(new_reg)
                 c_character.SelectedRegion = new_reg;

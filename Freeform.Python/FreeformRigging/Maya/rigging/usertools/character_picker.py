@@ -183,7 +183,7 @@ class RigSwapper(CharacterPicker):
         source_joint = source_joint_core_network.get_first_connection()
         source_root_joint = rigging.skeleton.get_root_joint(source_joint)
         source_mesh_group_list = [x for x in source_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
-        source_morph_group_list = [x for x in source_mesh_group_list if 'morph' in x.name().lower()]
+        source_morph_group_list = [x for x in source_mesh_group_list if 'morph' in x.name().lower() and 'components' not in x.name().lower()]
 
         for source_morph_group in source_morph_group_list:
             # Remove any file references from the current character so they can be replaced by the imported file
@@ -201,7 +201,9 @@ class RigSwapper(CharacterPicker):
         # change namespace before that so new references will parent correctly
         pm.namespace(rename=[source_namespace, source_namespace[:-1]+"_temp"])
 
+        playback_values = maya_utils.node_utils.get_playback()
         super(RigSwapper, self).import_rigs(rig_path_list, do_update)
+        maya_utils.node_utils.set_playback(playback_values)
 
         character_node_list = [x for x in pm.ls(self.new_nodes.values()[0], type='network') if x.meta_type.get() == str(metadata.network_core.CharacterCore)]
         if len(character_node_list) == 1:
@@ -250,23 +252,24 @@ class RigSwapper(CharacterPicker):
 
         source_joints_network = source_character_network.get_downstream(metadata.network_core.JointsCore)
         source_rig_network = source_character_network.get_downstream(metadata.network_core.RigCore)
+        source_region_network = source_character_network.get_downstream(metadata.network_core.RegionsCore)
         source_mesh_group_list = [x for x in source_character_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
         source_morph_group_list = [x for x in source_mesh_group_list if 'morph' in x.name().lower()]
-        source_mesh_group = get_first_or_default([x for x in source_mesh_group_list if 'morph' not in x.name().lower()])
+        source_mesh_group = get_first_or_default([x for x in source_mesh_group_list if 'morph' not in x.name().lower() and 'components' not in x.name().lower()])
 
         new_joints_network = new_character_network.get_downstream(metadata.network_core.JointsCore)
         new_rig_network = new_character_network.get_downstream(metadata.network_core.RigCore)
+        new_region_network = new_character_network.get_downstream(metadata.network_core.RegionsCore)
         new_mesh_group_list = [x for x in new_character_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
+        new_mesh_group_list = [x for x in new_mesh_group_list if 'morph' not in x.name().lower() and 'components' not in x.name().lower()]
         new_mesh_group = get_first_or_default(new_mesh_group_list)
 
         source_joint_list = source_joints_network.get_connections()
         source_joint_list = rigging.skeleton.sort_joints_by_name(source_joint_list)
-        first_source_joint = get_first_or_default(source_joint_list)
-        source_root_joint = rigging.skeleton.get_root_joint(first_source_joint)
+        source_root_joint = source_joints_network.root
 
         new_joint_list = new_joints_network.get_connections()
-        first_new_joint = get_first_or_default(new_joint_list)
-        new_root_joint = rigging.skeleton.get_root_joint(first_new_joint)
+        new_root_joint = new_joints_network.root
 
         # Any new references are assumed to be face morph targets.  Gather them and connect them to the root
         new_reference_list = maya_utils.node_utils.get_live_references_from_group(new_mesh_group)
@@ -276,19 +279,14 @@ class RigSwapper(CharacterPicker):
 
         rigging.faces.connect_face_rig(new_root_joint, reference_nodes)
 
-        # Swap out skeleton network connections and re-namespace joints
-        source_rig_network.disconnect_node(source_root_joint)
-        source_rig_network.connect_node(new_root_joint)
-        new_rig_network.disconnect_node(new_root_joint)
-
         # Update joint and property names to the current character namespace
-        source_namespace = first_source_joint.namespace()
+        source_namespace = source_root_joint.namespace()
         if not source_namespace:
             source_namespace = "transfer:"
             if not pm.namespace(exists = "transfer"):
                 pm.namespace(add = "transfer")
 
-        new_namespace = first_new_joint.namespace()
+        new_namespace = new_root_joint.namespace()
         for jnt in new_joint_list:
             new_joints_network.disconnect_node(jnt)
             jnt.rename(jnt.name().replace(new_namespace, source_namespace))
@@ -297,6 +295,17 @@ class RigSwapper(CharacterPicker):
             for propetry_list in property_dict.itervalues():
                 for network in propetry_list:
                     network.node.rename(network.node.name().replace(new_namespace, source_namespace))
+        
+        # Swap out skeleton and regions network connections
+        source_joints_network.node.root_joint.disconnect()
+        source_joints_network.connect_node(new_root_joint, source_joints_network.node.root_joint)
+        new_joints_network.node.root_joint.disconnect()
+
+        source_character_network.disconnect_node(source_region_network.node)
+        new_character_network.disconnect_node(new_region_network.node)
+        source_character_network.connect_node(new_region_network.node)
+        new_character_network.connect_node(source_region_network.node)
+        new_region_network.node.rename(new_region_network.node.name().replace(new_namespace, source_namespace))
 
         # Update meshes into the current character namespace and connected to scene DisplayLayers
         mesh_layer_list = source_mesh_group.drawOverride.listConnections()
@@ -322,6 +331,7 @@ class RigSwapper(CharacterPicker):
 
         source_joints_network.connect_nodes(new_joint_list)
 
+        # Transfer animation
         delete_constraints = []
         needs_baking = []
         start_frame = 0
@@ -355,7 +365,7 @@ class RigSwapper(CharacterPicker):
             if is_rigged or skeleton_constraint_list:
                 # If the joint is rigged connect it into the rigging network
                 if is_rigged:
-                    component_joint_network_list = metadata.network_core.MetaNode.get_network_entries(source_jnt, metadata.network_core.ComponentCore)
+                    component_joint_network_list = metadata.network_core.MetaNode.get_network_entries(source_jnt, metadata.network_core.SkeletonJoints)
                     for component_joint_network in component_joint_network_list:
                         component_joint_network.disconnect_node(source_jnt)
                         component_joint_network.connect_node(new_jnt)
@@ -406,6 +416,7 @@ class RigSwapper(CharacterPicker):
         
         pm.delete(source_joint_list)
         pm.delete(source_mesh_group)
+        pm.delete(new_rig_network.group)
         pm.delete([x for x in source_morph_group_list if pm.objExists(x)])
 
         actor_offset = [x for x in source_character_network.group.getChildren(type='transform') if "UE_Actor_Offset" in x.name()]
