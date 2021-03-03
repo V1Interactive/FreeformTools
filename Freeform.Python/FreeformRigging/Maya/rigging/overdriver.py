@@ -337,9 +337,9 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
     def get_rigger_methods(self):
         method_dict = {}
-        method_dict[self.select_constraint] = {"Name" : "(Overdriver)Select Constraint", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/transfer.ico", "Tooltip" : "Select the constraint maintining this Overdriver"}
+        method_dict[self.select_constraint] = {"Name" : "(Overdriver)Select Constraint", "ImagePath" : "../../Resources/pick_constraint.png", "Tooltip" : "Select the constraint maintining this Overdriver"}
 
-        method_dict[self.select_target_control] = {"Name" : "(Overdriver)Select Driven Control", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/pick.ico", "Tooltip" : "Select the control being driven by this Overdriver"}
+        method_dict[self.select_target_control] = {"Name" : "(Overdriver)Select Driven Control", "ImagePath" : "../../Resources/pick_control.png", "Tooltip" : "Select the control being driven by this Overdriver"}
 
         return method_dict
 

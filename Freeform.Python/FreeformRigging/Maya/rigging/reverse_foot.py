@@ -371,7 +371,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
     def get_rigger_methods(self):
         method_dict = {}
-        method_dict[self.select_attach_control] = {"Name" : "(ReverseFoot)Select Attach Control", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/pick.ico", "Tooltip" : "Select the attachment Controller for the Reverse Foot"}
+        method_dict[self.select_attach_control] = {"Name" : "(ReverseFoot)Select Attach Control", "ImagePath" : "../../Resources/pick_control.png", "Tooltip" : "Select the attachment Controller for the Reverse Foot"}
         method_dict[self.connect_ik_leg] = {"Name" : "(ReverseFoot)Connect Leg", "ImagePath" : "pack://application:,,,/HelixResources;component/Resources/transfer.ico", "Tooltip" : "Connect the IK Leg to the Reverse Foot if it exists"}
 
         return method_dict
