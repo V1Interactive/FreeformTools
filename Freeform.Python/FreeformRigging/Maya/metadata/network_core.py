@@ -754,7 +754,9 @@ class JointsCore(DependentNode):
         return return_root
 
     def __init__(self, parent = None, node_name = 'joints_core', node = None, namespace = "", root_jnt = None):
-        super(JointsCore, self).__init__(parent, node_name, node, namespace, root_joint = (None, 'message'))
+        super(JointsCore, self).__init__(parent, node_name, node, namespace)
+        # root_joint attr has to be added here and not with kwargs to prevent an issue where connections to the attribute remove themselves.
+        self.add_attr("root_joint", 'message')
         if not node:
             if not root_jnt:
                 pm.select(None)

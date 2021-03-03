@@ -41,6 +41,16 @@ def convert_scene_units(value):
     return return_value
 
 
+def get_playback():
+    return [pm.playbackOptions(q=True, ast=True), pm.playbackOptions(q=True, aet=True), pm.playbackOptions(q=True, minTime=True), pm.playbackOptions(q=True, maxTime=True)]
+
+def set_playback(playback_list):
+    pm.playbackOptions(ast=playback_list[0])
+    pm.playbackOptions(aet=playback_list[1])
+    pm.playbackOptions(minTime=playback_list[2])
+    pm.playbackOptions(maxTime=playback_list[3])
+
+
 def unlock_transforms(obj, transform_list = TRANSFORM_ATTRS):
     '''
     Unlock all transform values on a maya scene object
