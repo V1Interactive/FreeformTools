@@ -242,6 +242,8 @@ def import_file_safe(file_path, **kwargs):
         file_path (string): Full path to the file to import
         **kwargs (kwargs): keyword args to pass along to pm.importFile
     '''
+    scene_time_tuple = maya_utils.anim_attr_utils.get_scene_times()
+
     import_return = None
     pre_import_list = pm.ls(assemblies = True)
     try:
@@ -257,6 +259,8 @@ def import_file_safe(file_path, **kwargs):
         else:
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2]) 
+    finally:
+        maya_utils.anim_attr_utils.set_scene_times(scene_time_tuple)
 
     if not import_return and kwargs['returnNewNodes'] == True:
         post_import_list = pm.ls(assemblies = True)

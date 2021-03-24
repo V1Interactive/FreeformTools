@@ -50,6 +50,9 @@ class Ribbon(rigging.rig_base.Rig_Component):
         self.prefix = 'ribbon'
         self.up_axis = [0,1,0]
 
+    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = True, queue = True):
+        super(Ribbon, self).bake_joints(translate, rotate, scale, simulation, queue)
+
     @undoable
     def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, use_queue = False, additive = False, reverse = False, **kwargs):
         self.reverse = reverse
@@ -219,6 +222,11 @@ class Ribbon(rigging.rig_base.Rig_Component):
 
         return constraint_list
 
+    def get_control_joint(self, control):
+        '''
+        Controls don't drive specific joints, so always return the first joint in the skeleton chain.  
+        '''
+        return get_last_or_default(rigging.skeleton.sort_chain_by_hierarchy(self.network['skeleton'].get_connections()))
 
     def initialize_from_network_node(self, network_node):
         '''

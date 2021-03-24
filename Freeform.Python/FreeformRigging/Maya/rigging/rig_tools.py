@@ -190,8 +190,8 @@ def temporary_rig(start_jnt, end_jnt, type):
         end_jnt = start_jnt
         start_jnt = temp_jnt
 
-    start_property = metadata.meta_properties.RigMarkupProperty()
-    end_property = metadata.meta_properties.RigMarkupProperty()
+    start_property = metadata.meta_properties.add_property(start_jnt, metadata.meta_properties.RigMarkupProperty)
+    end_property = metadata.meta_properties.add_property(end_jnt, metadata.meta_properties.RigMarkupProperty)
 
     side = rigging.skeleton.get_joint_side(start_jnt)
     region = "temp_{0}".format(start_jnt.stripNamespace())
@@ -201,19 +201,15 @@ def temporary_rig(start_jnt, end_jnt, type):
     start_property.set('region', region)
     start_property.set('group', 'Temporary')
     start_property.set('temporary', True)
-    start_property.connect_node(start_jnt)
 
     end_property.set('tag', 'end')
     end_property.set('side', side)
     end_property.set('region', region)
     end_property.set('group', 'Temporary')
     end_property.set('temporary', True)
-    end_property.connect_node(end_jnt)
 
-    skeleton_dict = rigging.skeleton.get_skeleton_dict(start_jnt)
     character_network = metadata.network_core.MetaNode.get_first_network_entry(start_jnt, metadata.network_core.CharacterCore)
-
+    skeleton_dict = rigging.skeleton.get_skeleton_dict(start_jnt)
     
     rig_region(skeleton_dict, side, region, character_network, type, reverse)
-
     scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')

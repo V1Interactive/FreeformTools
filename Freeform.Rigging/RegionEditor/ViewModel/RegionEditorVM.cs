@@ -423,6 +423,7 @@ namespace Freeform.Rigging.RegionEditor
             GridStyle = "V1Grid";
             TextStyle = "LightTextBlock";
             SelectionNotRigged = true;
+            HighlightRegions = true;
 
             PickCommand = new RelayCommand(PickEventCall);
             AddRegionCommand = new RelayCommand(AddRegionEventCall);

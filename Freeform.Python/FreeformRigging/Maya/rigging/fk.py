@@ -244,7 +244,7 @@ class FK(rigging.rig_base.Rig_Component):
         return method_dict
 
     def create_menu(self, parent_menu, control):
-        logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_ik, "Context Menu (FK)")
+        logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_ik, "Context Menu (FK)", None, None)
         pm.menuItem(label="Switch To IK", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs))
         pm.menuItem(divider=True, parent=parent_menu)
         super(FK, self).create_menu(parent_menu, control)

@@ -758,10 +758,6 @@ class JointsCore(DependentNode):
         # root_joint attr has to be added here and not with kwargs to prevent an issue where connections to the attribute remove themselves.
         self.add_attr("root_joint", 'message')
         if not node:
-            if not root_jnt:
-                pm.select(None)
-                root_jnt = pm.joint()
-                root_jnt.rename("root")
             self.connect_node(root_jnt, self.node.root_joint)
 
     def get_root(self, obj):
