@@ -82,7 +82,8 @@ class ControlInfo(object):
         Returns:
             ControlInfo: self
         '''
-        control_info_list = control_info_str.split(";")
+        control_info = get_first_or_default(control_info_str.split(","))
+        control_info_list = control_info.split(";")
         if len(control_info_list) == 1:
             self.control_type = "object"
         else:

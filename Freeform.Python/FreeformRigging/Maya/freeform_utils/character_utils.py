@@ -81,12 +81,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     skeleton_root = rigging.skeleton.get_root_joint(replaced_joint_list[0])
 
     character_namespace = skeleton_root.namespace()
-    character_root = skeleton_root if (type(skeleton_root) == pm.nt.Joint and 'root' in skeleton_root.name().lower()) else None
-    old_root_parent = None
-    if skeleton_root.getParent():
-        old_root_parent = skeleton_root.getParent()
-        old_root_parent.rename('old_root')
-        skeleton_root.setParent(None)
+    root_parent = skeleton_root.getParent()
 
     character_network = metadata.network_core.CharacterCore(node_name = name, namespace = character_namespace)
 
@@ -98,19 +93,14 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     character_network.set('root_path', root_folder)
 
     rig_core = metadata.network_core.RigCore(parent = character_network.node, namespace = character_namespace, character_group = character_network.group)
-    joints_core = metadata.network_core.JointsCore(parent = character_network.node, namespace = character_namespace, root_jnt = character_root)
+    joints_core = metadata.network_core.JointsCore(parent = character_network.node, namespace = character_namespace, root_jnt = skeleton_root)
     regions_core = metadata.network_core.RegionsCore(parent = character_network.node, namespace = character_namespace)
 
-    # if not character root we have to generated a new one.  Make sure it gets the old animation
-    if not character_root:
-        temp_constraint = None
-        if old_root_parent and rigging.skeleton.is_animated([old_root_parent], False):
-            temp_constraint = pm.parentConstraint(old_root_parent, joints_core.root, mo=False)
-            maya_utils.baking.bake_objects([joints_core.root], True, True, True, use_settings = False, simulation = False)
-        pm.delete([temp_constraint, old_root_parent])
-        joints_core.root.translate.set([0,0,0])
-        joints_core.root.rotate.set([0,0,0])
-        skeleton_root.setParent(joints_core.root)
+    if root_parent and rigging.skeleton.is_animated([root_parent], False):
+        skeleton_root.setParent(None)
+        temp_constraint = pm.parentConstraint(root_parent, skeleton_root, mo=False)
+        maya_utils.baking.bake_objects([skeleton_root], True, True, True, use_settings = False, simulation = False)
+        pm.delete(temp_constraint)
 
     joint_list = [joints_core.root]
     joint_list += pm.listRelatives(joints_core.root, ad=True, type='joint')

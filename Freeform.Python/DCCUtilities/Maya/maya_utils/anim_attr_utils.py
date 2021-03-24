@@ -160,6 +160,10 @@ def get_scene_times():
 
     return (min_time, ast_time, max_time, aet_time)
 
+def set_scene_times(value_tuple):
+    min_time, ast_time, max_time, aet_time = value_tuple
+    pm.playbackOptions(min=min_time, ast=ast_time, max=max_time, aet=aet_time)
+
 def get_scene_fps():
     '''
     Gets the FPS that the scene is set to

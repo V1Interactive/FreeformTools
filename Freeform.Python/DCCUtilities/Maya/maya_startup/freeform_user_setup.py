@@ -80,7 +80,7 @@ def setup():
     v1_core.v1_logging.setup_logging('maya')
     v1_core.dotnet_setup.init_dotnet(["HelixResources", "Freeform.Core", "Freeform.Rigging"])
 
-    import System
+    import System.Diagnostics
     process = System.Diagnostics.Process.GetCurrentProcess()
 
     # Don't run UI methods if we're running in maya standalone

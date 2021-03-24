@@ -1943,6 +1943,7 @@ class HelixRigger:
         else:
             self.remove_component(c_object, event_args)
 
+    @csharp_error_catcher
     def remove_component(self, c_object, event_args):
         '''
         remove_component(self, c_object, event_args)
@@ -1968,6 +1969,7 @@ class HelixRigger:
 
         self.vm.UpdateRiggerInPlace()
 
+    @csharp_error_catcher
     def bake_and_remove_component(self, c_object, event_args):
         '''
         bake_and_remove_component(self, c_object, event_args)

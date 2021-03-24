@@ -1132,7 +1132,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                         <TextBlock Style="{StaticResource LightTextBlock}" Text="Not Undoable"/>
                                                     </MenuItem.ToolTip>
                                                 </MenuItem>
-                                                <MenuItem Header="Setup Joints" 
+                                                <MenuItem Header="Update Skeleton" 
                                                           Command="{Binding Data.AddNewJointsCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <Separator/>
