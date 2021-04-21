@@ -689,6 +689,23 @@ class Component_Base(object):
         control_list = self.network['controls'].get_connections()
         maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = True, simulation = simulation)
 
+    def partial_bake(self, bake_range, translate = True, rotate = True, scale = False, simulation = False):
+        '''
+        Wrapper for maya_utils.baking.bake_objects(). Bake all controls for the rig component in the frame range, 
+        preserving animation outside of the range
+
+        Args:
+            translate (boolean): Whether or not to bake translate channels
+            rotate (boolean): Whether or not to bake rotate channels
+            scale (boolean): Whether or not to bake scale channels
+            simulation (boolean): Whether or not to bake simulation
+        '''
+        control_list = self.network['controls'].get_connections()
+        control_list = [x for x in control_list if x in pm.ls(sl=True)]
+        maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = False, bake_range = bake_range, simulation = simulation, preserveOutsideKeys = True)
+        for obj in control_list:
+            pm.delete(obj.listRelatives(type='constraint'))
+
     def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = True, simulation = False):
         '''
         Wrapper for maya_utils.baking.BakeQueue(). Bake all controls for the rig component with default settings per component
@@ -974,7 +991,7 @@ class Addon_Component(Component_Base):
         if object_space_list:
             object_space_list = [x for x in object_space_list if x]
             addon_component = cls()
-            addon_component.rig(component.network['component'].node, control, object_space_list, bake_overdriver, default_space_list, use_queue = True)
+            addon_component.rig(component.network['component'].node, control, object_space_list, bake_overdriver, default_space_list, use_queue = True, weight_string = addon_component_dict.get('target_weight'))
         
             return addon_component
         return None
@@ -988,7 +1005,7 @@ class Addon_Component(Component_Base):
         self.scale = False
 
     @abstractmethod
-    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_queue = False):
+    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_queue = False, weight_string = ""):
         '''
         Base funtionality necessary for any Addon Component to build.  Zero's the character to ensure
         rigs are applied in bind pose space, builds initial objects for the component, and sets up the
@@ -1005,6 +1022,9 @@ class Addon_Component(Component_Base):
         # Check if any object spaces are an overdriver control and switch the entry with the overdriver's target control
         v1_core.v1_logging.get_logger().debug("Addon_Component start rigging - {0} - {1} - {2}".format(control, object_space_list, type(self)))
 
+        if weight_string == None:
+            weight_string = ""
+
         addon_start = time.clock()
         for object_space in object_space_list:
             addon_network = metadata.network_core.MetaNode.get_first_network_entry(object_space, metadata.network_core.AddonControls)
@@ -1017,6 +1037,8 @@ class Addon_Component(Component_Base):
                 object_space_list.remove(object_space)
                 object_space_list.insert(insert_index, overdriver_target)
 
+        character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+
         control_component = Component_Base.create_from_network_node(component_node)
         self.network = self.create_meta_network(component_node)
         self.network['overdriven_control'].connect_node(control)
@@ -1026,6 +1048,7 @@ class Addon_Component(Component_Base):
         self.zero_character(character_network, use_queue)
 
         addon_network = self.network['addon']
+        addon_network.set('target_weight', weight_string)
         addon_network.group.setParent(self.network['rig_core'].group)
         maya_utils.node_utils.force_align(control, addon_network.group)
 
@@ -1044,12 +1067,8 @@ class Addon_Component(Component_Base):
         # Add parent joint space to any overdrivers that aren't using the rig/bake queue
         jnt = control_component.get_control_joint(control)
         jnt_parent = jnt.getParent() if jnt else None
-        if jnt and jnt_parent not in object_space_list:
+        if jnt and jnt_parent not in object_space_list and not use_queue and not character_settings.overdriver_remove_parent_space:
             object_space_list.insert(0, jnt_parent)
-
-        character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
-        if (character_settings.overdriver_remove_parent_space or use_queue) and jnt_parent in object_space_list:
-            object_space_list.remove(jnt_parent)
 
         target_type_str = ''
         target_data_str = ''
@@ -1110,6 +1129,38 @@ class Addon_Component(Component_Base):
         self.network['addon'].delete_all()
 
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
+
+    @undoable
+    def remove_bake_partial(self, bake_range):
+        target = self.get_target_object()
+        control = self.network['controls'].get_first_connection()
+        point_constraint = get_first_or_default(target.listRelatives(type='pointConstraint'))
+        rest_translate = point_constraint.restTranslate.get()
+
+        orient_constraint = get_first_or_default(target.listRelatives(type='orientConstraint'))
+        rest_rotate = orient_constraint.restRotate.get()
+
+        pm.delete(target.listRelatives(type='constraint'))
+
+        self.load_animation()
+
+        if point_constraint != None:
+            point_constraint = pm.pointConstraint(control, target, mo=False)
+            point_constraint.restTranslate.set(rest_translate)
+        if orient_constraint != None:
+            orient_constraint = pm.orientConstraint(control, target, mo=False)
+            orient_constraint.restRotate.set(rest_rotate)
+
+        overdriven_control_list = self.network['overdriven_control'].get_connections()
+        for control in overdriven_control_list:
+            rigging.skeleton.force_set_attr(control.visibility, True)
+            rigging.skeleton.force_set_attr(control.getShape().visibility, True)
+
+        maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = False, bake_range = bake_range, simulation = self._simulated, preserveOutsideKeys = True)
+        pm.delete(control.listRelatives(type='constraint'))
+
+        self.network['addon'].delete_all()
+
 
     def zero_character(self, character_network, use_queue):
         # Zero character before applying rigging, only zero joints that aren't rigged
@@ -1280,7 +1331,8 @@ class Addon_Component(Component_Base):
 
         addon_dict = {'module': get_first_or_default(addon_info), 'type': get_index_or_default(addon_info,1), 'ordered_index': control_info.ordered_index,
                       'ctrl_key': control_info.control_type, 'target_type': addon_network.get('target_type', 'string'),
-                      'target_data': addon_network.get('target_data', 'string'), 'no_bake':addon_network.get('no_bake', 'bool')}
+                      'target_data': addon_network.get('target_data', 'string'), 'target_weight': addon_network.get('target_weight', 'string'), 
+                      'no_bake':addon_network.get('no_bake', 'bool')}
 
         return addon_dict
 
@@ -1542,7 +1594,7 @@ class Rig_Component(Component_Base):
             if revert_animation:
                 rigging.skeleton.remove_animation(joint_list)
             switch_component = Component_Base.create_from_network_node(component_network_list[0].node)
-            switch_component.switch_to_component()
+            switch_component.switch_current_component()
 
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_character_components', self.network['character'])
 
@@ -1790,35 +1842,6 @@ class Rig_Component(Component_Base):
 
         return world_grp
 
-    def bind_chains(self, control_chain, driven_list, translate = True, rotate = True, scale = False, additive = False):
-        '''
-        Binds two joint chains together using orient, point, and scale constraints
-
-        Args:
-            control_chain (list<PyNode>): List of joints that will drive the constraint
-            driven_list (list<PyNode>): List of joints that will be constrained
-            translate (boolean): Whether or not to bake translate attributes
-            rotate (boolean): Whether or not to bake rotate attributes
-            scale (boolean): Whether or not to bake scale attributes
-        '''
-        if self.exclude and self.exclude in driven_list:
-            driven_list.remove(self.exclude)
-
-        # Pack data so we can do a single iteration to apply all constraints
-        constraint_info_list = [['orientConstraint', pm.orientConstraint, rotate], 
-                               ['pointConstraint', pm.pointConstraint, translate], 
-                               ['scaleConstraint', pm.scaleConstraint, scale]]
-        for control_jnt, driven_jnt in zip(control_chain, driven_list):
-            v1_core.v1_logging.get_logger().debug("bind_chains - {0} - {1}".format(control_jnt, driven_jnt))
-            for constraint_name, constraint_method, do_add in constraint_info_list:
-                if do_add and (not pm.listConnections(driven_jnt, type=constraint_name, s=True, d=False) or additive):
-                    # Will return the existing constraint if it's adding a weight
-                    constraint = constraint_method(control_jnt, driven_jnt, mo=False)
-                    # zero weights on any existing constraints
-                    old_target_list = [x for x in constraint_method(constraint, q=True, tl=True) if x != control_jnt]
-                    for target in old_target_list:
-                        constraint_method(target, driven_jnt, e=True, w=0)
-
     def create_meta_network(self, skeleton_joint, side, region):
         '''
         Create the MetaNode graph for this component. Finds the CharacterCore and RigCore MetaNodes. Creates a 
@@ -1937,9 +1960,9 @@ class Rig_Component(Component_Base):
         return control_dict
 
     @undoable
-    def switch_to_component(self):
+    def switch_current_component(self):
         '''
-        switch_to_component(self)
+        switch_current_component(self)
         Switches control of the joints this component controls to the component
         '''
         autokey_state = pm.autoKeyframe(q=True, state=True)
@@ -1963,6 +1986,33 @@ class Rig_Component(Component_Base):
                     constraint_method(target, jnt, e=True, w=weight)
 
         pm.autoKeyframe(state=autokey_state)
+
+    @undoable
+    def switch_component(self, component_type, switch_condition = True):
+        switch_success = self.switch_rigging()
+
+        if not switch_success and switch_condition == True:
+            side = self.network['component'].get('side')
+            region = self.network['component'].get('region')
+            skele_dict = self.skeleton_dict
+
+            # Toggle temporary markup so switch doesn't delete the region before rigging
+            markup_network_list = self.get_temporary_markup()
+            for markup_network in markup_network_list:
+                markup_network.set('temporary', False, 'bool')
+
+            self.bake_and_remove(use_queue=False)
+        
+            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.network['character'].group)
+            component_type().rig(skele_dict, side, region, control_holder_list = control_holder_list)
+            pm.delete([x for x in imported_nodes if x.exists()])
+
+            for markup_network in markup_network_list:
+                markup_network.set('temporary', True, 'bool')
+
+            maya_utils.node_utils.set_current_frame()
+
+        scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
 
     @undoable
     def switch_space(self, control, overdriver_type, obj_list = []):
@@ -2132,11 +2182,48 @@ class Rig_Component(Component_Base):
             dictionary. json dictionary for all Rig Component information
         '''
         component_network = self.network['component']
+        control_vars_string = ""
+        for control in self.network['controls'].get_connections():
+            control_network = rigging.skeleton.get_rig_network(control)
+            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_type = control_property.get('control_type')
+            control_index = control_property.get('ordered_index')
+            if type(control_network) == metadata.network_core.AddonCore:
+                control = control_network.get_downstream(metadata.network_core.AddonControls).get_first_connection()
+
+            save_attrs = maya_utils.node_utils.get_control_vars_strings(control)
+            if save_attrs:
+                control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+                control_vars_string += "{0};{1}|".format(control_type, control_index)
+
+                for attr_name, value in save_attrs.iteritems():
+                    control_vars_string += "{0};{1},".format(attr_name, value)
+
+                control_vars_string += ":"
+
         class_info = v1_shared.shared_utils.get_class_info(component_network.node.component_type.get())
-        class_info_dict = {'module': get_first_or_default(class_info), 'type': get_index_or_default(class_info,1), 'world_space': self.world_space}
+        class_info_dict = {'module': get_first_or_default(class_info), 'type': get_index_or_default(class_info,1), 'world_space': self.world_space, 'control_vars': control_vars_string}
 
         return class_info_dict
 
+    def set_control_vars(self, control_var_string):
+        '''
+        Sets rig controls based on a control_var_string from saving the rig
+        '''
+        if control_var_string != None:
+            control_var_dict = maya_utils.node_utils.parse_control_vars(control_var_string)
+            for control in self.network['controls'].get_connections():
+                control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+                control_dict = control_var_dict.get((control_property.get('control_type'), control_property.get('ordered_index')))
+                control_dict = control_dict if control_dict else {}
+                for attr_name, value in control_dict.iteritems():
+                    split_name = attr_name.split(".", 1)
+                    if len(split_name) == 1:
+                        getattr(control, attr_name).set(value)
+                    else:
+                        attr_name, operation_name = split_name
+                        if operation_name == "isLocked":
+                            getattr(control, attr_name).set(lock = value)
 
     def open_rig_switcher(self):
         rigging.usertools.rig_switcher.RigSwitcher(self).show()
@@ -2162,26 +2249,47 @@ class Rig_Component(Component_Base):
 
             pm.menuItem(divider=True, parent=parent_menu)
 
+        component_menu = pm.menuItem(label = "Change Component", subMenu=True, parent=parent_menu)
 
-        od_method, od_args, od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
-                                                                           control, rigging.overdriver.Overdriver)
-        pm.menuItem(label="Switch Space", parent=parent_menu, command=lambda _: od_method(*od_args, **od_kwargs))
+        fk_method, fk_args, fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
+                                                                            rigging.fk.FK)
+        pm.menuItem(label="FK", parent=component_menu, command=lambda _: fk_method(*fk_args, **fk_kwargs))
 
-        po_od_method, po_od_args, po_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
-                                                                                    control, rigging.overdriver.Position_Overdriver)
-        pm.menuItem(label="Switch Space - Position", parent=parent_menu, command=lambda _: po_od_method(*po_od_args, **po_od_kwargs))
-        
-        ro_od_method, ro_od_args, ro_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)",
-                                                                                    control, rigging.overdriver.Rotation_Overdriver)
-        pm.menuItem(label="Switch Space - Rotation", parent=parent_menu, command=lambda _: ro_od_method(*ro_od_args, **ro_od_kwargs))
+        aim_fk_method, aim_fk_args, aim_fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
+                                                                                        rigging.fk.Aim_FK)
+        pm.menuItem(label="FK (Aimed)", parent=component_menu, command=lambda _: aim_fk_method(*aim_fk_args, **aim_fk_kwargs))
 
+        ik_method, ik_args, ik_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
+                                                                            rigging.ik.IK)
+        pm.menuItem(label="IK", parent=component_menu, command=lambda _: ik_method(*ik_args, **ik_kwargs))
+
+        ribbon_method, ribbon_args, ribbon_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
+                                                                                        rigging.ribbon.Ribbon)
+        pm.menuItem(label="Ribbon", parent=component_menu, command=lambda _: ribbon_method(*ribbon_args, **ribbon_kwargs))
 
         pm.menuItem(divider=True, parent=parent_menu)
 
 
+        space_menu = pm.menuItem(label = "Space Switching", subMenu=True, parent=parent_menu)
+        od_method, od_args, od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
+                                                                           control, rigging.overdriver.Overdriver)
+        pm.menuItem(label="Switch Space", parent=space_menu, command=lambda _: od_method(*od_args, **od_kwargs))
+
+        po_od_method, po_od_args, po_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
+                                                                                    control, rigging.overdriver.Position_Overdriver)
+        pm.menuItem(label="Switch Space - Position", parent=space_menu, command=lambda _: po_od_method(*po_od_args, **po_od_kwargs))
+        
+        ro_od_method, ro_od_args, ro_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)",
+                                                                                    control, rigging.overdriver.Rotation_Overdriver)
+        pm.menuItem(label="Switch Space - Rotation", parent=space_menu, command=lambda _: ro_od_method(*ro_od_args, **ro_od_kwargs))
+
+
+        pm.menuItem(divider=True, parent=parent_menu)
+
+        dynamics_menu = pm.menuItem(label = "Dynamics", subMenu=True, parent=parent_menu)
         aim_method, aim_args, aim_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
                                                                               control, rigging.overdriver.Aim)
-        pm.menuItem(label="Dynamics - Aim", parent=parent_menu, command=lambda _: aim_method(*aim_args, **aim_kwargs))
+        pm.menuItem(label="Dynamics - Aim", parent=dynamics_menu, command=lambda _: aim_method(*aim_args, **aim_kwargs))
 
 
         pm.menuItem(divider=True, parent=parent_menu)

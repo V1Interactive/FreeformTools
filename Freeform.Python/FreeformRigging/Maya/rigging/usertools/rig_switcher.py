@@ -213,14 +213,14 @@ class RigSwitcher(object):
 
                 # Key the switch to the new driving component
                 pm.currentTime(start_frame)
-                self.component.switch_to_component()
+                self.component.switch_current_component()
                 pm.setKeyframe(constraint_attr_list)
 
                 pm.currentTime(end_frame)
-                self.component.switch_to_component()
+                self.component.switch_current_component()
                 pm.setKeyframe(constraint_attr_list)
             else:
-                self.component.switch_to_component()
+                self.component.switch_current_component()
 
         except Exception, e:
             exception_info = sys.exc_info()

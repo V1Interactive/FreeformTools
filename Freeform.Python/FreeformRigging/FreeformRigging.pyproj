@@ -46,6 +46,9 @@
     <Compile Include="Maya\metadata\meta_properties.py" />
     <Compile Include="Maya\metadata\network_core.py" />
     <Compile Include="Maya\metadata\__init__.py" />
+    <Compile Include="Maya\rigging\constraints.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\rigging\faces.py" />
     <Compile Include="Maya\rigging\file_ops.py" />
     <Compile Include="Maya\rigging\fk.py" />

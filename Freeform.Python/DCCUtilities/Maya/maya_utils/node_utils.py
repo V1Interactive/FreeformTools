@@ -71,6 +71,53 @@ def unlock_transforms(obj, transform_list = TRANSFORM_ATTRS):
 
     return locked_attrs
 
+def attribute_is_locked(attribute):
+    '''
+    Checks if an attribute or it's X, Y, Z channels are locked
+    '''
+    is_locked = attribute.isLocked()
+    if is_locked != True:
+        for sub_attr_name in ['X', 'Y', 'Z']:
+            sub_attr = pm.PyNode(attribute.name() + sub_attr_name)
+            is_locked = sub_attr.isLocked()
+            if is_locked == True:
+                break
+            
+    return is_locked
+
+def get_control_vars_strings(obj):
+    '''
+    Returns visibility if false and any locked transform attributes
+    '''
+    modified_dict = {}
+    if not obj.visibility.get():
+        modified_dict["visibility"] = False
+    for attr_str in TRANSFORM_ATTRS:
+        attr = getattr(obj, attr_str)
+        if attr.isLocked():
+            attr_name = attr.name().rsplit(".", 1)[-1]
+            modified_dict[attr_name+".isLocked"] = True
+
+    return modified_dict
+
+def parse_control_vars(control_var_string):
+    '''
+    Parses a control_var_string and returns of dictionary of control {index : {attr_name: value}}
+    '''
+    control_dict = {}
+    for control_str in [x for x in control_var_string.split(":") if x]:
+        control_info, attr_list = control_str.split("|")
+        control_type, index = control_info.split(";")
+        index = eval(index)
+        control_dict.setdefault((control_type, index), {})
+        for attr_str in [x for x in attr_list.split(',') if x]:
+            attr_name, value = attr_str.split(";")
+            value = eval(value)
+            control_dict[(control_type, index)][attr_name] = value
+
+    return control_dict
+
+
 def get_root_node(obj, type_name):
     '''
     Recursive. Traverse up the hierarchy until finding the first object that doesn't have a parent
@@ -403,8 +450,19 @@ def get_constraint_driver(constraint):
     Returns:
         PyNode. The first object that is driving the constraint
     '''
+    weight_attr_list = constraint.getWeightAliasList()
+    index = 0
+    highest_value = 0
+    for i, weight_attr in enumerate(weight_attr_list):
+        if weight_attr.get() > highest_value:
+            highest_value = weight_attr.get()
+            index = i
+
+    constraint_type_list = [pm.nt.ParentConstraint, pm.nt.PointConstraint, pm.nt.OrientConstraint]
     destination_connection_list = get_first_or_default(list(set(constraint.listConnections(s=False, d=True, type='transform'))))
-    source_transform = get_first_or_default([x for x in list(set(constraint.listConnections(s=True, d=False, type='transform'))) if x != destination_connection_list])
+    source_transform_list = [x for x in list(set(constraint.listConnections(s=True, d=False, type='transform'))) if x != destination_connection_list and type(x) not in constraint_type_list]
+
+    source_transform = source_transform_list[index]
 
     return source_transform
 

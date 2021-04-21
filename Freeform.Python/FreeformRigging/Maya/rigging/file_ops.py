@@ -390,6 +390,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
             region_data = side_data.get(region) if side_data else None
             if region_data:
                 component = component_type.rig_from_json(side, region, target_skeleton_dict, component_dict, control_holder_list)
+                component.set_control_vars(component_dict.get('control_vars'))
                 created_rigging[side][region] = component
     v1_core.v1_logging.get_logger().info("Rigging Created in {0} Seconds".format(time.clock() - create_time))
 

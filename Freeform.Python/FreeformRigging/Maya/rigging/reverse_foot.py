@@ -24,6 +24,7 @@ import sys
 import rigging.skeleton
 import rigging.rig_base
 import rigging.overdriver
+import rigging.constraints
 
 import v1_core
 import v1_shared
@@ -193,7 +194,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
-        self.bind_chains([control_chain_end], [rigging_chain[2]])
+        rigging.constraints.bind_chains([control_chain_end], [rigging_chain[2]], self.exclude)
 
         self.attach_component(world_space, True)
 
@@ -221,7 +222,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         pm.delete( list(set(pm.listConnections(skeleton_chain[-1], type='orientConstraint', s=True, d=False))) )
         pm.orientConstraint( rigging_chain[-1], skeleton_chain[-1], mo=False )
 
-        self.bind_chains(rigging_chain[:2], skeleton_chain[-3:-1])
+        rigging.constraints.bind_chains(rigging_chain[:2], skeleton_chain[-3:-1], self.exclude)
 
     @undoable
     def attach_to_skeleton(self, target_skeleton_dict):
