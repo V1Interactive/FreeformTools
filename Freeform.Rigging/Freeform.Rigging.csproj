@@ -107,6 +107,10 @@
     <Compile Include="ControlColorSet\View\ControlColorSet.xaml.cs">
       <DependentUpon>ControlColorSet.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FrameRangeDialogue\ViewModel\FrameRangeDialogueVM.cs" />
+    <Compile Include="FrameRangeDialogue\View\FrameRangeDialogue.xaml.cs">
+      <DependentUpon>FrameRangeDialogue.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MessageDialogue\ViewModel\MessageDialogueVM.cs" />
     <Compile Include="MessageDialogue\View\MessageDialogue.xaml.cs">
       <DependentUpon>MessageDialogue.xaml</DependentUpon>
@@ -213,6 +217,10 @@
     <Page Include="DCCAssetExporter\View\DCCAssetExporter.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="FrameRangeDialogue\View\FrameRangeDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MessageDialogue\View\MessageDialogue.xaml">
       <SubType>Designer</SubType>
@@ -402,5 +410,9 @@
     <Resource Include="Resources\fk_switch.png" />
     <Resource Include="Resources\ik_switch.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\partial_bake.png" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

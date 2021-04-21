@@ -1005,6 +1005,7 @@ class AddonCore(RigComponent):
         component_type (str): Name of the Rig Component type for this component
         target_type (str): Name of the Rig Component type that this component is controlling
         target_data (str): Data attribute from the MetaNode for the rig component that this is controlling
+        target_data (str): Constraint weight values for each space
     '''
 
     dependent_node = ComponentCore
@@ -1015,6 +1016,7 @@ class AddonCore(RigComponent):
             self.add_attr('component_type', 'string')
             self.add_attr('target_type', 'string')
             self.add_attr('target_data', 'string')
+            self.add_attr('target_weight', 'string')
 
             addon_grp = pm.group(empty=True, name= namespace + node_name.replace("_core", "_grp"))
             self.connect_node(addon_grp)

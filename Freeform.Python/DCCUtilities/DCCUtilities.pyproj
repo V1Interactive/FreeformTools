@@ -23,6 +23,7 @@
     <Folder Include="Maya\maya_exceptions\" />
     <Folder Include="Maya\maya_startup\" />
     <Folder Include="Maya\maya_utils\" />
+    <Folder Include="Maya\maya_utils\usertools\" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Maya\maya_exceptions\maya_handler.py" />
@@ -38,6 +39,10 @@
     <Compile Include="Maya\maya_utils\fbx_wrapper.py" />
     <Compile Include="Maya\maya_utils\node_utils.py" />
     <Compile Include="Maya\maya_utils\scene_utils.py" />
+    <Compile Include="Maya\maya_utils\usertools\frame_range_dialogue.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\maya_utils\usertools\__init__.py" />
     <Compile Include="Maya\maya_utils\__init__.py" />
     <Compile Include="Maya\__root__.py" />
   </ItemGroup>

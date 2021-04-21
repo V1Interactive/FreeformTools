@@ -589,12 +589,13 @@ def get_all_rig_networks(jnt):
         MetaNode. ComponentCore if the joint is rigged, Addon Component if the rig control for that joint
             is controlled by an overdriver
     '''
-    network_entry_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.ComponentCore)
+    network_entry_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.AddonCore)
+    if not network_entry_list:
+        network_entry_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.ComponentCore)
     component_net_list = []
     if network_entry_list:
-        for network_entry in network_entry_list:
-            component_network = network_entry.get_upstream(metadata.network_core.ComponentCore)
-            if not [x for x in component_net_list if x.node == component_network.node]:
+        for component_network in network_entry_list:
+            if not component_network in component_net_list:
                 component_net_list.append( component_network )
 
     # If the joint is in a component but marked to be excluded from that component, don't include the component in the
@@ -842,7 +843,8 @@ def clean_skeleton(jnt):
     root_jnt = get_root_joint(jnt)
     joint_list = [root_jnt] + pm.listRelatives(root_jnt, ad=True, type='joint')
     for jnt in joint_list:
-        jnt.scale.set([1,1,1])
+        if not maya_utils.node_utils.attribute_is_locked(jnt.scale):
+            jnt.scale.set([1,1,1])
         for attr in pm.listAttr(jnt, ud=True):
             if not pm.listConnections(getattr(jnt, attr), s=True, d=False, p=True):
                 getattr(jnt, attr).delete()

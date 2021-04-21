@@ -29,6 +29,7 @@ import metadata
 import rigging.skeleton
 import rigging.rig_base
 import rigging.usertools
+import rigging.constraints
 
 import v1_core
 import v1_shared
@@ -67,11 +68,11 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
 
     @undoable
-    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_queue = False):
+    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_queue = False, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
-        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_queue = use_queue):
+        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_queue = use_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space_list, bake_controls, default_space)
@@ -94,13 +95,11 @@ class Overdriver(rigging.rig_base.Addon_Component):
         default_space = [1] if not default_space else default_space
         driver_control = self.network['controls'].get_first_connection()
         
-        #self.space_constraint(object_space_list, self.network['addon'].group, mo=True)
-        
-        # Kind of obsolete, but keeping it here incase I need to pull back on the change that makes every overdriver 
-        # a multi overdriver.
-        keep_offset = True if len(object_space_list) > 1 else False
-        overdriver_constraint = self.space_constraint(object_space_list, self.network['addon'].group, mo=keep_offset)
+        addon_network = self.network['addon']
+        #addon_network.set('target_weight', target_weight_str, 'string')
 
+        keep_offset = True if len(object_space_list) > 1 else False
+        overdriver_constraint = self.space_constraint(object_space_list, addon_network.group, mo=keep_offset)
 
         # Make sure the zero group is placed back on the control after space_constraint is added
         temp_constraint = pm.parentConstraint(control, driver_control.getParent(), mo=False)
@@ -109,31 +108,30 @@ class Overdriver(rigging.rig_base.Addon_Component):
         if self.hold_constraint:
             self.hold_constraint(control, self.network['addon'].group, mo=False)
 
-        ## TODO: Remove ugly split code that handles constraint order for rotate vs position overdriver
-        #if self.hold_constraint and self.translate:
-        #    self.hold_constraint(control, self.network['addon'].group, mo=False)
+        # Set weight value for each object space if values are stored.  This means that the user has a pre-defined set of 
+        # constraint values they want and this overdriver isn't meant to be switched between the multiple spaces
+        target_weight_list = eval("[{0}]".format(addon_network.get('target_weight')))
+        if target_weight_list:
+            for object_space, weight in zip(object_space_list, target_weight_list):
+                self.space_constraint(object_space, addon_network.group, e=True, w=weight)
+        else:
+            if len(object_space_list) > 1:
+                # Bake in the first object space for the overdriver, key it at frame -10000 as
+                # a reference point so we can modify weight values for zero-ing without breaking
+                # animation
+                self.swap_space(default_space, frame = -10000) 
 
-        if len(object_space_list) > 1:
-            # Bake in the first object space for the overdriver, key it at frame -10000 as
-            # a reference point so we can modify weight values for zero-ing without breaking
-            # animation
-            self.swap_space(default_space, frame = -10000) 
+            # If using a parentConstraint set target offsets to 0 after the rest of the work is done to set 0 space to
+            # each target.  If done earlier this will behave as a mo=True flag and the zero space will be the average
+            # of all target locations.  When done here the control will zero out properly for the space that it's in
+            # NOTE - I haven't looked into exactly why this behavior is different.
+            if self.space_constraint == pm.parentConstraint:
+                for target in overdriver_constraint.target:
+                    target.targetOffsetTranslate.set([0,0,0])
+                    target.targetOffsetRotate.set([0,0,0])
 
-        ## TODO: Remove ugly split code that handles constraint order for rotate vs position overdriver
-        #if self.hold_constraint and self.rotate:
-        #    self.hold_constraint(control, self.network['addon'].group, mo=False)
-
-        # If using a parentConstraint set target offsets to 0 after the rest of the work is done to set 0 space to
-        # each target.  If done earlier this will behave as a mo=True flag and the zero space will be the average
-        # of all target locations.  When done here the control will zero out properly for the space that it's in
-        # NOTE - I haven't looked into exactly why this behavior is different.
-        if self.space_constraint == pm.parentConstraint:
-            for target in overdriver_constraint.target:
-                target.targetOffsetTranslate.set([0,0,0])
-                target.targetOffsetRotate.set([0,0,0])
-
-            driver_control.getParent().translate.set([0,0,0])
-            driver_control.getParent().rotate.set([0,0,0])
+                driver_control.getParent().translate.set([0,0,0])
+                driver_control.getParent().rotate.set([0,0,0])
 
         maya_utils.node_utils.force_align(control, driver_control)
         control_property = metadata.meta_properties.get_property(driver_control, metadata.meta_properties.ControlProperty)
@@ -155,8 +153,6 @@ class Overdriver(rigging.rig_base.Addon_Component):
             maya_utils.baking.BakeQueue().add_bake_command(control_list, {'translate' : self.translate, 'rotate' : self.rotate, 'scale' : True, 'simulation' : False})
         else:
             temp_constraint = self.attach_to_component()
-            #bake_rotate = True if self.space_constraint != pm.pointConstraint else False
-            #self.bake_controls(translate = True, rotate = bake_rotate)
             self.bake_controls(translate = self.translate, rotate = self.rotate)
             pm.delete(temp_constraint)
 
@@ -168,33 +164,14 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
         if self.translate:
             pm.pointConstraint(driver_control, control, mo=False)
-            #driver_control.rx >> control.rx
-            #driver_control.ry >> control.ry
-            #driver_control.rz >> control.rz
         if self.rotate:
             pm.orientConstraint(driver_control, control, mo=False)
-            #if not self.translate:
-            #    driver_control.tx >> control.tx
-            #    driver_control.ty >> control.ty
-            #    driver_control.tz >> control.tz
-
-            #    driver_parent = driver_control.getParent()
-            #    multiply_divide = pm.shadingNode('multiplyDivide', asUtility=True)
-            #    control.tx >> multiply_divide.input1X
-            #    control.ty >> multiply_divide.input1Y
-            #    control.tz >> multiply_divide.input1Z
-            #    multiply_divide.input2.set([-1,-1,-1])
-            #    multiply_divide.outputX >> driver_parent.tx
-            #    multiply_divide.outputY >> driver_parent.ty
-            #    multiply_divide.outputZ >> driver_parent.tz
-
 
         # Only set transform visibility off if it has no children.
         if not [x for x in control.getChildren() if type(x) == pm.nt.Transform]:
             rigging.skeleton.force_set_attr(control.visibility, False)
         rigging.skeleton.force_set_attr(control.getShape().visibility, False)
 
-        #maya_utils.node_utils.set_current_frame()
         pm.select(driver_control, replace = True)
 
     def get_target_object(self):
@@ -318,6 +295,16 @@ class Overdriver(rigging.rig_base.Addon_Component):
     def select_target_control(self, c_rig_button, event_args):
         pm.select(self.get_target_object(), replace=True)
 
+    @csharp_error_catcher
+    def save_constraint_weights(self, c_rig_button, event_args):
+        component_constraint = self.get_space_constraint()
+        pm.cutKey(component_constraint)
+        weight_alias_list = component_constraint.getWeightAliasList()
+        weight_string = "".join(str(x.get())+"," for x in weight_alias_list)
+
+        self.network['addon'].set('no_bake', True)
+        self.network['addon'].set('target_weight', weight_string)
+
     def zero_control(self, control):
         '''
         Wrapper for maya_utils.node_utils.zero_node() to zero a single rig control object
@@ -340,6 +327,8 @@ class Overdriver(rigging.rig_base.Addon_Component):
         method_dict[self.select_constraint] = {"Name" : "(Overdriver)Select Constraint", "ImagePath" : "../../Resources/pick_constraint.png", "Tooltip" : "Select the constraint maintining this Overdriver"}
 
         method_dict[self.select_target_control] = {"Name" : "(Overdriver)Select Driven Control", "ImagePath" : "../../Resources/pick_control.png", "Tooltip" : "Select the control being driven by this Overdriver"}
+
+        method_dict[self.save_constraint_weights] = {"Name" : "(Overdriver)Save Constraint Weights", "ImagePath" : "../../Resources/locked.ico", "Tooltip" : "Save the constraint weights to be restored on load"}
 
         return method_dict
 
@@ -397,13 +386,13 @@ class Dynamic_Driver(Overdriver):
         self.maintain_offset = False
 
     @undoable
-    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_queue = False):
+    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_queue = False, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
         use_queue = False
 
-        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_queue):
+        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space)
@@ -457,47 +446,11 @@ class Aim(Dynamic_Driver):
         constraint_node = list(set(component_grp.listConnections(type='constraint')))[0]
         up_object = maya_utils.node_utils.get_constraint_driver(constraint_node)
 
-        aim_vector = self.get_offset_vector(object_space, dynamic_control)
-        up_vector = self.get_offset_vector(dynamic_control, up_object, True)
+        aim_vector = rigging.constraints.get_offset_vector(object_space, dynamic_control)
+        up_vector = rigging.constraints.get_offset_vector(dynamic_control, up_object, True)
 
         pm.aimConstraint(object_space, dynamic_grp, aim=aim_vector, u=[0,1,0], wuo=up_object, wu=up_vector, wut='objectrotation', mo=self.maintain_offset)
         pm.orientConstraint(dynamic_grp, dynamic_control.getParent(), mo=self.maintain_offset)
-
-    def get_offset_vector(self, check_object, compare_object, up_vector = False):
-        '''
-        Find the closest cardinal vector from the offset between two objects
-
-        To find the closest matching up axis on the up object we do a local move on positive y
-        then compare the parent space translate values to find which axis on the parent had the 
-        most movement from the local space move
-        '''
-        axis_check_obj = pm.duplicate(check_object, po=True)[0]
-        axis_check_obj.setParent(compare_object)
-
-        # Check difference of relative motion from the compare_object
-        if up_vector:
-            start_translate = axis_check_obj.translate.get()
-            pm.move(axis_check_obj, [0,10,0], r=True, os=True, wd=True)
-        else:
-            start_translate = [0,0,0]
-
-        compare_translate = axis_check_obj.translate.get()
-
-        delta = compare_translate - start_translate
-        max_delta = max(delta, key=abs)
-        move_sign = math.copysign(1, max_delta) # Returns -1 for negative or 1 for positive
-
-        max_index = delta.index(max_delta)
-        if 0 in max_index:
-            return_vector = [move_sign,0,0]
-        elif 1 in max_index:
-            return_vector = [0,move_sign,0]
-        elif 2 in max_index:
-            return_vector = [0,0,move_sign]
-
-        pm.delete(axis_check_obj)
-
-        return return_vector
 
 
 class Pendulum(Aim):
@@ -509,7 +462,7 @@ class Pendulum(Aim):
         self.prefix = "PendulumDynamic"
         self.maintain_offset = False
 
-    def rig(self, component_node, control, bake_controls=False, default_space=None, use_queue=False):
+    def rig(self, component_node, control, bake_controls=False, default_space=None, use_queue=False, **kwargs):
         # Create the dynamic pendulum to be used as the Aim space for the overdriver
         self.network = self.create_meta_network(component_node)
         #self.zero_character(self.network['character'], use_queue)
@@ -541,7 +494,7 @@ class Pendulum(Aim):
 
         self.reset_pendulum(object_space)
 
-        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_queue=use_queue):
+        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_queue=use_queue, **kwargs):
             return False
         
         driver_control = self.network['controls'].get_first_connection()
@@ -631,11 +584,11 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
 
     @undoable
 
-    def rig(self, component_node, control, object_space, attribute_list, use_queue = False):
+    def rig(self, component_node, control, object_space, attribute_list, use_queue = False, **kwargs):
         # Disable queue for this type
         use_queue = False
 
-        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, use_queue = use_queue):
+        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, use_queue = use_queue, **kwargs):
             return False
 
         object_space = get_last_or_default(object_space)
@@ -762,7 +715,7 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
         self.prefix = "AttributeTranslator"
 
     @undoable
-    def rig(self, component_node, control, object_space_list, attribute_channel_dict, use_queue = False):
+    def rig(self, component_node, control, object_space_list, attribute_channel_dict, use_queue = False, **kwargs):
         '''
         Args:
             component_node (PyNode): The component network.node object
@@ -772,7 +725,7 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
         # Disable queue for this type
         use_queue = False
 
-        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, use_queue = use_queue):
+        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, use_queue = use_queue, **kwargs):
             return False
 
         object_space = get_first_or_default(object_space_list)

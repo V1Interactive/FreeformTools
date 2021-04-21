@@ -30,6 +30,7 @@ import rigging.skeleton
 import rigging.rig_base
 import rigging.rig_tools
 import rigging.overdriver
+import rigging.constraints
 
 import v1_core
 import v1_shared
@@ -154,13 +155,13 @@ class IK(rigging.rig_base.Rig_Component):
 
         character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         if character_settings.lightweight_rigging:
-            self.bind_chains(ik_solved_chain[1:], skeleton_chain[1:], translate=False, additive = additive)
-            self.bind_chains(ik_solved_chain[:1], skeleton_chain[:1], rotate=False, additive = additive)
+            rigging.constraints.bind_chains(ik_solved_chain[1:], skeleton_chain[1:], self.exclude, translate=False, additive = additive)
+            rigging.constraints.bind_chains(ik_solved_chain[:1], skeleton_chain[:1], self.exclude, rotate=False, additive = additive)
             pm.orientConstraint(get_first_or_default(control_chain), get_first_or_default(skeleton_chain), mo=True)
         else:
-            self.bind_chains(rigging_chain, skeleton_chain, additive = additive)
-            self.bind_chains(ik_solved_chain[1:], rigging_chain[1:], translate=False)
-            self.bind_chains(ik_solved_chain[:1], rigging_chain[:1], rotate=False)
+            rigging.constraints.bind_chains(rigging_chain, skeleton_chain, self.exclude, additive = additive)
+            rigging.constraints.bind_chains(ik_solved_chain[1:], rigging_chain[1:], self.exclude, translate=False)
+            rigging.constraints.bind_chains(ik_solved_chain[:1], rigging_chain[:1], self.exclude, rotate=False)
             pm.orientConstraint(get_first_or_default(control_chain), get_first_or_default(rigging_chain), mo=True)
 
     def create_json_dictionary(self):
@@ -296,30 +297,7 @@ class IK(rigging.rig_base.Rig_Component):
 
     @csharp_error_catcher
     def switch_to_fk(self, c_rig_button, event_args):
-        switch_success = self.switch_rigging()
-
-        if not switch_success:
-            side = self.network['component'].node.side.get()
-            region = self.network['component'].node.region.get()
-            skele_dict = self.skeleton_dict
-
-            # Toggle temporary markup so FK->IK switch doesn't delete the region before FK is rigged
-            markup_network_list = self.get_temporary_markup()
-            for markup_network in markup_network_list:
-                markup_network.set('temporary', False, 'bool')
-
-            self.bake_and_remove(use_queue=False)
-
-            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.network['character'].group)
-            rigging.fk.FK().rig(skele_dict, side, region, control_holder_list = control_holder_list)
-            pm.delete([x for x in imported_nodes if x.exists()])
-
-            for markup_network in markup_network_list:
-                markup_network.set('temporary', True, 'bool')
-
-            maya_utils.node_utils.set_current_frame()
-
-        scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
+        self.switch_component(rigging.fk.FK)
 
     def get_rigger_methods(self):
         method_dict = {}

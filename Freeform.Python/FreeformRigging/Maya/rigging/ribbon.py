@@ -29,6 +29,7 @@ import rigging.skeleton
 import rigging.rig_base
 import rigging.rig_tools
 import rigging.overdriver
+import rigging.constraints
 
 import v1_core
 import v1_shared
@@ -126,7 +127,7 @@ class Ribbon(rigging.rig_base.Rig_Component):
         rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
         rigging.skeleton.zero_skeleton_joints(skeleton_chain)
 
-        self.bind_chains(rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain), additive = additive)
+        rigging.constraints.bind_chains(rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain), self.exclude, additive = additive)
         for follicle, rig_joint in zip(follicle_list, rigging_chain):
             pm.pointConstraint(follicle.getParent(), rig_joint, mo=True)
             pm.orientConstraint(follicle.getParent(), rig_joint, mo=True)
