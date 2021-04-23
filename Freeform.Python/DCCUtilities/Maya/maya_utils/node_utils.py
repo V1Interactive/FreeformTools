@@ -85,39 +85,6 @@ def attribute_is_locked(attribute):
             
     return is_locked
 
-def get_control_vars_strings(obj):
-    '''
-    Returns visibility if false and any locked transform attributes
-    '''
-    modified_dict = {}
-    if not obj.visibility.get():
-        modified_dict["visibility"] = False
-    for attr_str in TRANSFORM_ATTRS:
-        attr = getattr(obj, attr_str)
-        if attr.isLocked():
-            attr_name = attr.name().rsplit(".", 1)[-1]
-            modified_dict[attr_name+".isLocked"] = True
-
-    return modified_dict
-
-def parse_control_vars(control_var_string):
-    '''
-    Parses a control_var_string and returns of dictionary of control {index : {attr_name: value}}
-    '''
-    control_dict = {}
-    for control_str in [x for x in control_var_string.split(":") if x]:
-        control_info, attr_list = control_str.split("|")
-        control_type, index = control_info.split(";")
-        index = eval(index)
-        control_dict.setdefault((control_type, index), {})
-        for attr_str in [x for x in attr_list.split(',') if x]:
-            attr_name, value = attr_str.split(";")
-            value = eval(value)
-            control_dict[(control_type, index)][attr_name] = value
-
-    return control_dict
-
-
 def get_root_node(obj, type_name):
     '''
     Recursive. Traverse up the hierarchy until finding the first object that doesn't have a parent
@@ -199,26 +166,6 @@ def force_align(driver, object):
     '''
     pm.delete( pm.parentConstraint(driver, object, mo=False) )
     pm.delete( pm.parentConstraint(driver, object, mo=False) )
-
-
-def remove_empty_namespaces():
-    '''
-    Remove all empty namespaces in the scene
-    '''
-    for ns in pm.system.Namespace(':').listNamespaces():
-        if not ns.listNodes():
-            ns.remove()
-
-
-def set_current_frame():
-    '''
-    Set the current frame to itself to force a scene update
-    '''
-    # Weird issue, turning off cycle check here prevents warnings of a meaningless cycle
-    cycle_check = pm.cycleCheck(q=True, e=True)
-    pm.cycleCheck(e=False)
-    pm.currentTime(pm.currentTime())
-    pm.cycleCheck(e=cycle_check)
 
 
 def flip_attribute_keys(obj, attr_list):

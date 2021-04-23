@@ -112,8 +112,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
         # constraint values they want and this overdriver isn't meant to be switched between the multiple spaces
         target_weight_list = eval("[{0}]".format(addon_network.get('target_weight')))
         if target_weight_list:
-            for object_space, weight in zip(object_space_list, target_weight_list):
-                self.space_constraint(object_space, addon_network.group, e=True, w=weight)
+            rigging.constraints.set_constraint_weights(self.space_constraint, addon_network.group, object_space_list, target_weight_list)
         else:
             if len(object_space_list) > 1:
                 # Bake in the first object space for the overdriver, key it at frame -10000 as
@@ -199,7 +198,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
     def get_space_object(self, index):
         component_constraint = self.get_space_constraint()
-        return component_constraint.target[index].targetParentMatrix.listConnections()[0]
+        return rigging.constraints.get_constraint_driver(component_constraint, index)
 
     def space_switcher(self, index, start_frame, end_frame, key_switch):
         # Temporary disable cycle checks during swapping
@@ -430,7 +429,7 @@ class Aim(Dynamic_Driver):
         self.maintain_offset = False
 
     def apply_dynamics(self, dynamic_control, object_space):
-        maya_utils.node_utils.set_current_frame()
+        maya_utils.scene_utils.set_current_frame()
         target_data = rigging.rig_base.ControlInfo().parse_string(self.network['addon'].node.target_data.get())
         dynamic_grp_name = "{0}{1}_{2}_{3}_grp".format(self.namespace, target_data.region, target_data.side, self.prefix)
         dynamic_grp = pm.group(empty=True, name=dynamic_grp_name)
@@ -519,7 +518,7 @@ class Pendulum(Aim):
         Reset the position of the pendulum to under the overdriven control object
         '''
         # Evaluate the scene by setting current frame first to ensure all controls are in place
-        maya_utils.node_utils.set_current_frame()
+        maya_utils.scene_utils.set_current_frame()
         driver_control = self.network['controls'].get_first_connection()
         ws_pos = pm.xform(driver_control, q=True, ws=True, t=True)
         ws_pos[2] = ws_pos[2] - 20

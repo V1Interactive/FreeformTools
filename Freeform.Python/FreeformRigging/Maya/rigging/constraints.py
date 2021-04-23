@@ -5,10 +5,6 @@ import math
 
 import metadata
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.usertools
-
 import v1_core
 import v1_shared
 import maya_utils
@@ -17,6 +13,65 @@ from maya_utils.decorators import undoable
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
+CONSTRAINT_CHANNELS = {pm.nt.PointConstraint : ["tx", "ty", "tz"], pm.nt.OrientConstraint : ["rx", "ry", "rz"], pm.nt.ScaleConstraint : ["sx", "sy", "sz"], pm.nt.ParentConstraint : maya_utils.node_utils.TRANSFORM_ATTRS}
+CONSTRAINT_TYPES = [pm.nt.PointConstraint, pm.nt.OrientConstraint, pm.nt.ScaleConstraint, pm.nt.ParentConstraint]
+# Which channels to bake per constraint type, Translate, Rotate, Scale
+CONSTRAINT_BAKE_SETTINGS = {pm.nt.PointConstraint : [True, False, False], pm.nt.OrientConstraint : [False, True, False], pm.nt.ScaleConstraint : [False, False, True], pm.nt.ParentConstraint : [True, True, True]}
+
+
+
+def set_constraint_weights(constraint_type, target_obj, driver_list, weight_list):
+    '''
+    Set constraint weights from a list of objects and weights
+    '''
+    for driver, weight in zip(driver_list, weight_list):
+        constraint_type(driver, target_obj, e=True, w=weight)
+
+def get_constraint_driver_list(constraint_obj):
+    '''
+    Returns list of all driver objects from a constraint
+    '''
+    return [x.targetParentMatrix.listConnections()[0] for x in constraint_obj.target]
+
+def get_constraint_driver(constraint_obj, index):
+    return get_constraint_driver_list(constraint_obj)[index]
+
+def get_control_targets(obj):
+    '''
+    Finds all rig controls that are being driven via constraint by the give object
+    '''
+    target_obj_list = []
+    for constraint_obj in list(set(obj.listConnections(type='constraint'))):
+        driver_obj_list = get_constraint_driver_list(constraint_obj)
+        if obj in driver_obj_list:
+            target_obj = get_first_or_default( [x for x in constraint_obj.listConnections(type='joint') if x not in driver_obj_list] )
+            if metadata.meta_properties.get_property(target_obj, metadata.meta_properties.ControlProperty):
+                target_obj_list.append([target_obj, constraint_obj])
+
+    return target_obj_list
+
+def bake_constrained_rig_controls(obj_list):
+    '''
+    Bakes all rig control objects that are constrained by any object in the given list and removes the constraints
+    '''
+    bake_dict = {}
+    constraint_list = []
+    for control_obj in obj_list:
+        for rig_control, constraint_obj in get_control_targets(control_obj):
+            constraint_list.append(constraint_obj)
+            bake_dict.setdefault(type(constraint_obj), [])
+            bake_dict[type(constraint_obj)].append(rig_control)
+
+    # Unlock constrained channels before baking
+    for constraint_type, bake_list in bake_dict.iteritems():
+        bake_translate, bake_rotate, bake_scale = rigging.constraints.CONSTRAINT_BAKE_SETTINGS[constraint_type]
+        for bake_obj in bake_list:
+            for attr in rigging.constraints.CONSTRAINT_CHANNELS[constraint_type]:
+                getattr(bake_obj, attr).unlock()
+            
+        maya_utils.baking.bake_objects(bake_list, bake_translate, bake_rotate, bake_scale, use_settings = True)
+    
+    pm.delete(constraint_list) 
 
 
 def get_offset_vector(check_object, compare_object, up_vector = False):

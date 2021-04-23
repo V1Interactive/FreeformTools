@@ -470,6 +470,93 @@ def get_control_info(control):
 
     return None
 
+def get_control_from_info(control_info, skeleton_dict):
+    '''
+    Finds the rig control that matches the control_info from a skeleton
+    '''
+    if type(control_info) == str:
+        control_info = rigging.rig_base.ControlInfo().parse_string(control_info)
+
+    found_control = None
+    region_root = skeleton_dict[control_info.side][control_info.region]['root']
+    component_core = metadata.network_core.MetaNode.get_first_network_entry(region_root, metadata.network_core.ComponentCore)
+    if component_core:
+        control_list = component_core.get_downstream(metadata.network_core.ControlJoints).get_connections()
+
+        for rig_control in control_list:
+            control_property = metadata.meta_properties.get_property(rig_control, metadata.meta_properties.ControlProperty)
+            if control_property.get('control_type') == control_info.control_type and control_property.get('ordered_index') == control_info.ordered_index:
+                found_control = rig_control
+
+        return found_control
+
+def get_control_vars_strings(rig_control):
+    '''
+    Returns visibility if false and any locked transform attributes
+    '''
+    modified_dict = {}
+    if not rig_control.visibility.get():
+        modified_dict["visibility"] = False
+    for attr_str in maya_utils.node_utils.TRANSFORM_ATTRS:
+        attr = getattr(rig_control, attr_str)
+        if attr.isLocked():
+            attr_name = attr.name().rsplit(".", 1)[-1]
+            modified_dict[attr_name+".isLocked"] = True
+
+    control_property = metadata.meta_properties.get_property(rig_control, metadata.meta_properties.ControlProperty)
+    selection_lock = control_property.get("locked")
+    if selection_lock:
+        modified_dict["locked.selectionLock"] = True
+
+    orient_constraint = get_first_or_default(rig_control.rotateX.listConnections(s=True, d=False))
+    if orient_constraint and type(orient_constraint) != pm.nt.OrientConstraint:
+        orient_constraint = get_first_or_default(orient_constraint.listConnections(s=True, d=False, type='orientConstraint'))
+    if orient_constraint:
+        rotate_info = get_constraint_info(orient_constraint, rig_control)
+        if rotate_info:
+            modified_dict["orientConstraint.constraint"] = rotate_info
+
+    point_constraint = get_first_or_default(rig_control.translateX.listConnections(s=True, d=False))
+    if point_constraint and type(point_constraint) != pm.nt.OrientConstraint:
+        point_constraint = get_first_or_default(point_constraint.listConnections(s=True, d=False, type='pointConstraint'))
+    if point_constraint:
+        point_info = get_constraint_info(point_constraint, rig_control)
+        if point_info:
+            modified_dict["pointConstraint.constraint"] = point_info
+
+    return modified_dict
+
+def get_constraint_info(constraint_obj, obj):
+    '''
+    If the constraint is only driven by rig controls
+    Returns a list of rig Control_Info strings and the constraint weight for each control
+    '''
+    return_info = None
+    driver_list = [x for x in list(set(constraint_obj.listConnections(type='joint'))) if x != obj]
+    driver_info_list = [get_control_info(x) for x in driver_list]
+    if None not in driver_info_list:
+        weight_list = [x.get() for x in constraint_obj.getWeightAliasList()]
+        return_info = zip([str(x) for x in driver_info_list], weight_list)
+
+    return return_info
+
+def parse_control_vars(control_var_string):
+    '''
+    Parses a control_var_string and returns of dictionary of control {index : {attr_name: value}}
+    '''
+    control_dict = {}
+    for control_str in [x for x in control_var_string.split(":") if x]:
+        control_info, attr_list = control_str.split("|", 1)
+        control_type, index = control_info.split(";", 1)
+        index = eval(index)
+        control_dict.setdefault((control_type, index), {})
+        for attr_str in [x for x in attr_list.split('|') if x]:
+            attr_name, value = attr_str.split(";", 1)
+            value = eval(value)
+            control_dict[(control_type, index)][attr_name] = value
+
+    return control_dict
+
 
 def get_matching_component(component_network, mirror_dict):
     rig_network = component_network.get_upstream(metadata.network_core.RigCore)

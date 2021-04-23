@@ -394,7 +394,7 @@ namespace Freeform.Rigging
                     if (value)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/bake_remove_rig.ico";
-                        GetRigCategoryList("Space Switching").RigButtonList.First().SecondaryStatusImagePath = "";
+                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "";
                     }
                     else if (!RevertAnimation)
                     {
@@ -426,12 +426,12 @@ namespace Freeform.Rigging
                     if (value)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
-                        GetRigCategoryList("Space Switching").RigButtonList.First().SecondaryStatusImagePath = "../../Resources/remove_revert.png";
+                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
                     }
                     else if (!BakeComponent)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "";
-                        GetRigCategoryList("Space Switching").RigButtonList.First().SecondaryStatusImagePath = "";
+                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "";
                     }
                 }
             }

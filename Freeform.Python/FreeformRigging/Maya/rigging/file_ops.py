@@ -372,12 +372,14 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
     target_skeleton_dict = rigging.skeleton.get_skeleton_dict( get_first_or_default(joint_core_network.get_connections()) )
 
+    control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)
+
     rigging.skeleton.zero_character(get_first_or_default(joint_core_network.get_connections()), ignore_rigged = False)
     rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
     rigging.rig_base.Component_Base.zero_all_rigging(character_network)
 
-    control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)
-
+    # Build Components
+    set_control_var_dict = {}
     create_time = time.clock()
     created_rigging = {}
     side_iteritems = [(x,y) for x,y in rigging_data.iteritems() if x in side_filter] if side_filter else rigging_data.iteritems()
@@ -390,18 +392,22 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
             region_data = side_data.get(region) if side_data else None
             if region_data:
                 component = component_type.rig_from_json(side, region, target_skeleton_dict, component_dict, control_holder_list)
-                component.set_control_vars(component_dict.get('control_vars'))
+                set_control_var_dict[component.set_control_vars] = component_dict.get('control_vars')
                 created_rigging[side][region] = component
     v1_core.v1_logging.get_logger().info("Rigging Created in {0} Seconds".format(time.clock() - create_time))
 
     queue_time = time.clock()
     maya_utils.baking.BakeQueue().run_queue()
+
+    for control_var_method, args in set_control_var_dict.iteritems():
+        control_var_method(args)
     v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.clock() - queue_time))
 
     rigging.skeleton.zero_character(get_first_or_default(joint_core_network.get_connections()), ignore_rigged = False)
     rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
     rigging.rig_base.Component_Base.zero_all_rigging(character_network)
 
+    # Build Overdrivers
     addon_time = time.clock()
     side_addon_iteritems = [(x,y) for x,y in addon_data.iteritems() if x in side_filter] if side_filter else addon_data.iteritems()
     for side, region_dict in side_addon_iteritems:
@@ -431,7 +437,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     pm.delete([x for x in imported_nodes if x.exists()])
     v1_core.v1_logging.get_logger().info("Rigging Completed in {0} Seconds".format(time.clock() - start_time))
 
-    maya_utils.node_utils.set_current_frame()
+    maya_utils.scene_utils.set_current_frame()
     pm.autoKeyframe(state=autokey_state)
 
     return created_rigging

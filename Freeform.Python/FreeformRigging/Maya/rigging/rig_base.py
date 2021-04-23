@@ -28,12 +28,14 @@ import inspect
 import metadata
 
 import rigging.skeleton
+import rigging.constraints
 
 import v1_core
 import v1_shared
 import maya_utils
 import scene_tools
 import freeform_utils.materials # redundant import for sphynx autodoc
+import freeform_utils.character_utils
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from maya_utils.decorators import undoable
@@ -108,6 +110,7 @@ class Component_Base(object):
     '''
     __metaclass__ = ABCMeta
     _icon = "../../Resources/fk_icon.ico"
+    _save_channel_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
 
     #region Static Methods
     @staticmethod
@@ -689,7 +692,7 @@ class Component_Base(object):
         control_list = self.network['controls'].get_connections()
         maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = True, simulation = simulation)
 
-    def partial_bake(self, bake_range, translate = True, rotate = True, scale = False, simulation = False):
+    def partial_bake(self, translate = True, rotate = True, scale = False, simulation = False):
         '''
         Wrapper for maya_utils.baking.bake_objects(). Bake all controls for the rig component in the frame range, 
         preserving animation outside of the range
@@ -702,7 +705,7 @@ class Component_Base(object):
         '''
         control_list = self.network['controls'].get_connections()
         control_list = [x for x in control_list if x in pm.ls(sl=True)]
-        maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = False, bake_range = bake_range, simulation = simulation, preserveOutsideKeys = True)
+        maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = True, simulation = simulation)
         for obj in control_list:
             pm.delete(obj.listRelatives(type='constraint'))
 
@@ -1053,6 +1056,7 @@ class Addon_Component(Component_Base):
         maya_utils.node_utils.force_align(control, addon_network.group)
 
         addon_control = get_first_or_default(pm.duplicate(control, po=True))
+        maya_utils.node_utils.unlock_transforms(addon_control)
         custom_attr_list = [getattr(addon_control, x) for x in pm.listAttr(addon_control, ud=True, k=True)]
         for attribute in custom_attr_list:
             attribute.unlock()
@@ -1113,42 +1117,29 @@ class Addon_Component(Component_Base):
         remove(self)
         Remove the Addon component, baking it's animation back onto the control it's been overriding
         '''
-        character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
-        revert_animation = character_settings.revert_animation
-        if revert_animation:
-            self.load_animation()
-
-        overdriven_control_list = self.network['overdriven_control'].get_connections()
-        for control in overdriven_control_list:
-            rigging.skeleton.force_set_attr(control.visibility, True)
-            rigging.skeleton.force_set_attr(control.getShape().visibility, True)
-
-        if do_bake and not revert_animation:
-            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self._simulated)
-
-        self.network['addon'].delete_all()
-
-        scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
-
-    @undoable
-    def remove_bake_partial(self, bake_range):
         target = self.get_target_object()
-        control = self.network['controls'].get_first_connection()
-        point_constraint = get_first_or_default(target.listRelatives(type='pointConstraint'))
-        rest_translate = point_constraint.restTranslate.get()
+        overdriver_control = self.network['controls'].get_first_connection()
+        point_constraint = None
+        translate_locked = maya_utils.node_utils.attribute_is_locked(target.translate)
+        rotate_locked = maya_utils.node_utils.attribute_is_locked(target.rotate)
+        if not translate_locked:
+            point_constraint = get_first_or_default(target.listRelatives(type='pointConstraint'))
+            rest_translate = point_constraint.restTranslate.get() if point_constraint else None
 
-        orient_constraint = get_first_or_default(target.listRelatives(type='orientConstraint'))
-        rest_rotate = orient_constraint.restRotate.get()
+        orient_constraint = None
+        if not rotate_locked:
+            orient_constraint = get_first_or_default(target.listRelatives(type='orientConstraint'))
+            rest_rotate = orient_constraint.restRotate.get() if orient_constraint else None
 
-        pm.delete(target.listRelatives(type='constraint'))
+        pm.delete([x for x in [point_constraint, orient_constraint] if x])
 
         self.load_animation()
 
-        if point_constraint != None:
-            point_constraint = pm.pointConstraint(control, target, mo=False)
+        if point_constraint != None and not translate_locked:
+            point_constraint = pm.pointConstraint(overdriver_control, target, mo=False)
             point_constraint.restTranslate.set(rest_translate)
-        if orient_constraint != None:
-            orient_constraint = pm.orientConstraint(control, target, mo=False)
+        if orient_constraint != None and not rotate_locked:
+            orient_constraint = pm.orientConstraint(overdriver_control, target, mo=False)
             orient_constraint.restRotate.set(rest_rotate)
 
         overdriven_control_list = self.network['overdriven_control'].get_connections()
@@ -1156,10 +1147,16 @@ class Addon_Component(Component_Base):
             rigging.skeleton.force_set_attr(control.visibility, True)
             rigging.skeleton.force_set_attr(control.getShape().visibility, True)
 
-        maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = False, bake_range = bake_range, simulation = self._simulated, preserveOutsideKeys = True)
-        pm.delete(control.listRelatives(type='constraint'))
+        character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+        revert_animation = character_settings.revert_animation
+
+        if do_bake and not revert_animation:
+            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self._simulated)
+        pm.delete(overdriver_control.listRelatives(type='constraint'))
 
         self.network['addon'].delete_all()
+
+        scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
 
 
     def zero_character(self, character_network, use_queue):
@@ -1177,14 +1174,14 @@ class Addon_Component(Component_Base):
         Save animation curve outputs onto the ComponentCore network node
         '''
         driven_control = self.network['overdriven_control'].get_first_connection()
-        self.network['addon'].save_animation([driven_control])
+        self.network['addon'].save_animation([driven_control], self._save_channel_list)
 
     def load_animation(self):
         '''
         Load animation that was previously saved on the ComponentCore back onto the skeleton
         '''
         driven_control = self.network['overdriven_control'].get_first_connection()
-        self.network['addon'].load_animation([driven_control])
+        self.network['addon'].load_animation([driven_control], self._save_channel_list)
         
 
     def create_meta_network(self, component_node):
@@ -1433,6 +1430,9 @@ class Rig_Component(Component_Base):
             boolean. Whether or not the component is in world space
         '''
         const = get_first_or_default(list(set(self.network['component'].group.listConnections(type='constraint'))))
+        if not const:
+            return False
+
         con_list = list(set(const.listConnections(type='transform')))
         target = [x for x in con_list if type(x) == pm.nt.Transform and x != self.network['component'].group]
         
@@ -1485,10 +1485,8 @@ class Rig_Component(Component_Base):
 
         component_grp = self.create_component_group(side, region)
         self.network['component'].connect_node(component_grp)
-        if world_space == False:
-            maya_utils.node_utils.force_align(self.skel_root.getParent(), component_grp)
-        else:
-            maya_utils.node_utils.force_align(self.network['character'].group, component_grp)
+        self.align_component_group(component_grp, world_space)
+
         rigging_chain = rigging.skeleton.duplicate_chain(skeleton_chain, self.namespace, self.prefix)
 
         if self.exclude:
@@ -1505,6 +1503,12 @@ class Rig_Component(Component_Base):
         rigging_root.setParent(component_grp)
 
         v1_core.v1_logging.get_logger().debug("Rigging for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
+
+    def align_component_group(self, component_grp, world_space):
+        if world_space == False:
+            maya_utils.node_utils.force_align(self.skel_root.getParent(), component_grp)
+        else:
+            maya_utils.node_utils.force_align(self.network['character'].group, component_grp)
 
     @abstractmethod
     def attach_to_skeleton(self):
@@ -1552,7 +1556,7 @@ class Rig_Component(Component_Base):
         '''
         joint_list = self.network['skeleton'].get_connections()
         sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
-        self.network['component'].save_animation(sorted_joint_list)
+        self.network['component'].save_animation(sorted_joint_list, self._save_channel_list)
 
     def load_animation(self):
         '''
@@ -1560,7 +1564,7 @@ class Rig_Component(Component_Base):
         '''
         joint_list = self.network['skeleton'].get_connections()
         sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
-        self.network['component'].load_animation(sorted_joint_list)
+        self.network['component'].load_animation(sorted_joint_list, self._save_channel_list)
 
     @undoable
     def remove(self, use_settings = True):
@@ -1575,6 +1579,8 @@ class Rig_Component(Component_Base):
         if addon_list:
             for addon in addon_list:
                 addon.remove()
+
+        rigging.constraints.bake_constrained_rig_controls(self.network['controls'].get_connections())
 
         character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         revert_animation = character_settings.revert_animation if use_settings else False
@@ -1690,7 +1696,7 @@ class Rig_Component(Component_Base):
             maya_utils.baking.BakeQueue().add_post_process(self.remove, {})
         else:
             self.remove(use_settings = False)
-            maya_utils.node_utils.set_current_frame()
+            maya_utils.scene_utils.set_current_frame()
 
     def bake_components_and_remove(self, component_network_list, use_queue = True):
         '''
@@ -1741,7 +1747,7 @@ class Rig_Component(Component_Base):
                     target_list = constraint_method(jnt, q=True, tl=True)
                     constraint_method(target_list[0], jnt, e=True, w=1)
 
-            maya_utils.node_utils.set_current_frame()
+            maya_utils.scene_utils.set_current_frame()
 
     def attach_and_bake(self, target_skeleton_dict, use_queue = False):
         '''
@@ -1786,10 +1792,13 @@ class Rig_Component(Component_Base):
         Args:
             world_space (boolean): Whether the rig should build in world or parent space
         '''
+        constraint = None
         if self._spacetype == "inherit" and world_space == False:
-            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=maintain_offset)
+            constraint = pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=maintain_offset)
         elif (self._spacetype == "world") or (self._spacetype == "inherit" and world_space == True):
-            pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=maintain_offset)
+            constraint = pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=maintain_offset)
+
+        return constraint
 
     def create_component_group(self, side, region):
         '''
@@ -2010,7 +2019,7 @@ class Rig_Component(Component_Base):
             for markup_network in markup_network_list:
                 markup_network.set('temporary', True, 'bool')
 
-            maya_utils.node_utils.set_current_frame()
+            maya_utils.scene_utils.set_current_frame()
 
         scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
 
@@ -2047,7 +2056,7 @@ class Rig_Component(Component_Base):
         overdriver_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.OverdriverSettings)
         overdriver_component.rig(self.network['component'].node, control, object_space_list, overdriver_category.bake_overdriver)
 
-        maya_utils.node_utils.set_current_frame()
+        maya_utils.scene_utils.set_current_frame()
 
         return overdriver_component
 
@@ -2191,13 +2200,13 @@ class Rig_Component(Component_Base):
             if type(control_network) == metadata.network_core.AddonCore:
                 control = control_network.get_downstream(metadata.network_core.AddonControls).get_first_connection()
 
-            save_attrs = maya_utils.node_utils.get_control_vars_strings(control)
+            save_attrs = freeform_utils.character_utils.get_control_vars_strings(control)
             if save_attrs:
                 control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
                 control_vars_string += "{0};{1}|".format(control_type, control_index)
 
                 for attr_name, value in save_attrs.iteritems():
-                    control_vars_string += "{0};{1},".format(attr_name, value)
+                    control_vars_string += "{0};{1}|".format(attr_name, value)
 
                 control_vars_string += ":"
 
@@ -2210,8 +2219,8 @@ class Rig_Component(Component_Base):
         '''
         Sets rig controls based on a control_var_string from saving the rig
         '''
-        if control_var_string != None:
-            control_var_dict = maya_utils.node_utils.parse_control_vars(control_var_string)
+        if control_var_string:
+            control_var_dict = freeform_utils.character_utils.parse_control_vars(control_var_string)
             for control in self.network['controls'].get_connections():
                 control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
                 control_dict = control_var_dict.get((control_property.get('control_type'), control_property.get('ordered_index')))
@@ -2222,8 +2231,25 @@ class Rig_Component(Component_Base):
                         getattr(control, attr_name).set(value)
                     else:
                         attr_name, operation_name = split_name
+                        if operation_name == "constraint":
+                            driver_list = []
+                            weight_list = []
+                            for obj_info in value:
+                                control_info_str, weight_value = obj_info
+                                weight_list.append(weight_value)
+                                driver_list.append( freeform_utils.character_utils.get_control_from_info(control_info_str, self.skeleton_dict) )
+                            constraint_type = getattr(pm, attr_name)
+                            constraint_obj = constraint_type(driver_list, control, mo=True)
+                            rigging.constraints.set_constraint_weights(constraint_type, control, driver_list, weight_list)
+                # Locking needs to happen after constraints
+                for attr_name, value in control_dict.iteritems():
+                    split_name = attr_name.split(".", 1)
+                    if len(split_name) != 1:
+                        attr_name, operation_name = split_name
                         if operation_name == "isLocked":
-                            getattr(control, attr_name).set(lock = value)
+                            getattr(control, attr_name).lock()
+                        if operation_name == "selectionLock":
+                            control_property.set('locked', True)
 
     def open_rig_switcher(self):
         rigging.usertools.rig_switcher.RigSwitcher(self).show()

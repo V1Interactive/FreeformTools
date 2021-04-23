@@ -52,6 +52,23 @@ def get_scene_name_csharp(c_object, event_args):
     '''
     event_args.Value = get_last_or_default(get_scene_name().split("_", 1))
 
+def set_current_frame():
+    '''
+    Set the current frame to itself to force a scene update
+    '''
+    # Weird issue, turning off cycle check here prevents warnings of a meaningless cycle
+    cycle_check = pm.cycleCheck(q=True, e=True)
+    pm.cycleCheck(e=False)
+    pm.currentTime(pm.currentTime())
+    pm.cycleCheck(e=cycle_check)
+
+def remove_empty_namespaces():
+    '''
+    Remove all empty namespaces in the scene
+    '''
+    for ns in pm.system.Namespace(':').listNamespaces():
+        if not ns.listNodes():
+            ns.remove()
 
 def clean_scene():
     '''
