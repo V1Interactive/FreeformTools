@@ -841,10 +841,12 @@ class RigComponent(DependentNode):
             pm.addAttr(self.node, ln="rotate_save", multi=True, type='doubleAngle')
             pm.addAttr(self.node, ln="scale_save", multi=True, type='double')
 
-    def save_animation(self, joint_list):
+    def save_animation(self, joint_list, channel_list):
         for j, joint in enumerate(joint_list):
             offset_index = j * 3
             for i, attr in enumerate(['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']):
+                if attr not in channel_list:
+                    continue
                 index = (i % 3) + offset_index
 
                 if i >= 6:
@@ -854,16 +856,19 @@ class RigComponent(DependentNode):
                 elif i >= 0:
                     network_attr = self.node.translate_save
                 
-                connection_list = getattr(joint, attr).listConnections(p=True, c=True, d=True, s=True)
-                if connection_list:
+                connect_attr = getattr(joint, attr)
+                connection_list = connect_attr.listConnections(p=True, c=True, d=True, s=True)
+                if not connect_attr.isLocked() and connection_list:
                     transform_attr, anim_curve_attr = connection_list[0]
                     anim_curve_attr // transform_attr
                     anim_curve_attr >> network_attr[index]
 
-    def load_animation(self, joint_list):
+    def load_animation(self, joint_list, channel_list):
         for j, joint in enumerate(joint_list):
             offset_index = j * 3
             for i, attr in enumerate(['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']):
+                if attr not in channel_list:
+                    continue
                 index = (i % 3) + offset_index
 
                 if i >= 6:

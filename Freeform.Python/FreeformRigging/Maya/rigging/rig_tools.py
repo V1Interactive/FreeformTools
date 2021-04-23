@@ -124,7 +124,7 @@ def rig_region(skeleton_dict, side, region, character_network, component_type, r
     rig_success = component.rig(skeleton_dict, side, region, False, control_holder_list, additive = not character_category.remove_existing, reverse = reverse)
 
     pm.delete([x for x in imported_nodes if pm.objExists(x)])
-    maya_utils.node_utils.set_current_frame()
+    maya_utils.scene_utils.set_current_frame()
 
 def switch_rigging(component_network):
     component_data = component_network.data

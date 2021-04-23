@@ -62,6 +62,11 @@ class BakeQueue(object):
         self.pre_process_list = []
         self.post_process_list = []
 
+    def clear(self):
+        self.queue = {}
+        self.pre_process_list = []
+        self.post_process_list = []
+
     def add_bake_command(self, obj_list, kwargs):
         '''
         Wrapper for add_command that specifically adds a pm.bakeResults command
@@ -236,9 +241,9 @@ def bake_objects(obj_list, translate, rotate, scale, use_settings = True, custom
         bake_start = time.clock()
         # Baking is stupidly slower if you pass in a value to smart bake(sr), even if it's False, so we split out the command
         if bake_settings.smart_bake:
-            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, sr=True, **kwargs)
+            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, sr=True, preserveOutsideKeys = True, **kwargs)
         else:
-            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, **kwargs)
+            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, preserveOutsideKeys = True, **kwargs)
         v1_core.v1_logging.get_logger().info("Bake Command Completed in {0} Seconds".format(time.clock() - bake_start))
 
         pm.setKeyframe(obj_list, t=-1010, at='rotate', v=0)

@@ -423,7 +423,7 @@ class RigSwapper(CharacterPicker):
         if actor_offset:
             new_root_joint.setParent(actor_offset[0])
             new_root_joint.jointOrient.set([0,0,0])
-            maya_utils.node_utils.set_current_frame()
+            maya_utils.scene_utils.set_current_frame()
         else:
             new_root_joint.setParent(source_character_network.group)
 

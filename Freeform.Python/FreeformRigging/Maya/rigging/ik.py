@@ -195,7 +195,7 @@ class IK(rigging.rig_base.Rig_Component):
         pv_control = self.get_control('pv')
 
         if pv_control:
-            maya_utils.node_utils.set_current_frame()
+            maya_utils.scene_utils.set_current_frame()
             settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
             frame_range = maya_utils.baking.get_bake_time_range(target_chain, settings)
 

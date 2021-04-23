@@ -254,15 +254,15 @@ class HelixRigger:
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.bake_and_remove_component
         new_button.Name = "Bake and Remove Component"
-        new_button.ImagePath = "../../Resources/bake_remove_rig.ico"
-        new_button.StatusImagePath = "../../Resources/remove.ico" 
+        new_button.ImagePath = "../../Resources/remove.ico"
+        new_button.StatusImagePath = "../../Resources/bake_remove_rig.ico" 
         new_button.Tooltip = "Remove rig component on selected controls and bake animation to joints"
         remove_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
-        new_button.CommandHandler += self.partial_bake_component
+        new_button.CommandHandler += self.bake_component
         new_button.Name = "Partial Bake - Frame Range"
-        new_button.ImagePath = "../../Resources/partial_bake.png"
+        new_button.ImagePath = "../../Resources/bake_remove_rig.ico"
         new_button.Tooltip = "Bake rig component controls over a frame range, preserving outside animation"
         remove_category.AddButton(new_button)
 
@@ -317,16 +317,15 @@ class HelixRigger:
         new_button.CommandHandler += self.remove_overdriver
         new_button.Name = "Remove Overdrivers"
         new_button.ImagePath = "../../Resources/remove_overdriver.ico"
-        new_button.StatusImagePath = "../../Resources/bake_remove_rig.ico"
         new_button.Tooltip = "Remove all selected Overdrivers"
         space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
-        new_button.CommandHandler += self.partial_bake_overdriver
-        new_button.Name = "Partial Bake Overdrivers"
+        new_button.CommandHandler += self.remove_revert_overdriver
+        new_button.Name = "Remove Overdrivers"
         new_button.ImagePath = "../../Resources/remove_overdriver.ico"
-        new_button.StatusImagePath = "../../Resources/partial_bake.png"
-        new_button.Tooltip = "Remove all selected Overdrivers, only baking the selected frame range and reverting all other frame animation"
+        new_button.StatusImagePath = "../../Resources/remove_revert.png" 
+        new_button.Tooltip = "Remove all selected Overdrivers and revert their animation"
         space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
@@ -1935,16 +1934,15 @@ class HelixRigger:
 
 
     @csharp_error_catcher
-    def partial_bake_component(self, c_object, event_args):
+    def bake_component(self, c_object, event_args):
         '''
-        partial_bake_component(self, c_object, event_args)
+        bake_component(self, c_object, event_args)
         Bake the rig controls over a frame range, preserving animation outside of the range
 
         Args:
             c_object (Rigging.RigBarButton): C# view model object sending the command
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
-        frame_dialogue = maya_utils.usertools.frame_range_dialogue.Frame_Range_Dialogue()
         if event_args:
             sel_list = pm.ls(selection=True)
             component_obj_list = [x for x in sel_list if metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.AddonCore)]
@@ -1954,11 +1952,11 @@ class HelixRigger:
                 if component_obj.exists():
                     rig_network = rigging.skeleton.get_rig_network(component_obj)
                     rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
-                    frame_dialogue.close_method_list.append(rig_component.partial_bake)
+                    rig_component.partial_bake()
         else:
             network_node = pm.PyNode(c_object.NodeName)
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(network_node)
-            frame_dialogue.close_method_list.append(rig_component.partial_bake)
+            rig_component.partial_bake()
 
     @csharp_error_catcher
     @undoable
@@ -2053,7 +2051,7 @@ class HelixRigger:
             self.vm.ActiveCharacter.RemoveComponent(c_object)
 
         maya_utils.baking.BakeQueue().run_queue()
-        maya_utils.node_utils.set_current_frame()
+        maya_utils.scene_utils.set_current_frame()
 
         self.vm.UpdateRiggerInPlace()
 
@@ -2086,7 +2084,7 @@ class HelixRigger:
         if character_category.bake_component:
             maya_utils.baking.BakeQueue().run_queue()
 
-        maya_utils.node_utils.set_current_frame()
+        maya_utils.scene_utils.set_current_frame()
         self.vm.UpdateRiggerInPlace()
 
     @csharp_error_catcher
@@ -2235,27 +2233,22 @@ class HelixRigger:
                 if control == addon_control:
                     rig_component.remove()
 
-    def partial_bake_overdriver(self, c_rig_button, event_args):
+    @csharp_error_catcher
+    def remove_revert_overdriver(self, c_rig_button, event_args):
         '''
-        partial_bake_overdriver(self, c_rig_button, event_args)
-        Removes any Overdrivers from the rig component, baking only a subset of animation down to the rig control
+        remove_revert_overdriver(self, c_rig_button, event_args)
+        Removes any Overdrivers from the rig component and revert their animation
 
         Args:
             c_rig_button (Rigging.RigBarButton): C# view model object sending the command
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
-        frame_dialogue = maya_utils.usertools.frame_range_dialogue.Frame_Range_Dialogue()
+        character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+        original_revert_animation = character_category.revert_animation
 
-        sel_list = pm.ls(selection=True)
-        control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
-        for control in control_list:
-            component_network = rigging.skeleton.get_rig_network(control)
-            addon_network_list = component_network.get_all_downstream(metadata.network_core.AddonCore)
-            for addon in addon_network_list:
-                rig_component = rigging.rig_base.Component_Base.create_from_network_node(addon.node)
-                addon_control = rig_component.network['controls'].get_first_connection()
-                if control == addon_control:
-                    frame_dialogue.close_method_list.append(rig_component.remove_bake_partial)
+        character_category.revert_animation = True
+        self.remove_overdriver(c_object, event_args)
+        character_category.revert_animation = original_revert_animation
 
     @csharp_error_catcher
     def ik_fk_switch(self, c_rig_button, event_args):
@@ -2534,7 +2527,7 @@ class HelixRigger:
         if not character_category.remove_existing:
             component.open_rig_switcher()
 
-        maya_utils.node_utils.set_current_frame()
+        maya_utils.scene_utils.set_current_frame()
 
     def _remove_rigging_from_ui(self, component_node):
         '''
