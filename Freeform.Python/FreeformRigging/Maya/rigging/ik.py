@@ -72,7 +72,7 @@ class IK(rigging.rig_base.Rig_Component):
 
         control_grp = self.create_control_grp(side, region)
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
-        world_grp = self.create_world_grp(side, region)
+        world_group = self.create_world_grp(side, region)
 
         rigging_chain = self.network['rigging'].get_connections()
         rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
@@ -83,7 +83,7 @@ class IK(rigging.rig_base.Rig_Component):
 
         ik_solver = 'ikRPsolver' if len(rigging_chain) > 2 else 'ikSCsolver'
         ik_handle, end_effector = pm.ikHandle(sj = ik_solved_chain[-1], ee = get_first_or_default(ik_solved_chain), sol = ik_solver, name = "{0}{1}_{2}_ikHandle".format(self.namespace, side, region))
-        ik_handle.setParent(world_grp)
+        ik_handle.setParent(world_group)
         rigging.skeleton.force_set_attr(ik_handle.visibility, False)
 
         control_chain = rigging.skeleton.duplicate_chain([get_first_or_default(rigging_chain)], self.namespace, 'control', self.prefix)
@@ -95,7 +95,7 @@ class IK(rigging.rig_base.Rig_Component):
             control_root.jointOrient.set([0,0,0])
             control_root.rotate.set([0,0,0])
         self.network['component'].set('ik_local_orient', not check_world_orient_ik, 'bool')
-        control_root.setParent(world_grp)
+        control_root.setParent(world_group)
 
         self.network['controls'].connect_nodes(control_chain)
         self.create_controls(control_chain, side, region, 'ik_handle', control_holder_list)
@@ -110,7 +110,7 @@ class IK(rigging.rig_base.Rig_Component):
             pv_position = rigging.skeleton.calculate_pole_vector_position(rigging_chain, pm.currentTime())
             pm.select(None) # select None to make sure joint doesn't parent to anything
             pv_control = pm.joint(name = "{0}control_{1}_{2}_ik_pv".format(self.namespace, side, region), position=pv_position)
-            pv_control.setParent(world_grp)
+            pv_control.setParent(world_group)
             pm.poleVectorConstraint(pv_control, ik_handle)
             self.network['controls'].connect_node(pv_control)
             self.create_controls([pv_control], side, region, 'pv', control_holder_list)
@@ -119,10 +119,10 @@ class IK(rigging.rig_base.Rig_Component):
             pv_control_property = metadata.meta_properties.get_property(pv_control, metadata.meta_properties.ControlProperty)
             pv_control_property.set('world_space', True, 'bool')
 
-        pm.parentConstraint( self.get_character_world(), world_grp, mo=True )
+        pm.parentConstraint(self.character_root, world_group, mo=True)
         pm.pointConstraint(get_first_or_default(control_chain), ik_handle, mo=False)
 
-        self.attach_component(world_space, True)
+        self.attach_component(True)
 
         if rigging.skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_queue)

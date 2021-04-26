@@ -348,6 +348,17 @@ def get_joint_chain(root, end):
 
     return joint_list
 
+def get_control_joint(rig_control):
+    skeleton_joint = None
+    control_property = metadata.meta_properties.get_property(rig_control, metadata.meta_properties.ControlProperty)
+    if control_property:
+        control_index = control_property.get('ordered_index')
+        component_network = metadata.network_core.MetaNode.get_first_network_entry(rig_control, metadata.network_core.ComponentCore)
+        skeleton_network = component_network.get_downstream(metadata.network_core.SkeletonJoints)
+        sorted_chain = rigging.skeleton.sort_chain_by_hierarchy( skeleton_network.get_connections() )
+        skeleton_joint = sorted_chain[control_index]
+
+    return skeleton_joint
 
 def get_joint_markup_details(jnt):
     '''
@@ -545,6 +556,21 @@ def is_animated(joint_list, filter_joints = True, recursive = True):
             else:
                 return False
     return False
+
+def has_animation(jnt):
+    '''
+    Returns True if the given object has animation curves connected.
+    '''
+    connection_type_list = list(set([type(x) for x in pm.listConnections(jnt, s=True, d=False)]))
+    # Animation curves might be connected through animation layers or a PairBlend node
+    anim_type_list = [pm.nt.AnimBlendNodeAdditiveDL, pm.nt.AnimBlendNodeAdditiveRotation, pm.nt.AnimBlendNodeAdditiveScale, 
+                      pm.nt.AnimCurveTU, pm.nt.AnimCurveTL, pm.nt.AnimCurveTA, pm.nt.PairBlend]
+    has_animation = False
+    for connection_type in connection_type_list:
+        if connection_type in anim_type_list:
+            has_animation = True
+            break
+    return has_animation
 
 def get_rig_network(jnt):
     '''

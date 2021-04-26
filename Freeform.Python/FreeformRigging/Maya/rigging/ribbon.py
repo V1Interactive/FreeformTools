@@ -70,7 +70,7 @@ class Ribbon(rigging.rig_base.Rig_Component):
 
         control_grp = self.create_control_grp(side, region)
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
-        world_grp = self.create_world_grp(side, region)
+        world_goup = self.create_world_grp(side, region)
 
         rigging_chain = self.network['rigging'].get_connections()
         rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
@@ -86,10 +86,10 @@ class Ribbon(rigging.rig_base.Rig_Component):
         number_of_follicles = len(rigging_chain)
 
         ribbon, follicle_list = self.create_ribbon(ribbon_length, number_of_follicles)
-        ribbon.setParent(world_grp)
+        ribbon.setParent(world_goup)
         rigging.skeleton.force_set_attr(ribbon.visibility, False)
         for follicle in follicle_list:
-            follicle.getParent().setParent(world_grp)
+            follicle.getParent().setParent(world_goup)
         
         control_chain = self.create_ribbon_controls(rigging_chain)
         self.align_ribbon_controls(control_chain, rigging_chain, ribbon, follicle_list)
@@ -97,9 +97,9 @@ class Ribbon(rigging.rig_base.Rig_Component):
         for control_zero in control_zero_list:
             control_zero.setParent(control_grp)
 
-        pm.parentConstraint( self.get_character_world(), world_grp, mo=True )
+        pm.parentConstraint( self.character_root, world_goup, mo=True )
 
-        self.attach_component(world_space, True)
+        self.attach_component(True)
         if rigging.skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_queue)
 

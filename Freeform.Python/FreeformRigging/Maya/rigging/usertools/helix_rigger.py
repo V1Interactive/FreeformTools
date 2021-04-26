@@ -124,6 +124,7 @@ class HelixRigger:
         self.vm.UpdateEventHandler += self.update_from_scene
         self.vm.UpdateCharacterHandler += self.run_character_update
         self.vm.RemoveAnimationHandler += self.remove_animation
+        self.vm.SelectAllAnimatedHandler += self.select_all_animated
         self.vm.AddNewJointsHandler += self.add_new_joints
         self.vm.UpdateCharacterNamespaceHandler += self.update_namespace
         self.vm.UpdateCharacterNameHandler += self.update_character_name
@@ -192,6 +193,7 @@ class HelixRigger:
         self.vm.UpdateEventHandler -= self.update_from_scene
         self.vm.UpdateCharacterHandler -= self.run_character_update
         self.vm.RemoveAnimationHandler -= self.remove_animation
+        self.vm.SelectAllAnimatedHandler -= self.select_all_animated
         self.vm.AddNewJointsHandler -= self.add_new_joints
         self.vm.UpdateCharacterNamespaceHandler -= self.update_namespace
         self.vm.UpdateCharacterNameHandler -= self.update_character_name
@@ -248,7 +250,7 @@ class HelixRigger:
         new_button.Name = "Remove and Revert Component"
         new_button.ImagePath = "../../Resources/remove.ico"
         new_button.StatusImagePath = "../../Resources/remove_revert.png" 
-        new_button.Tooltip = "Remove rig component on selected controls and bake animation to joints"
+        new_button.Tooltip = "Remove rig component on selected controls and revert joint animation"
         remove_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
@@ -312,20 +314,6 @@ class HelixRigger:
         space_category = self.create_category("Space Switching")
         space_category.ImagePath = "../../Resources/overdriver.ico"
         space_category.Tooltip = "Tools for applying and removing Overdrivers"
-
-        new_button = Freeform.Rigging.RigBarButton()
-        new_button.CommandHandler += self.remove_overdriver
-        new_button.Name = "Remove Overdrivers"
-        new_button.ImagePath = "../../Resources/remove_overdriver.ico"
-        new_button.Tooltip = "Remove all selected Overdrivers"
-        space_category.AddButton(new_button)
-
-        new_button = Freeform.Rigging.RigBarButton()
-        new_button.CommandHandler += self.remove_revert_overdriver
-        new_button.Name = "Remove Overdrivers"
-        new_button.ImagePath = "../../Resources/remove_overdriver.ico"
-        new_button.StatusImagePath = "../../Resources/remove_revert.png" 
-        new_button.Tooltip = "Remove all selected Overdrivers and revert their animation"
         space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
@@ -473,6 +461,13 @@ class HelixRigger:
         new_button.Name = "Save Control Shapes"
         new_button.ImagePath = "../../Resources/save_control_shapes.png"
         new_button.Tooltip = "Saves control shapes to character's Control_Shapes.fbx file"
+        misc_category.AddButton(new_button)
+
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.re_parent_component
+        new_button.Name = "Re-Parent Component"
+        new_button.ImagePath = "pack://application:,,,/HelixResources;component/Resources/transfer.ico"
+        new_button.Tooltip = "Re-parents the selected components to last item in your selection"
         misc_category.AddButton(new_button)
 
 
@@ -693,7 +688,7 @@ class HelixRigger:
         selection_set = event_args.SelectButton.SelectionSet.split(",")
 
         search_dict = {}
-        for control_info in [rigging.rig_base.ControlInfo().parse_string(x) for x in selection_set if x]:
+        for control_info in [rigging.rig_base.ControlInfo.parse_string(x) for x in selection_set if x]:
             search_dict.setdefault(control_info.side, {})
             search_dict[control_info.side].setdefault(control_info.region, [])
             search_dict[control_info.side][control_info.region].append([control_info.control_type, control_info.ordered_index])
@@ -820,6 +815,16 @@ class HelixRigger:
         c_character.SelectAllGroups()
 
     @csharp_error_catcher
+    @undoable
+    def select_all_animated(self, vm, event_args):
+        '''
+        Select all animated objects that are driving the character
+        '''
+        c_character = event_args.character
+        character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(c_character.NodeName))
+        freeform_utils.character_utils.select_all_animated(character_network)
+
+    @csharp_error_catcher
     def update_from_scene(self, vm, event_args):
         '''
         update_from_scene(self, vm, event_args)
@@ -932,6 +937,17 @@ class HelixRigger:
             character_network (CharacterCore): Network MetaNode object for a character
         '''
         v1_core.v1_logging.get_logger().info("Updating Character - {0}".format(character_network.node))
+
+        c_character.UpdateMessage = ""
+        c_character.OutOfDate = False
+        updater = versioning.character_version.CharacterUpdater(character_network)
+        if not updater.is_updated:
+            update_message = "Errors Found:"
+            for message in updater.update_message_list:
+                update_message += "\n" + message
+            c_character.UpdateMessage = update_message
+            c_character.OutOfDate = True
+
         
         self.update_character_regions(c_character, character_network)
         self.update_character_props(c_character, character_network)
@@ -1207,8 +1223,6 @@ class HelixRigger:
         new_c_component.ToggleVisibilityComponentHandler += self.toggle_vis_component
         new_c_component.AttributeChangedHandler += metadata.meta_properties.attribute_changed
         new_c_component.TransferAnimHandler += self.transfer_animation
-        new_c_component.RemoveComponentHandler += self.remove_component
-        new_c_component.BakeRemoveComponentHandler += self.bake_and_remove_component
 
         return new_c_component
 
@@ -1945,13 +1959,14 @@ class HelixRigger:
         '''
         if event_args:
             sel_list = pm.ls(selection=True)
-            component_obj_list = [x for x in sel_list if metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.AddonCore)]
-            if not component_obj_list:
-                component_obj_list = [x for x in sel_list if metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore)]
-            for component_obj in component_obj_list:
-                if component_obj.exists():
-                    rig_network = rigging.skeleton.get_rig_network(component_obj)
-                    rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
+            component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.AddonCore) for x in sel_list]
+            if not component_network_list:
+                component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in sel_list]
+
+            component_network_list = list(set(component_network_list))
+            for component_network in component_network_list:
+                if component_network.node.exists():
+                    rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                     rig_component.partial_bake()
         else:
             network_node = pm.PyNode(c_object.NodeName)
@@ -1994,7 +2009,8 @@ class HelixRigger:
         character_category.revert_animation = True
         self.remove_component(c_object, event_args)
         character_category.revert_animation = original_revert_animation
-        pass
+        
+        self.vm.UpdateRiggerInPlace()
 
     @csharp_error_catcher
     def remove_component(self, c_object, event_args):
@@ -2006,19 +2022,12 @@ class HelixRigger:
             c_object (Rigging.RigBarButton): C# view model object sending the command
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
-        if event_args:
-            sel_list = pm.ls(selection=True)
-            component_obj_list = [x for x in sel_list if metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore)]
-            for component_obj in component_obj_list:
-                if component_obj.exists():
-                    rig_network = rigging.skeleton.get_rig_network(component_obj)
-                    rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
-                    rig_component.remove()
-        else:
-            network_node = pm.PyNode(c_object.NodeName)
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(network_node)
+        sel_list = pm.ls(selection=True)
+        component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+
+        for component_network in component_network_list:
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
             rig_component.remove()
-            self.vm.ActiveCharacter.RemoveComponent(c_object)
 
         self.vm.UpdateRiggerInPlace()
 
@@ -2032,23 +2041,12 @@ class HelixRigger:
             c_object (Rigging.RigBarButton): C# view model object sending the command
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
-        if event_args:
-            sel_list = pm.ls(selection=True)
-            control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
-            completed = []
-            for control in control_list:
-                if control.exists():
-                    rig_network = rigging.skeleton.get_rig_network(control)
-                    # Create temporary attribute 'is_removed' to track if we've already acted on this component
-                    if rig_network.get('is_removed', 'bool') == False:
-                        rig_network.set('is_removed', True, 'bool')
-                        rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
-                        rig_component.bake_and_remove()
-        else:
-            network_node = pm.PyNode(c_object.NodeName)
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(network_node)
+        sel_list = pm.ls(selection=True)
+        component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+
+        for component_network in component_network_list:
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
             rig_component.bake_and_remove()
-            self.vm.ActiveCharacter.RemoveComponent(c_object)
 
         maya_utils.baking.BakeQueue().run_queue()
         maya_utils.scene_utils.set_current_frame()
@@ -2058,28 +2056,20 @@ class HelixRigger:
     def force_remove_component(self, c_object, event_args):
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
-        rig_network = None
-        if event_args:
-            sel_list = pm.ls(selection=True)
-            component_obj_list = [x for x in sel_list if metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore)]
-            for component_obj in component_obj_list:
-                if component_obj.exists():
-                    rig_network = rigging.skeleton.get_rig_network(component_obj)
-        else:
-            network_node = pm.PyNode(c_object.NodeName)
-            rig_network = metadata.network_core.MetaNode.create_from_node(network_node)
+        sel_list = pm.ls(selection=True)
+        component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
 
-        if rig_network:
-            joints_network = rig_network.get_downstream(metadata.network_core.SkeletonJoints)
+        for component_network in component_network_list:
+            joints_network = component_network.get_downstream(metadata.network_core.SkeletonJoints)
             joint_list = joints_network.get_connections()
             if character_category.bake_component:
                 maya_utils.baking.BakeQueue().add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
             elif character_category.revert_animation:
                 sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
-                rig_network.load_animation(sorted_joint_list)
+                component_network.load_animation(sorted_joint_list)
 
-            pm.delete(rig_network.group)
-            metadata.network_core.MetaNode.delete_network(rig_network.node)
+            pm.delete(component_network.group)
+            metadata.network_core.MetaNode.delete_network(component_network.node)
 
         if character_category.bake_component:
             maya_utils.baking.BakeQueue().run_queue()
@@ -2101,8 +2091,8 @@ class HelixRigger:
         sel_list = pm.ls(selection=True)
         control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
         for control in control_list:
-            rig_network = rigging.skeleton.get_rig_network(control)
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
+            component_network = rigging.skeleton.get_rig_network(control)
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
             rig_component.switch_space( control, rigging.overdriver.Overdriver, None )
 
     @csharp_error_catcher
@@ -2121,8 +2111,8 @@ class HelixRigger:
             space = get_first_or_default(sel_list)
             control_list = [x for x in sel_list[1:] if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
             for control in control_list:
-                rig_network = rigging.skeleton.get_rig_network(control)
-                rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
+                component_network = rigging.skeleton.get_rig_network(control)
+                rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 rig_component.switch_space( control, rigging.overdriver.Overdriver, [space] )
 
     @csharp_error_catcher
@@ -2146,8 +2136,8 @@ class HelixRigger:
                 control = control_list[-1]
                 space_list = [x for x in sel_list if x != control]
 
-                rig_network = rigging.skeleton.get_rig_network(control)
-                rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
+                component_network = rigging.skeleton.get_rig_network(control)
+                rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 
                 overdriver_component = rig_component.switch_space( control, space_type, space_list )
 
@@ -2169,8 +2159,8 @@ class HelixRigger:
         sel_list = pm.ls(selection=True)
         control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
         for control in control_list:
-            rig_network = rigging.skeleton.get_rig_network(control)
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
+            component_network = rigging.skeleton.get_rig_network(control)
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
             rig_component.pin_children(control)
 
     @csharp_error_catcher
@@ -2188,8 +2178,8 @@ class HelixRigger:
         sel_list = pm.ls(selection=True)
         control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
         for control in control_list:
-            rig_network = rigging.skeleton.get_rig_network(control)
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(rig_network.node)
+            component_network = rigging.skeleton.get_rig_network(control)
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
             rig_component.unpin_children(control)
 
     @csharp_error_catcher
@@ -2211,44 +2201,6 @@ class HelixRigger:
                                                       'animBlendNodeAdditiveRotation', 'pairBlend'])
 
         rigging.skeleton.zero_skeleton_joints(other_list)
-
-    @csharp_error_catcher
-    def remove_overdriver(self, c_rig_button, event_args):
-        '''
-        remove_overdriver(self, c_rig_button, event_args)
-        Removes any Overdrivers from the rig component
-
-        Args:
-            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
-            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
-        '''
-        sel_list = pm.ls(selection=True)
-        control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
-        for control in control_list:
-            component_network = rigging.skeleton.get_rig_network(control)
-            addon_network_list = component_network.get_all_downstream(metadata.network_core.AddonCore)
-            for addon in addon_network_list:
-                rig_component = rigging.rig_base.Component_Base.create_from_network_node(addon.node)
-                addon_control = rig_component.network['controls'].get_first_connection()
-                if control == addon_control:
-                    rig_component.remove()
-
-    @csharp_error_catcher
-    def remove_revert_overdriver(self, c_rig_button, event_args):
-        '''
-        remove_revert_overdriver(self, c_rig_button, event_args)
-        Removes any Overdrivers from the rig component and revert their animation
-
-        Args:
-            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
-            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
-        '''
-        character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
-        original_revert_animation = character_category.revert_animation
-
-        character_category.revert_animation = True
-        self.remove_overdriver(c_object, event_args)
-        character_category.revert_animation = original_revert_animation
 
     @csharp_error_catcher
     def ik_fk_switch(self, c_rig_button, event_args):
@@ -2477,6 +2429,32 @@ class HelixRigger:
         '''
         rigging.rig_base.Component_Base.save_control_shapes()
 
+    @csharp_error_catcher
+    def re_parent_component(self, c_rig_button, event_args):
+        '''
+        re_parent_component(self, c_rig_button, event_args)
+        Re-parents the selected component to last item in your selection
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        autokey_state = pm.autoKeyframe(q=True, state=True)
+        pm.autoKeyframe(state=False)
+
+        character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+
+        sel_list = pm.ls(selection=True)
+        obj_list = sel_list[:-1]
+        new_parent = sel_list[-1]
+        component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in obj_list]
+        component_network_list = list(set(component_network_list))
+        for component_network in component_network_list:
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+            rig_component.re_parent(new_parent, character_category.bake_component)
+
+        maya_utils.scene_utils.set_current_frame()
+        pm.autoKeyframe(state=autokey_state)
 
     @csharp_error_catcher
     @undoable

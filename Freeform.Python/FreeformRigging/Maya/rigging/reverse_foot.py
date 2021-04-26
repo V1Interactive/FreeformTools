@@ -196,7 +196,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         rigging.constraints.bind_chains([control_chain_end], [rigging_chain[2]], self.exclude)
 
-        self.attach_component(world_space, True)
+        self.attach_component(True)
 
         if rigging.skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_queue)

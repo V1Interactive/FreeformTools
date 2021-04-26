@@ -35,8 +35,6 @@ namespace Freeform.Rigging
     {
         public event EventHandler SelectComponentHandler;
         public event EventHandler TransferAnimHandler;
-        public event EventHandler RemoveComponentHandler;
-        public event EventHandler BakeRemoveComponentHandler;
         public event EventHandler ToggleVisibilityComponentHandler;
         public event EventHandler AttributeChangedHandler;
 
@@ -324,17 +322,6 @@ namespace Freeform.Rigging
             {
                 LockedState = "locked";
             }
-        }
-
-
-        public void CallRemoveComponenet()
-        {
-            RemoveComponentHandler?.Invoke(this, null);
-        }
-
-        public void CallBakeRemoveComponenet()
-        {
-            BakeRemoveComponentHandler?.Invoke(this, null);
         }
 
         public void SelectComponent(bool forceAdd)

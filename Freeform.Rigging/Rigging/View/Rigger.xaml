@@ -1090,6 +1090,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Zero Character" 
                                                           Command="{Binding Data.ZeroCharacterCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                                <MenuItem Header="Select All Animated" 
+                                                          Command="{Binding Data.SelectAllAnimatedCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <Separator/>
                                                 <MenuItem Header="Set As Transfer Source" 
                                                           Command="{Binding Data.SetTargetCharacterCommand, Source={StaticResource dataContextProxy}}" 

@@ -435,7 +435,29 @@ def get_matching_control(control_obj, mirror_dict):
     return (addon_control if addon_control else mirror_control), found_match
 
 
+def select_all_animated(character_network):
+    '''
+    Select all animated objects that are driving the character
+    '''
+    component_network_list = character_network.get_all_downstream(metadata.network_core.ComponentCore)
+    control_list = []
+    for component_network in component_network_list:
+        control_list.extend( rigging.rig_base.Component_Base.get_controls(component_network) )
+    
+    skeleton = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
+    animated_skeleton = []
+    for skeleton_joint in skeleton:
+        if rigging.skeleton.has_animation(skeleton_joint):
+            animated_skeleton.append(skeleton_joint)
+        
+    all_animated = control_list + animated_skeleton
+    pm.select(all_animated, r=True)
+
+
 def get_addon_from_control(control_obj):
+    '''
+    Get the Addon control object from the give rig control object if it's overdriven
+    '''
     overdriven_network_entry = metadata.network_core.MetaNode.get_first_network_entry(control_obj, metadata.network_core.OverDrivenControl)
     addon_control = None
     if overdriven_network_entry:
@@ -446,6 +468,17 @@ def get_addon_from_control(control_obj):
     
     return addon_control
 
+
+def get_component_network_list(obj_list):
+    '''
+    Returns a list of all component network objects from a list of scene objects
+    '''
+    control_list = [x for x in obj_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+    component_network_list = []
+    for control in control_list:
+        component_network_list.append(rigging.skeleton.get_rig_network(control))
+
+    return list(set(component_network_list))
 
 def get_control_info(control):
     '''
@@ -475,7 +508,7 @@ def get_control_from_info(control_info, skeleton_dict):
     Finds the rig control that matches the control_info from a skeleton
     '''
     if type(control_info) == str:
-        control_info = rigging.rig_base.ControlInfo().parse_string(control_info)
+        control_info = rigging.rig_base.ControlInfo.parse_string(control_info)
 
     found_control = None
     region_root = skeleton_dict[control_info.side][control_info.region]['root']

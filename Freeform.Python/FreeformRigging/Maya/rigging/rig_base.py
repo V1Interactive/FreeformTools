@@ -74,7 +74,23 @@ class ControlInfo(object):
         '''
         return ";".join([self.side, self.region, self.control_type, str(self.ordered_index)])
 
-    def parse_string(self, control_info_str):
+    @classmethod
+    def parse_control(cls, control_obj):
+        control_property = metadata.meta_properties.get_property(control_obj, metadata.meta_properties.ControlProperty)
+        component_core = metadata.network_core.MetaNode.get_first_network_entry(control_obj, metadata.network_core.ComponentCore)
+
+        control_info = None
+        if control_property:
+            control_info = cls()
+            control_info.side = component_core.get('side')
+            control_info.region = component_core.get('region')
+            control_info.control_type = control_property.get('control_type')
+            control_info.ordered_index = control_property.get('ordered_index')
+
+        return control_info
+
+    @classmethod
+    def parse_string(cls, control_info_str):
         '''
         Parse a string form of a control object and populate the information to the object
 
@@ -86,17 +102,18 @@ class ControlInfo(object):
         '''
         control_info = get_first_or_default(control_info_str.split(","))
         control_info_list = control_info.split(";")
+        control_info = cls()
         if len(control_info_list) == 1:
-            self.control_type = "object"
+            control_info.control_type = "object"
         else:
-            self.side = get_index_or_default(control_info_list, 0)
-            self.region = get_index_or_default(control_info_list, 1)
+            control_info.side = get_index_or_default(control_info_list, 0)
+            control_info.region = get_index_or_default(control_info_list, 1)
             # If bound to a skeleton we haven't saved a control type, so set it to 'skeleton'
-            self.control_type = get_index_or_default(control_info_list, 2) if len(control_info_list) == 4 else "skeleton"
+            control_info.control_type = get_index_or_default(control_info_list, 2) if len(control_info_list) == 4 else "skeleton"
             # may be index 2 or 3 depending on passed in string, but will always be the last entry
-            self.ordered_index = int(get_last_or_default(control_info_list).replace(",", ""))
+            control_info.ordered_index = int(get_last_or_default(control_info_list).replace(",", ""))
 
-        return self
+        return control_info
 
 class Component_Base(object):
     '''
@@ -111,6 +128,20 @@ class Component_Base(object):
     __metaclass__ = ABCMeta
     _icon = "../../Resources/fk_icon.ico"
     _save_channel_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
+
+    @property
+    def character_world(self):
+        '''
+        Get group node that is the parent for all rig components
+
+        Returns:
+            PyNode. Maya scene group node
+        '''
+        return self.network['character'].group
+
+    @property
+    def character_root(self):
+        return self.network['character'].get_downstream(metadata.network_core.JointsCore).get('root_joint')
 
     #region Static Methods
     @staticmethod
@@ -744,7 +775,7 @@ class Component_Base(object):
         # If controls aren't already imported bring in a fresh import
         import_controls = True if not control_holder_list else False
         if import_controls:
-            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.network['character'].group)
+            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.character_world)
 
         locked_control_list = []
         for control in control_list:
@@ -823,15 +854,6 @@ class Component_Base(object):
             pm.parent(control_object.getShape(), jnt, s=True, r=True)
             pm.delete(control_object)
 
-    def get_character_world(self):
-        '''
-        Get group node that is the parent for all rig components
-
-        Returns:
-            PyNode. Maya scene group node
-        '''
-        return self.network['character'].group
-
     def set_control_orders(self):
         '''
         Get a list of the control joints for the rig component, order it, and assign the index for each control to it's
@@ -879,14 +901,9 @@ class Component_Base(object):
         if control_property:
             control_type = control_property.data.get('control_type')
             ordered_index = control_property.data.get('ordered_index')
-            control_list = self.get_control_dict().get(control_type)
-            if control_list:
-                if ordered_index == None:
-                    ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
-                    ordered_index = ordered_control_list.index(control)
 
-                component_node = self.network['component'].node
-                return ControlInfo(component_node.side.get(), component_node.region.get(), control_type, ordered_index)
+            component_node = self.network['component'].node
+            return ControlInfo(component_node.side.get(), component_node.region.get(), control_type, ordered_index)
         return None
 
     def get_control_joint(self, control):
@@ -964,7 +981,7 @@ class Addon_Component(Component_Base):
         for target_type, target_data in zip(addon_component_dict['target_type'].split(','), addon_component_dict['target_data'].split(',')):
             if target_type and target_data:
                 if target_type == 'ctrl':  # rig control object
-                    target_data = rigging.rig_base.ControlInfo().parse_string(target_data)
+                    target_data = rigging.rig_base.ControlInfo.parse_string(target_data)
                     target_component = created_rigging[target_data.side][target_data.region]
                 
                     target_control_list = target_component.get_control_dict()[target_data.control_type]
@@ -1157,6 +1174,10 @@ class Addon_Component(Component_Base):
         self.network['addon'].delete_all()
 
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
+
+    @undoable
+    def bake_and_remove(self, use_queue = True):
+        self.remove(True);
 
 
     def zero_character(self, character_network, use_queue):
@@ -1368,6 +1389,13 @@ class Rig_Component(Component_Base):
     '''
     __metaclass__ = ABCMeta
 
+    @property
+    def character_root(self):
+        root_joint = self.network['character'].get_downstream(metadata.network_core.JointsCore).get('root_joint')
+        if root_joint == self.skel_root:
+            root_joint = self.character_world
+        return root_joint
+
     @classmethod
     def rig_from_json(cls, side, region, target_skeleton_dict, component_dict, control_holder_list):
         '''
@@ -1422,28 +1450,36 @@ class Rig_Component(Component_Base):
 
 
     @property
-    def world_space(self):
+    def constraint_space(self):
         '''
-        Whether or not the component is considered to be in world space
+        Gets the skeleton markup information for the joint the component is in the space of, or None if character world space
 
         Returns:
-            boolean. Whether or not the component is in world space
+            string. rig control or joint information for the parent space
         '''
-        const = get_first_or_default(list(set(self.network['component'].group.listConnections(type='constraint'))))
-        if not const:
-            return False
+        component_constraint = get_first_or_default(list(set(self.network['component'].group.listConnections(type='constraint'))))
+        if not component_constraint:
+            return None
 
-        con_list = list(set(const.listConnections(type='transform')))
-        target = [x for x in con_list if type(x) == pm.nt.Transform and x != self.network['component'].group]
-        
-        if target and get_first_or_default(target) == self.network['character'].group:
-            return True
-        return False
+        space_obj = get_first_or_default( rigging.constraints.get_constraint_driver_list(component_constraint) )
+        if space_obj == self.character_root:
+            return None
+
+        space_info = rigging.skeleton.get_joint_markup_details(space_obj)
+        if space_info == None:
+            self.default_space
+
+        return space_info
+
+    @property
+    def default_space(self):
+        return self.skel_root.getParent()
 
 
     def __init__(self):
         self.base_init()
         self.skeleton_dict = {}
+        self.parent_space = None
 
     #region Abstract Methods
     @abstractmethod
@@ -1457,7 +1493,7 @@ class Rig_Component(Component_Base):
             skeleton_dict (dictionary): The region dictionary for the skeleton this rig is applying on
             side (str): The side of the character to build this component on
             region (str): The region to build this component on
-            world_space (boolean): Whether the rig should build in world or parent space
+            world_space (?string): What space the rig should be built in, None = character world group
             zero_character (boolean): Whether or not we should zero the character before building
         '''
         # Rigging basic setup, create duplicate rigging chain ready for controls
@@ -1470,7 +1506,9 @@ class Rig_Component(Component_Base):
         self.skel_end = self.skeleton_dict[side][region]['end']
         self.exclude = self.skeleton_dict[side][region].get('exclude')
         self.network = self.create_meta_network(self.skel_root, side, region)
-        self.namespace = self.network['character'].group.namespace()
+        self.namespace = self.character_world.namespace()
+
+        self.get_parent_space(world_space)
 
         skeleton_chain = rigging.skeleton.get_joint_chain(self.skel_root, self.skel_end)
         self.network['skeleton'].connect_nodes(skeleton_chain)
@@ -1485,7 +1523,7 @@ class Rig_Component(Component_Base):
 
         component_grp = self.create_component_group(side, region)
         self.network['component'].connect_node(component_grp)
-        self.align_component_group(component_grp, world_space)
+        self.align_component_group()
 
         rigging_chain = rigging.skeleton.duplicate_chain(skeleton_chain, self.namespace, self.prefix)
 
@@ -1504,11 +1542,41 @@ class Rig_Component(Component_Base):
 
         v1_core.v1_logging.get_logger().debug("Rigging for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
 
-    def align_component_group(self, component_grp, world_space):
-        if world_space == False:
-            maya_utils.node_utils.force_align(self.skel_root.getParent(), component_grp)
+
+    def get_parent_space(self, world_space):
+        # In older rig files world_space was a boolean, so we need to account for None or True = character world space
+        # and False = component skeleton parent space
+        if world_space == None or world_space == True:
+            self.parent_space = None
+        elif world_space == False:
+            self.parent_space = self.default_space
         else:
-            maya_utils.node_utils.force_align(self.network['character'].group, component_grp)
+            space_info = world_space.split(";")
+            # Default parent space is the parent of the first joint controlled by the component
+            parent_obj = self.default_space
+
+            # skeletal joint information is in 3 parts
+            if len(space_info) == 3:
+                side, region, index = space_info
+                index = eval(index)
+                region_dict = self.skeleton_dict[side][region]
+                joint_chain = rigging.skeleton.get_joint_chain(region_dict['root'], region_dict['end'])
+                sorted_chain = rigging.skeleton.sort_chain_by_hierarchy(joint_chain)
+                parent_obj = sorted_chain[index]
+            # rig control information is in 4 parts
+            elif len(space_info) == 4:
+                side, region, control_type, ordered_index = space_info
+                ordered_index = eval(ordered_index)
+
+            self.parent_space = parent_obj
+
+
+    def align_component_group(self):
+        component_group = self.network['component'].group
+        if self.parent_space != None:
+            maya_utils.node_utils.force_align(self.parent_space, component_group)
+        else:
+            maya_utils.node_utils.force_align(self.character_root, component_group)
 
     @abstractmethod
     def attach_to_skeleton(self):
@@ -1565,6 +1633,48 @@ class Rig_Component(Component_Base):
         joint_list = self.network['skeleton'].get_connections()
         sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
         self.network['component'].load_animation(sorted_joint_list, self._save_channel_list)
+
+    @undoable
+    def re_parent(self, new_parent, preserve_animation):
+        '''
+        re-parent the component group to a joint on the skeleton of the character
+        '''
+        control_property = metadata.meta_properties.get_property(new_parent, metadata.meta_properties.ControlProperty)
+        if control_property:
+            new_parent = rigging.skeleton.get_control_joint(new_parent)
+
+        control_list = self.network['controls'].get_connections()
+        anim_locator_list = []
+        if preserve_animation:
+            baking_constraints_list = []
+            for rig_control in control_list:
+                anim_locator = pm.spaceLocator()
+                anim_locator_list.append(anim_locator)
+                baking_constraints_list.append( pm.parentConstraint(rig_control, anim_locator, mo=False) )
+
+            maya_utils.baking.bake_objects(anim_locator_list, True, True, True, use_settings = True)
+            pm.delete(baking_constraints_list)
+
+        character_network = self.network['character']
+        rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
+        rigging.rig_base.Component_Base.zero_all_rigging(character_network)
+        rigging.skeleton.zero_character(self.network['skeleton'].get_first_connection())
+
+        component_group = self.network['component'].group
+        group_constraint = get_first_or_default(component_group.listConnections(type='constraint'))
+        if group_constraint:
+            pm.delete(group_constraint)
+        pm.parentConstraint(new_parent, component_group, mo=True)
+
+        if preserve_animation:
+            baking_constraints_list = []
+            for rig_control, anim_locator in zip(control_list, anim_locator_list):
+                baking_constraints_list.append( pm.parentConstraint(anim_locator, rig_control, mo=False) )
+
+            self.bake_controls()
+            pm.delete(baking_constraints_list)
+            pm.delete(anim_locator_list)
+        
 
     @undoable
     def remove(self, use_settings = True):
@@ -1769,36 +1879,34 @@ class Rig_Component(Component_Base):
                              button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
             return False
 
-        world_space = self.world_space
-
         if use_queue:
             maya_utils.baking.BakeQueue().add_pre_process(self.attach_to_skeleton, {'target_skeleton_dict' : target_skeleton_dict}, 0)
-            self.queue_bake_controls({'world_space':world_space})
+            self.queue_bake_controls({})
         else:
             constraint_list = self.attach_to_skeleton(target_skeleton_dict)
             self.bake_controls()
             pm.delete(constraint_list)
-            self.attach_component(world_space)
+            self.attach_component()
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
-    def attach_component(self, world_space, maintain_offset = False):
+    def attach_component(self, maintain_offset = False):
         '''
         Final step of attaching rig controls to a skeleton, after baking constrain the component group 
         to the correct space
 
         Args:
-            world_space (boolean): Whether the rig should build in world or parent space
+
         '''
         constraint = None
-        if self._spacetype == "inherit" and world_space == False:
-            constraint = pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=maintain_offset)
-        elif (self._spacetype == "world") or (self._spacetype == "inherit" and world_space == True):
-            constraint = pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=maintain_offset)
+        if self._spacetype == "inherit" and self.parent_space != None:
+            constraint = pm.parentConstraint(self.parent_space, self.network['component'].group, mo=maintain_offset)
+        elif (self._spacetype == "world") or (self._spacetype == "inherit" and self.parent_space == None):
+            constraint = pm.parentConstraint(self.character_root, self.network['component'].group, mo=maintain_offset)
 
-        return constraint
+        return [constraint]
 
     def create_component_group(self, side, region):
         '''
@@ -2012,7 +2120,7 @@ class Rig_Component(Component_Base):
 
             self.bake_and_remove(use_queue=False)
         
-            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.network['character'].group)
+            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.character_world)
             component_type().rig(skele_dict, side, region, control_holder_list = control_holder_list)
             pm.delete([x for x in imported_nodes if x.exists()])
 
@@ -2047,7 +2155,7 @@ class Rig_Component(Component_Base):
                 object_space_list.remove(control)
 
             if not object_space_list:
-                object_space_list.append(self.get_character_world())
+                object_space_list.append(self.character_world)
         else:
             object_space_list = None
         
@@ -2211,7 +2319,7 @@ class Rig_Component(Component_Base):
                 control_vars_string += ":"
 
         class_info = v1_shared.shared_utils.get_class_info(component_network.node.component_type.get())
-        class_info_dict = {'module': get_first_or_default(class_info), 'type': get_index_or_default(class_info,1), 'world_space': self.world_space, 'control_vars': control_vars_string}
+        class_info_dict = {'module': get_first_or_default(class_info), 'type': get_index_or_default(class_info,1), 'world_space': self.constraint_space, 'control_vars': control_vars_string}
 
         return class_info_dict
 

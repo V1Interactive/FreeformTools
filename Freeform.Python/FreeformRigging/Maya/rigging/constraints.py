@@ -64,9 +64,9 @@ def bake_constrained_rig_controls(obj_list):
 
     # Unlock constrained channels before baking
     for constraint_type, bake_list in bake_dict.iteritems():
-        bake_translate, bake_rotate, bake_scale = rigging.constraints.CONSTRAINT_BAKE_SETTINGS[constraint_type]
+        bake_translate, bake_rotate, bake_scale = CONSTRAINT_BAKE_SETTINGS[constraint_type]
         for bake_obj in bake_list:
-            for attr in rigging.constraints.CONSTRAINT_CHANNELS[constraint_type]:
+            for attr in CONSTRAINT_CHANNELS[constraint_type]:
                 getattr(bake_obj, attr).unlock()
             
         maya_utils.baking.bake_objects(bake_list, bake_translate, bake_rotate, bake_scale, use_settings = True)
