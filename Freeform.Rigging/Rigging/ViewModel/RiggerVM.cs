@@ -50,6 +50,7 @@ namespace Freeform.Rigging
         public event EventHandler SaveRiggingHandler;
         public event EventHandler LoadRiggingHandler;
         public event EventHandler RemoveAnimationHandler;
+        public event EventHandler SelectAllAnimatedHandler;
         public event EventHandler UpdateCharacterHandler;
         public event EventHandler AddNewJointsHandler;
         public event EventHandler UpdateCharacterNamespaceHandler;
@@ -104,6 +105,7 @@ namespace Freeform.Rigging
         public RelayCommand TransferAllJointsCommand { get; set; }
         public RelayCommand ImportUE4AnimationCommand { get; set; }
         public RelayCommand RemoveAnimationCommand { get; set; }
+        public RelayCommand SelectAllAnimatedCommand { get; set; }
         public RelayCommand MirrorAnimationCommand { get; set; }
         public RelayCommand ZeroRigCommand { get; set; }
         public RelayCommand ZeroCharacterCommand { get; set; }
@@ -116,6 +118,7 @@ namespace Freeform.Rigging
         public RelayCommand UnloadCharacterCommand { get; set; }
         public RelayCommand AddQuickSearchCommand { get; set; }
         public RelayCommand RemoveQuickSearchCommand { get; set; }
+        
 
         public RelayCommand HelpCommand { get; set; }
         #endregion
@@ -394,11 +397,12 @@ namespace Freeform.Rigging
                     if (value)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/bake_remove_rig.ico";
-                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "";
+                        GetRigCategoryList("Miscellaneous").RigButtonList.Last().StatusImagePath = "../../Resources/bake_remove_rig.ico";
                     }
                     else if (!RevertAnimation)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "";
+                        GetRigCategoryList("Miscellaneous").RigButtonList.Last().StatusImagePath = "";
                     }
                 }
             }
@@ -426,12 +430,10 @@ namespace Freeform.Rigging
                     if (value)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
-                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
                     }
                     else if (!BakeComponent)
                     {
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "";
-                        GetRigCategoryList("Space Switching").RigButtonList.First().StatusImagePath = "";
                     }
                 }
             }
@@ -752,6 +754,7 @@ namespace Freeform.Rigging
             DeleteCharacterCommand = new RelayCommand(DeleteCharacterCall);
             QuickFKCharacterCommand = new RelayCommand(QuickFKCharacterCall);
             RemoveAnimationCommand = new RelayCommand(RemoveAnimationCall);
+            SelectAllAnimatedCommand = new RelayCommand(SelectAllAnimatedCall);
             ZeroRigCommand = new RelayCommand(ZeroRigCall);
             ZeroCharacterCommand = new RelayCommand(ZeroCharacterCall);
             SwapCharacterCommand = new RelayCommand(SwapCharacterCall);
@@ -1075,6 +1078,15 @@ namespace Freeform.Rigging
                 character = (Character)sender
             };
             RemoveAnimationHandler?.Invoke(this, eventArgs);
+        }
+
+        public void SelectAllAnimatedCall(object sender)
+        {
+            CharacterEventArgs eventArgs = new CharacterEventArgs()
+            {
+                character = (Character)sender
+            };
+            SelectAllAnimatedHandler?.Invoke(this, eventArgs);
         }
 
         public void SetActiveCharacterCall(object sender)

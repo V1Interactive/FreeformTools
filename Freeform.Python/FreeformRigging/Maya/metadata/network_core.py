@@ -242,6 +242,9 @@ class MetaNode(object):
             return True
         return False
 
+    def __hash__(self):
+        return hash(self.get('guid'))
+
     #region Class Methods
     def get(self, attr_name, value_type='string'):
         '''

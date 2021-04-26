@@ -430,7 +430,7 @@ class Aim(Dynamic_Driver):
 
     def apply_dynamics(self, dynamic_control, object_space):
         maya_utils.scene_utils.set_current_frame()
-        target_data = rigging.rig_base.ControlInfo().parse_string(self.network['addon'].node.target_data.get())
+        target_data = rigging.rig_base.ControlInfo.parse_string(self.network['addon'].node.target_data.get())
         dynamic_grp_name = "{0}{1}_{2}_{3}_grp".format(self.namespace, target_data.region, target_data.side, self.prefix)
         dynamic_grp = pm.group(empty=True, name=dynamic_grp_name)
         dynamic_grp.setParent(self.network['addon'].group)
@@ -469,7 +469,7 @@ class Pendulum(Aim):
         dynamic_grp_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
         pre_dynamic_group = pm.group(empty=True, name=dynamic_grp_name)
         pre_dynamic_group.setParent(self.network['addon'].group)
-        pm.parentConstraint(self.network['character'].group, pre_dynamic_group, mo=False)
+        pm.parentConstraint(self.character_world, pre_dynamic_group, mo=False)
 
         cur_namespace = pm.namespaceInfo(cur=True)
         pm.namespace(set=":")
@@ -558,7 +558,7 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
         if cls not in type_list:
             if control and target_type:
                 if target_type == 'ctrl':  # rig control object
-                    target_data = rigging.rig_base.ControlInfo().parse_string(addon_component_dict['target_data'])
+                    target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                     target_component = created_rigging[target_data.side][target_data.region]
                 
                     target_control_list = target_component.get_control_dict()[target_data.control_type]
@@ -692,7 +692,7 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
 
         if control and target_type:
             if target_type == 'ctrl':  # rig control object
-                target_data = rigging.rig_base.ControlInfo().parse_string(addon_component_dict['target_data'])
+                target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                 target_component = created_rigging[target_data.side][target_data.region]
                 
                 target_control_list = target_component.get_control_dict()[target_data.control_type]

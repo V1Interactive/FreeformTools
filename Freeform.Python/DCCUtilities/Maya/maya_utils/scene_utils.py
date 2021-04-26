@@ -245,7 +245,7 @@ def clean_reference_cameras():
         except:
             continue
 
-def import_file_safe(file_path, **kwargs):
+def import_file_safe(file_path, fbx_mode = "add", **kwargs):
     '''
     Import FBX files or Maya files safely, and with the ability to return import nodes.
     
@@ -263,12 +263,15 @@ def import_file_safe(file_path, **kwargs):
 
     import_return = None
     pre_import_list = pm.ls(assemblies = True)
+    current_import_mode = maya_utils.fbx_wrapper.FBXImportMode(q=True)
     try:
         filename, extension = os.path.splitext(file_path)
         if extension.lower() == '.ma':
             import_return = pm.importFile(file_path, **kwargs)
         elif extension.lower() == '.fbx':
             fbx_file_path = file_path.replace('\\', '\\\\')
+
+            maya_utils.fbx_wrapper.FBXImportMode(v = fbx_mode)
             maya_utils.fbx_wrapper.FBXImport(f = fbx_file_path)
     except:
         if ".ai_translator" in v1_core.exceptions.get_exception_message():
@@ -277,6 +280,7 @@ def import_file_safe(file_path, **kwargs):
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2]) 
     finally:
+        maya_utils.fbx_wrapper.FBXImportMode(v = current_import_mode)
         maya_utils.anim_attr_utils.set_scene_times(scene_time_tuple)
 
     if not import_return and kwargs['returnNewNodes'] == True:

@@ -65,7 +65,7 @@ class FK(rigging.rig_base.Rig_Component):
 
         super(FK, self).rig(skeleton_dict, side, region, world_space, not use_queue, **kwargs)
 
-        control_chain = self.rig_setup(side, region, world_space, reverse, control_holder_list)
+        control_chain = self.rig_setup(side, region, reverse, control_holder_list)
         for i, child_control in enumerate(control_chain[:-1]):
             pm.controller([child_control, control_chain[i+1]], p=True)
 
@@ -94,7 +94,7 @@ class FK(rigging.rig_base.Rig_Component):
         rigging.constraints.bind_chains(control_chain, rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), self.exclude, scale=True)
         
 
-    def rig_setup(self, side, region, world_space, reverse, control_holder_list):
+    def rig_setup(self, side, region, reverse, control_holder_list):
         control_grp = self.create_control_grp(side, region)
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
 
@@ -111,7 +111,7 @@ class FK(rigging.rig_base.Rig_Component):
         self.create_controls(control_chain, side, region, 'fk', control_holder_list)
         control_chain = self.get_ordered_controls()
         
-        self.attach_component(world_space, True)
+        self.attach_component(True)
 
         return control_chain
 
@@ -120,7 +120,6 @@ class FK(rigging.rig_base.Rig_Component):
         '''
         matching_dict: dictionary - used to associate which skeleton joints the control chain should bind to {control_index: jnt_index, ...}
         '''
-        world_space = self.world_space
         side = self.network['component'].node.side.get()
         region = self.network['component'].node.region.get()
 
@@ -134,7 +133,7 @@ class FK(rigging.rig_base.Rig_Component):
             if target_exclude:
                 target_chain.remove(target_exclude)
 
-            if world_space == False:
+            if self.parent_space != None:
                 pm.delete( pm.listConnections(self.network['component'].group, type = 'parentConstraint') )
 
             target_chain = rigging.skeleton.sort_chain_by_hierarchy(target_chain)
@@ -145,7 +144,7 @@ class FK(rigging.rig_base.Rig_Component):
             else:
                 self.constrain_to_skeleton_1to1(target_skeleton_dict, rotate_only, maintain_offset, control_chain, target_chain, constraint_list)
 
-            constraint_list.append(self.attach_component(world_space))
+            constraint_list.extend(self.attach_component())
 
         return constraint_list
 
@@ -223,6 +222,34 @@ class FK(rigging.rig_base.Rig_Component):
 class Point_FK(FK):
     _save_channel_list = ['rx', 'ry', 'rz']
 
+    @property
+    def default_space(self):
+        return self.skel_root
+
+    @property
+    def constraint_space(self):
+        '''
+        Gets the skeleton markup information for the joint the component is in the space of, or None if character world space
+
+        Returns:
+            string. rig control or joint information for the parent space
+        '''
+        component_constraint = get_first_or_default(list(set(self.network['component'].group.listConnections(type='constraint'))))
+        space_obj = None
+        if not component_constraint:
+            space_obj = self.default_space
+        else:
+            space_obj = get_first_or_default( rigging.constraints.get_constraint_driver_list(component_constraint) )
+            if space_obj == self.character_world:
+                return None
+
+        space_info = rigging.skeleton.get_joint_markup_details(space_obj)
+        if space_info == None:
+            self.default_space
+
+        return space_info
+
+
     def bake_controls(self, translate = False, rotate = True, scale = False, simulation = False):
         super(Point_FK, self).bake_controls(translate, rotate, scale)
 
@@ -246,10 +273,7 @@ class Point_FK(FK):
         rigging.constraints.bind_chains(rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain), self.exclude, translate=False, scale=False, additive = additive)
         rigging.constraints.bind_chains(control_chain, rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), self.exclude, scale=True)
 
-    def align_component_group(self, component_grp, world_space):
-        maya_utils.node_utils.force_align(self.skel_root, component_grp)
-
-    def attach_component(self, world_space, maintain_offset = False):
+    def attach_component(self, maintain_offset = False):
         '''
         Final step of attaching rig controls to a skeleton, after baking constrain the component group 
         to the correct space
@@ -257,18 +281,22 @@ class Point_FK(FK):
         Args:
             world_space (boolean): Whether the rig should build in world or parent space
         '''
+        constraint_list = []
         rig_control = self.network['controls'].get_first_connection()
-
+        
         rig_control.tx.unlock()
         rig_control.ty.unlock()
         rig_control.tz.unlock()
 
-        constraint = pm.pointConstraint(self.skel_root, rig_control, mo=maintain_offset)
+        constraint_list.append( pm.pointConstraint(self.skel_root, rig_control, mo=maintain_offset) )
         rig_control.tx.lock()
         rig_control.ty.lock()
         rig_control.tz.lock()
 
-        return constraint
+        if self.parent_space != None and self.parent_space != self.default_space:
+            constraint_list.append( pm.parentConstraint(self.parent_space, self.network['component'].group, mo=maintain_offset) )
+
+        return constraint_list
 
     def verify_component(self, skeleton_dict, side, region):
         self.skel_root = skeleton_dict[side][region]['root']
@@ -312,10 +340,7 @@ class Aim_FK(FK):
                 up_axis = [0,1,0] if aim_axis != [0,1,0] else [0,0,1]
                 pm.aimConstraint(control, control_chain[i + 1], aim=aim_axis, mo=False, upVector=up_axis, wut='objectrotation', wuo=control, wu=up_axis)
         
-        if world_space == False:
-            pm.parentConstraint(self.skel_root.getParent(), self.network['component'].group, mo=True)
-        else:
-            pm.parentConstraint(self.network['character'].group, self.network['component'].group, mo=True)
+        self.attach_component(True)
 
         return control_chain
 
@@ -372,8 +397,8 @@ class Eye_FK(FK):
             return False
         super(Eye_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, use_queue, additive, reverse, **kwargs)
 
-    def rig_setup(self, side, region, world_space, reverse, control_holder_list):
-        control_chain = super(Eye_FK, self).rig_setup(side, region, world_space, reverse, control_holder_list)
+    def rig_setup(self, side, region, reverse, control_holder_list):
+        control_chain = super(Eye_FK, self).rig_setup(side, region, reverse, control_holder_list)
 
         lookat_loc = pm.joint(name="{0}_{1}_{2}_aim".format(self.prefix, region, side))
 

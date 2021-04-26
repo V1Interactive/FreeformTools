@@ -416,7 +416,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
             for addon, addon_component_dict in component_type_dict.iteritems():
                 created_side = created_rigging.get(side)
                 component = created_side.get(region) if created_side else None
-                target_data = rigging.rig_base.ControlInfo().parse_string(addon_component_dict['target_data'])
+                target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                 # Continue if the overdriver is attached to a skeleton joint or scene object
                 # Otherwise make sure that the rig controls were created before trying to attach to them
                 if target_data.control_type == "skeleton" or target_data.control_type == "object":
