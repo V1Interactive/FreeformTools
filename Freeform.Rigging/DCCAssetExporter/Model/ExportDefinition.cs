@@ -195,7 +195,8 @@ namespace Freeform.Rigging.DCCAssetExporter
                 {
                     StringEventArgs stringEventArgs = new StringEventArgs();
                     GetSceneNameHandler?.Invoke(this, stringEventArgs);
-                    Name = stringEventArgs.Value;
+                    if(stringEventArgs.Value != null && stringEventArgs.Value != string.Empty)
+                        Name = stringEventArgs.Value;
                 }
             }
         }

@@ -28,9 +28,7 @@ import metadata
 import scene_tools
 import rigging
 
-import maya_utils.anim_attr_utils
-import maya_utils.baking
-import maya_utils.node_utils
+import maya_utils
 
 import v1_core
 import v1_shared
@@ -135,7 +133,7 @@ def characterize_with_zeroing(jnt = None):
         jnt (PyNode): Any joint on the skeleton to be characterized
     '''
     pm.delete([x for x in pm.ls(type='displayLayer') if x != pm.nt.DisplayLayer(u'defaultLayer')])
-    scene_times = maya_utils.anim_attr_utils.get_scene_times()
+    scene_times = maya_utils.scene_utils.get_scene_times()
 
     root_joint = rigging.skeleton.get_root_joint(jnt) if jnt else pm.ls(pm.ls(assemblies=True), type='joint')[0]
 

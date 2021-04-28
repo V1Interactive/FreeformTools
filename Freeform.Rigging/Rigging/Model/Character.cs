@@ -31,9 +31,9 @@ namespace Freeform.Rigging
     public class Character : INotifyPropertyChanged
     {
         public event EventHandler RigRegionEventHandler;
-        public event EventHandler DeselectHandler;
         public event EventHandler RemovePropAttachmentHandler;
         public event EventHandler SelectAllGroupsHandler;
+        public event EventHandler DeselectHandler;
 
 
         public RelayCommand RemovePropAttachmentCommand { get; set; }

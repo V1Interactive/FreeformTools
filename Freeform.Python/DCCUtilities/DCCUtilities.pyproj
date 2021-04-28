@@ -39,6 +39,9 @@
     <Compile Include="Maya\maya_utils\fbx_wrapper.py" />
     <Compile Include="Maya\maya_utils\node_utils.py" />
     <Compile Include="Maya\maya_utils\scene_utils.py" />
+    <Compile Include="Maya\maya_utils\usertools\aim_constraint_dialogue.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\maya_utils\usertools\frame_range_dialogue.py">
       <SubType>Code</SubType>
     </Compile>

@@ -19,6 +19,28 @@ CONSTRAINT_TYPES = [pm.nt.PointConstraint, pm.nt.OrientConstraint, pm.nt.ScaleCo
 CONSTRAINT_BAKE_SETTINGS = {pm.nt.PointConstraint : [True, False, False], pm.nt.OrientConstraint : [False, True, False], pm.nt.ScaleConstraint : [False, False, True], pm.nt.ParentConstraint : [True, True, True]}
 
 
+def aim_constraint(object_space, target, up_object, roll_object = None, **kwargs):
+    scene_up = [0,0,10]
+    aim_vector = get_offset_vector(target, object_space)
+    up_vector = get_offset_vector(target, target, scene_up)
+    if aim_vector == up_vector:
+        scene_up = [0,10,0]
+        up_vector = get_offset_vector(target, target, scene_up)
+    object_up_vector = get_offset_vector(up_object, up_object, scene_up)
+
+    if roll_object:
+        rotate_attr_list = ['rx', 'ry', 'rz']
+        for axis, rotate_attr in zip(aim_vector, rotate_attr_list):
+            if axis != 0:
+                if not object_space.hasAttr("roll"):
+                    object_space.addAttr("roll", k=True, h=False)
+                roll_attr = getattr(roll_object, rotate_attr)
+                object_space.roll.set(roll_attr.get())
+                object_space.roll >> roll_attr
+                break
+
+    return pm.aimConstraint(object_space, target, aim=aim_vector, u=up_vector, wuo=up_object, wu=object_up_vector, wut='objectrotation', **kwargs)
+
 
 def set_constraint_weights(constraint_type, target_obj, driver_list, weight_list):
     '''
@@ -35,6 +57,45 @@ def get_constraint_driver_list(constraint_obj):
 
 def get_constraint_driver(constraint_obj, index):
     return get_constraint_driver_list(constraint_obj)[index]
+
+
+def get_offset_vector(compare_object, check_object, up_vector = None, **kwargs):
+    '''
+    Find the closest cardinal vector from the offset between two objects
+
+    To find the closest matching up axis on the up object we do a local move on positive y
+    then compare the parent space translate values to find which axis on the parent had the 
+    most movement from the local space move
+    '''
+    dupe_check_obj = pm.duplicate(check_object, po=True)[0]
+    dupe_check_obj.setParent(compare_object)
+
+    # Check difference of relative motion from the compare_object
+    if up_vector:
+        start_translate = dupe_check_obj.translate.get()
+        kwargs = {'ws':True} if not kwargs else kwargs
+        pm.move(dupe_check_obj, up_vector, r=True, wd=True, **kwargs)
+    else:
+        start_translate = [0,0,0]
+
+    compare_translate = dupe_check_obj.translate.get()
+
+    delta = compare_translate - start_translate
+    max_delta = max(delta, key=abs)
+    move_sign = math.copysign(1, max_delta) # Returns -1 for negative or 1 for positive
+
+    max_index = delta.index(max_delta)
+    if 0 in max_index:
+        return_vector = [move_sign,0,0]
+    elif 1 in max_index:
+        return_vector = [0,move_sign,0]
+    elif 2 in max_index:
+        return_vector = [0,0,move_sign]
+
+    pm.delete(dupe_check_obj)
+
+    return pm.dt.Vector(return_vector)
+
 
 def get_control_targets(obj):
     '''
@@ -72,43 +133,6 @@ def bake_constrained_rig_controls(obj_list):
         maya_utils.baking.bake_objects(bake_list, bake_translate, bake_rotate, bake_scale, use_settings = True)
     
     pm.delete(constraint_list) 
-
-
-def get_offset_vector(check_object, compare_object, up_vector = False):
-    '''
-    Find the closest cardinal vector from the offset between two objects
-
-    To find the closest matching up axis on the up object we do a local move on positive y
-    then compare the parent space translate values to find which axis on the parent had the 
-    most movement from the local space move
-    '''
-    axis_check_obj = pm.duplicate(check_object, po=True)[0]
-    axis_check_obj.setParent(compare_object)
-
-    # Check difference of relative motion from the compare_object
-    if up_vector:
-        start_translate = axis_check_obj.translate.get()
-        pm.move(axis_check_obj, [0,10,0], r=True, os=True, wd=True)
-    else:
-        start_translate = [0,0,0]
-
-    compare_translate = axis_check_obj.translate.get()
-
-    delta = compare_translate - start_translate
-    max_delta = max(delta, key=abs)
-    move_sign = math.copysign(1, max_delta) # Returns -1 for negative or 1 for positive
-
-    max_index = delta.index(max_delta)
-    if 0 in max_index:
-        return_vector = [move_sign,0,0]
-    elif 1 in max_index:
-        return_vector = [0,move_sign,0]
-    elif 2 in max_index:
-        return_vector = [0,0,move_sign]
-
-    pm.delete(axis_check_obj)
-
-    return return_vector
 
 
 def bind_chains(control_chain, driven_list, exclude, translate = True, rotate = True, scale = False, additive = False):

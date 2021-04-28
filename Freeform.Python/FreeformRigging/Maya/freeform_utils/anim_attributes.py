@@ -23,6 +23,7 @@ import metadata
 import rigging
 
 import maya_utils.anim_attr_utils
+import maya_utils.scene_utils
 import pymel.core as pm
 from v1_shared.decorators import csharp_error_catcher
 from v1_math.vector import Vector
@@ -99,7 +100,7 @@ class AnimAttributes(object):
         self.target = pm.PyNode(self.target)
         maya_utils.anim_attr_utils.create_float_attr(self.target, 'SpeedCurve')
 
-        fps = maya_utils.anim_attr_utils.get_scene_fps()
+        fps = maya_utils.scene_utils.get_scene_fps()
 
         #handle first keyframe edge case
         pm.setCurrentTime(self.start_time+1)
