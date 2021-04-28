@@ -87,6 +87,10 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AimConstraintDialogue\View\AimConstraintDialogue.xaml.cs">
+      <DependentUpon>AimConstraintDialogue.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AimConstraintDialogue\ViewModel\AimConstraintDialogueVM.cs" />
     <Compile Include="AnimMirror\Model\MirrorPair.cs" />
     <Compile Include="AnimMirror\ViewModel\AnimMirrorVM.cs" />
     <Compile Include="AnimMirror\View\AnimMirror.xaml.cs">
@@ -194,6 +198,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="AimConstraintDialogue\View\AimConstraintDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="AnimMirror\View\AnimMirror.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -413,6 +421,8 @@
   <ItemGroup>
     <Resource Include="Resources\partial_bake.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Resources\aim_constraint.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -314,7 +314,6 @@ class HelixRigger:
         space_category = self.create_category("Space Switching")
         space_category.ImagePath = "../../Resources/overdriver.ico"
         space_category.Tooltip = "Tools for applying and removing Overdrivers"
-        space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_world_space
@@ -369,6 +368,18 @@ class HelixRigger:
         new_button.Tooltip = "Apply an Dynamic Pendulum Overdriver to a control"
         new_button.Data = "Pendulum"
         space_category.AddButton(new_button)
+
+        dynamic_category = self.create_category("Dynamics")
+        dynamic_category.ImagePath = "../../Resources/pendulum.png"
+        dynamic_category.Tooltip = "Tools for applying dynamic control of scene objects"
+
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.open_aim_constraint_ui
+        new_button.Name = "Aim Constraint..."
+        new_button.ImagePath = "../../Resources/aim_constraint.png"
+        new_button.StatusImagePath = "../../Resources/pendulum.png"
+        new_button.Tooltip = "Open the UI to build an Aim Constraint on the selected object"
+        dynamic_category.AddButton(new_button)
 
         component_category = self.create_category("Component Switching")
         component_category.ImagePath = "../../Resources/space_switcher.ico"
@@ -2143,6 +2154,18 @@ class HelixRigger:
 
                 if len(space_list) > 1:
                     overdriver_component.open_space_switcher()
+
+    @csharp_error_catcher
+    def open_aim_constraint_ui(self, c_rig_button, event_args):
+        '''
+        open_aim_constraint_ui(self, c_rig_button, event_args)
+        Opens the Aim Constraint Dialogue
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        maya_utils.usertools.aim_constraint_dialogue.Aim_Constraint_Dialogue().show()
 
     @csharp_error_catcher
     @undoable

@@ -396,13 +396,20 @@ namespace Freeform.Rigging
 
                     if (value)
                     {
-                        GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/bake_remove_rig.ico";
-                        GetRigCategoryList("Miscellaneous").RigButtonList.Last().StatusImagePath = "../../Resources/bake_remove_rig.ico";
+                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "../../Resources/bake_remove_rig.ico";
+                        GetRigButtonFromCategory(GetRigCategoryList("Miscellaneous"), "Re-Parent Component").StatusImagePath = "../../Resources/bake_remove_rig.ico";
+                        GetRigButtonFromCategory(GetRigCategoryList("Space Switching"), "Dynamics - AIM").StatusImagePath = "../../Resources/bake_remove_rig.ico";
                     }
                     else if (!RevertAnimation)
                     {
-                        GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "";
-                        GetRigCategoryList("Miscellaneous").RigButtonList.Last().StatusImagePath = "";
+                        // If RevertAnimation is true it will set the StatusImagePath, so don't clear it
+                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "";
+                    }
+
+                    if (!value)
+                    {
+                        GetRigButtonFromCategory(GetRigCategoryList("Miscellaneous"), "Re-Parent Component").StatusImagePath = "";
+                        GetRigButtonFromCategory(GetRigCategoryList("Space Switching"), "Dynamics - AIM").StatusImagePath = "";
                     }
                 }
             }
@@ -429,11 +436,11 @@ namespace Freeform.Rigging
 
                     if (value)
                     {
-                        GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "../../Resources/remove_revert.png";
+                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "../../Resources/remove_revert.png";
                     }
                     else if (!BakeComponent)
                     {
-                        GetRigCategoryList("Bake/Remove Components").RigButtonList.First().StatusImagePath = "";
+                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "";
                     }
                 }
             }
@@ -905,6 +912,17 @@ namespace Freeform.Rigging
                     returnCategory = category;
             }
             return returnCategory;
+        }
+
+        public RigBarButton GetRigButtonFromCategory(RigBarCategory category, string buttonName)
+        {
+            RigBarButton returnButton = null;
+            foreach (RigBarButton button in category.RigButtonList)
+            {
+                if (button.Name == buttonName)
+                    returnButton = button;
+            }
+            return returnButton;
         }
 
         public void AddQuickSearchCall(object sender)

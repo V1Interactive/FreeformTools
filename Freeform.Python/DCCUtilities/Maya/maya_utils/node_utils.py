@@ -139,6 +139,14 @@ def zero_node(obj, connection_filter_list):
     for attr in locked_attrs:
         attr.lock()
 
+def get_distance(obj_start, obj_end):
+    '''
+    Get the world space distance between two objects
+    '''
+    end_ws = pm.dt.Vector(pm.xform(obj_end, q=True, ws=True, t=True))
+    start_ws = pm.dt.Vector(pm.xform(obj_start, q=True, ws=True, t=True))
+    return (end_ws - start_ws).length()
+
 def get_world_space_position_at_time(obj, frame):
     '''
     Uses pm.getAttr to get the .worldMatrix of an object at a time frame, and returns the translate portion of it

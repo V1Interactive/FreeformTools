@@ -431,19 +431,21 @@ def create_zero_group(jnt):
     else:
         zero_name = "zero_" + zero_name
 
-    try:
-        freeze_transform(jnt)
-    except:
-        pass
+    if type(jnt) == pm.nt.Joint:
+        try:
+            freeze_transform(jnt)
+        except Exception, e:
+            exception_text = v1_core.exceptions.get_exception_message()
+            v1_core.v1_logging.get_logger().error(exception_text)
 
-    empty_group = pm.group(empty=True, name=zero_name)
-    temp_const = pm.parentConstraint(jnt, empty_group, maintainOffset=False)
-    pm.delete(temp_const)
+    zero_group = pm.group(empty=True, name=zero_name)
+    align_const = pm.parentConstraint(jnt, zero_group, maintainOffset=False)
+    pm.delete(align_const)
     temp_parent = jnt.getParent()
-    jnt.setParent(empty_group)
-    empty_group.setParent(temp_parent)
+    jnt.setParent(zero_group)
+    zero_group.setParent(temp_parent)
 
-    return empty_group
+    return zero_group
 
 def freeze_transform(jnt):
     '''
@@ -709,6 +711,26 @@ def sort_chain_by_hierarchy(joint_list):
         order_dict.setdefault(relative_count, [])
         order_dict[	relative_count ].append(obj)
     
+    ordered_keys = order_dict.keys()
+    ordered_keys.sort()
+
+    sorted_list = []
+    for key in ordered_keys:
+        sorted_list.extend(order_dict[key])
+
+    return sorted_list
+
+def sort_chain_by_index(joint_list):
+    '''
+    Sorts a chain of joints by the 'ordered_index' property value on them
+    Requires all joints to have an 'ordered_index' property
+    '''
+    order_dict = {}
+    for obj in joint_list:
+        index = obj.ordered_index.get()
+        order_dict.setdefault(index, [])
+        order_dict[	index ].append(obj)
+
     ordered_keys = order_dict.keys()
     ordered_keys.sort()
 

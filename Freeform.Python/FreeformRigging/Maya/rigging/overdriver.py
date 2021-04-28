@@ -388,7 +388,7 @@ class Dynamic_Driver(Overdriver):
     def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_queue = False, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
-
+        bake_dynamics = not use_queue
         use_queue = False
 
         if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_queue, **kwargs):
@@ -397,7 +397,7 @@ class Dynamic_Driver(Overdriver):
         driver_control = self.rig_setup(control, object_space)
 
         object_space = object_space[1] if len(object_space) > 1 else object_space[0]
-        self.apply_dynamics(driver_control, object_space)
+        self.apply_dynamics(driver_control, object_space, bake_dynamics)
 
         self.save_animation()
         self.bind_controls()
@@ -414,7 +414,7 @@ class Dynamic_Driver(Overdriver):
 
         return driver_control
 
-    def apply_dynamics(self, dynamic_control, object_space):
+    def apply_dynamics(self, dynamic_control, object_space, bake_dynamics):
         return NotImplemented
 
 
@@ -428,29 +428,43 @@ class Aim(Dynamic_Driver):
         self.hold_constraint = pm.pointConstraint
         self.maintain_offset = False
 
-    def apply_dynamics(self, dynamic_control, object_space):
+    def apply_dynamics(self, dynamic_control, object_space, bake_dynamics):
         maya_utils.scene_utils.set_current_frame()
+        control = self.network['overdriven_control'].get_first_connection()
+        maya_utils.node_utils.force_align(control, dynamic_control)
         target_data = rigging.rig_base.ControlInfo.parse_string(self.network['addon'].node.target_data.get())
-        dynamic_grp_name = "{0}{1}_{2}_{3}_grp".format(self.namespace, target_data.region, target_data.side, self.prefix)
-        dynamic_grp = pm.group(empty=True, name=dynamic_grp_name)
-        dynamic_grp.setParent(self.network['addon'].group)
 
-        maya_utils.node_utils.force_align(dynamic_control, dynamic_grp)
+        roll_group_name = "{0}{1}_{2}_roll_group".format(self.namespace, target_data.region, target_data.side, self.prefix)
+        roll_group = pm.group(empty=True, name=roll_group_name)
+        roll_group.setParent(self.network['addon'].group)
 
-        target_object = self.get_target_object()
+        aim_up_group_name = "{0}{1}_{2}_{3}_grp".format(self.namespace, target_data.region, target_data.side, self.prefix)
+        aim_up_group = pm.group(empty=True, name=aim_up_group_name)
+        aim_up_group.setParent(roll_group)
 
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(target_object, metadata.network_core.ComponentCore)
-        component_grp = component_network.group
+        aim_vector = rigging.constraints.get_offset_vector(dynamic_control, object_space)
+        distance = maya_utils.node_utils.get_distance(object_space, dynamic_control)
 
-        constraint_node = list(set(component_grp.listConnections(type='constraint')))[0]
-        up_object = maya_utils.node_utils.get_constraint_driver(constraint_node)
+        object_space_parent = object_space.getParent()
+        object_space.setParent(dynamic_control)
+        object_space.translate.set(aim_vector * distance)
+        object_space.setParent(object_space_parent)
+        
+        maya_utils.node_utils.force_align(dynamic_control, roll_group)
 
-        aim_vector = rigging.constraints.get_offset_vector(object_space, dynamic_control)
-        up_vector = rigging.constraints.get_offset_vector(dynamic_control, up_object, True)
+        character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+        if bake_dynamics and character_category.bake_component:
+            self.network['addon'].set("no_bake", False)
+            bake_constraint_list = []
+            bake_constraint_list.append(pm.parentConstraint(control, object_space, mo=True))
+            bake_constraint_list.append(pm.parentConstraint(control, aim_up_group, mo=False))
+            maya_utils.baking.bake_objects([object_space, aim_up_group], True, True, False)
+            pm.delete(bake_constraint_list)
 
-        pm.aimConstraint(object_space, dynamic_grp, aim=aim_vector, u=[0,1,0], wuo=up_object, wu=up_vector, wut='objectrotation', mo=self.maintain_offset)
-        pm.orientConstraint(dynamic_grp, dynamic_control.getParent(), mo=self.maintain_offset)
+        pm.pointConstraint(control, roll_group, mo=False)
 
+        aim_constraint = rigging.constraints.aim_constraint(object_space, dynamic_control, aim_up_group, roll_object = roll_group, mo = self.maintain_offset)
+        pm.orientConstraint(aim_up_group, dynamic_control.getParent(), mo=self.maintain_offset)
 
 class Pendulum(Aim):
     _requires_space = False
@@ -466,8 +480,8 @@ class Pendulum(Aim):
         self.network = self.create_meta_network(component_node)
         #self.zero_character(self.network['character'], use_queue)
 
-        dynamic_grp_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
-        pre_dynamic_group = pm.group(empty=True, name=dynamic_grp_name)
+        aim_up_group_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
+        pre_dynamic_group = pm.group(empty=True, name=aim_up_group_name)
         pre_dynamic_group.setParent(self.network['addon'].group)
         pm.parentConstraint(self.character_world, pre_dynamic_group, mo=False)
 

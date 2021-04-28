@@ -62,6 +62,50 @@ def set_current_frame():
     pm.currentTime(pm.currentTime())
     pm.cycleCheck(e=cycle_check)
 
+def get_scene_times():
+    '''
+    Gets all values from the scene time range
+
+    Returns:
+        (float, float, float float). The full time range from the scene
+    '''
+    min_time = pm.playbackOptions(q=True, min=True)
+    ast_time = pm.playbackOptions(q=True, ast=True)
+    max_time = pm.playbackOptions(q=True, max=True)
+    aet_time = pm.playbackOptions(q=True, aet=True)
+
+    return (min_time, ast_time, max_time, aet_time)
+
+def set_scene_times(value_tuple):
+    min_time, ast_time, max_time, aet_time = value_tuple
+    pm.playbackOptions(min=min_time, ast=ast_time, max=max_time, aet=aet_time)
+
+def get_scene_fps():
+    '''
+    Gets the FPS that the scene is set to
+
+    Returns:
+        float. FPS value
+    '''
+    time = pm.currentUnit(q=True, t=True)
+    
+    if(time == 'game'):
+        return 15.0
+    elif(time == 'film'):
+        return 24.0
+    elif(time == 'pal'):
+        return 25.0
+    elif(time == 'ntsc'):
+        return 30.0
+    elif(time == 'show'):
+        return 48.0
+    elif(time == 'palf'):
+        return 50.0
+    elif(time == 'ntscf'):
+        return 60.0
+    else:
+        print time
+
 def remove_empty_namespaces():
     '''
     Remove all empty namespaces in the scene
@@ -259,7 +303,7 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
         file_path (string): Full path to the file to import
         **kwargs (kwargs): keyword args to pass along to pm.importFile
     '''
-    scene_time_tuple = maya_utils.anim_attr_utils.get_scene_times()
+    scene_time_tuple = get_scene_times()
 
     import_return = None
     pre_import_list = pm.ls(assemblies = True)
@@ -281,7 +325,7 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2]) 
     finally:
         maya_utils.fbx_wrapper.FBXImportMode(v = current_import_mode)
-        maya_utils.anim_attr_utils.set_scene_times(scene_time_tuple)
+        set_scene_times(scene_time_tuple)
 
     if not import_return and kwargs['returnNewNodes'] == True:
         post_import_list = pm.ls(assemblies = True)

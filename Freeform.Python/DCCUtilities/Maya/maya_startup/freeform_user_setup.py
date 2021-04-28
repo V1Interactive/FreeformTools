@@ -92,5 +92,5 @@ def setup():
     import versioning
     import maya_utils
     scene_tools.scene_manager.SceneManager().update_method_list.append(versioning.meta_network_version.update_network)
-    scene_tools.scene_manager.SceneManager().update_method_list.append(maya_utils.scene_utils.clean_reference_cameras)
+    #scene_tools.scene_manager.SceneManager().update_method_list.append(maya_utils.scene_utils.clean_reference_cameras)
     #scene_tools.scene_manager.SceneManager().update_method_list.append(maya_utils.scene_utils.fix_full_paths)
