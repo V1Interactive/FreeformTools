@@ -42,6 +42,33 @@ class BakeRangeError(Exception):
         message = "Bake Range must be 2 integer values.  Non integers found."
         super(BakeRangeError, self).__init__(message)
 
+class Global_Bake_Queue(object):
+    '''
+    Holds a singleton BakeQueue() object.
+
+    Attributes:
+        queue (BakeQueue): Queue to use for global registration
+    '''
+    __metaclass__ = v1_core.py_helpers.Singleton
+
+    def __init__(self, *args, **kwargs):
+        self.queue = BakeQueue("Global Bake Queue")
+
+    def add_bake_command(self, obj_list, kwargs):
+        self.queue.add_bake_command(obj_list, kwargs)
+
+    def add_command(self, method, obj_list, kwargs):
+        self.queue.add_command(method, obj_list, kwargs)
+
+    def add_post_process(self, method, kwargs):
+        self.queue.add_post_process(method, kwargs)
+
+    def add_pre_process(self, method, kwargs, priority):
+        self.queue.add_pre_process(method, kwargs, priority)
+
+    def run_queue(self):
+        self.queue.run_queue()
+
 
 class BakeQueue(object):
     '''
@@ -55,9 +82,9 @@ class BakeQueue(object):
         pre_process_list (list<method>): List of methods from each rig component for any pre-bake commands that must be run
         post_process_list (list<method>): List of methods for each rig component for any post-bake command that must be run
     '''
-    __metaclass__ = v1_core.py_helpers.Singleton
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, *args, **kwargs):
+        self.name = name
         self.queue = {}
         self.pre_process_list = []
         self.post_process_list = []
@@ -128,6 +155,10 @@ class BakeQueue(object):
         pm.autoKeyframe(state=False)
 
         try:
+            if not (self.queue or self.pre_process_list or self.post_process_list):
+                return
+
+            v1_core.v1_logging.get_logger().info("============     Bake Queue Running - {0}     ============".format(self.name))
             constraint_list = []
             v1_core.v1_logging.get_logger().debug("Running {0} Pre-Processes".format(len(self.pre_process_list)))
 

@@ -169,6 +169,21 @@ def characterize_with_zeroing(jnt = None):
 
     scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
 
+
+def remove_existing_rigging(component_type, joint_chain, force_remove = False):
+    local_bake_queue = maya_utils.baking.BakeQueue("Remove Existing Queue")
+    character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+    if character_category.remove_existing or force_remove:
+        for region_joint in joint_chain[1:-1]:
+            rigging.rig_base.Component_Base.remove_rigging(region_joint, local_queue=local_bake_queue)
+        if component_type._hasattachment != 'root':
+            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[0], exclude = 'end', local_queue=local_bake_queue)
+        if component_type._hasattachment != 'end':
+            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[-1], exclude = 'root', local_queue=local_bake_queue)
+
+        local_bake_queue.run_queue()
+
+
 def transfer_ue_anim_to_character(character_node, ue4_animation_path):
     character_network = metadata.network_core.MetaNode.create_from_node(character_node)
     character_skeleton = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()

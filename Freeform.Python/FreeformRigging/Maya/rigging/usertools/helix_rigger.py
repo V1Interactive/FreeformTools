@@ -846,6 +846,8 @@ class HelixRigger:
             vm (Rigging.RiggerVM): C# view model object sending the command
             event_args (None): None
         '''
+        v1_core.v1_logging.get_logger().info("-------------     Helix Rigger UI Updated     -------------")
+
         self.delete_orphaned_characters()
         self.clean_component_lookup()
         update_character_list = []
@@ -1361,7 +1363,7 @@ class HelixRigger:
                 return_list[-1] = control
             elif control_type == 'pv':
                 return_list[0] = control
-            elif control_type == 'toe_ik':
+            elif control_type == 'toe_ik' or control_type == "locator":
                 return_list.insert(0, control)
                 offset += 1
 
@@ -1971,10 +1973,11 @@ class HelixRigger:
         if event_args:
             sel_list = pm.ls(selection=True)
             component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.AddonCore) for x in sel_list]
-            if not component_network_list:
+            if not get_first_or_default(component_network_list):
                 component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in sel_list]
 
             component_network_list = list(set(component_network_list))
+            component_network_list = [x for x in component_network_list if x]
             for component_network in component_network_list:
                 if component_network.node.exists():
                     rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
@@ -2059,7 +2062,7 @@ class HelixRigger:
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
             rig_component.bake_and_remove()
 
-        maya_utils.baking.BakeQueue().run_queue()
+        maya_utils.baking.Global_Bake_Queue().run_queue()
         maya_utils.scene_utils.set_current_frame()
 
         self.vm.UpdateRiggerInPlace()
@@ -2074,7 +2077,7 @@ class HelixRigger:
             joints_network = component_network.get_downstream(metadata.network_core.SkeletonJoints)
             joint_list = joints_network.get_connections()
             if character_category.bake_component:
-                maya_utils.baking.BakeQueue().add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
+                maya_utils.baking.Global_Bake_Queue().add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
             elif character_category.revert_animation:
                 sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
                 component_network.load_animation(sorted_joint_list)
@@ -2083,7 +2086,7 @@ class HelixRigger:
             metadata.network_core.MetaNode.delete_network(component_network.node)
 
         if character_category.bake_component:
-            maya_utils.baking.BakeQueue().run_queue()
+            maya_utils.baking.Global_Bake_Queue().run_queue()
 
         maya_utils.scene_utils.set_current_frame()
         self.vm.UpdateRiggerInPlace()
@@ -2496,18 +2499,14 @@ class HelixRigger:
             return
 
         component_type = getattr(sys.modules[event_args.rigType[0]], event_args.rigType[1])
-        root = pm.PyNode(event_args.skeletonRegion.Root)
-        end = pm.PyNode(event_args.skeletonRegion.End)
+        root_joint = pm.PyNode(event_args.skeletonRegion.Root)
+        end_joint = pm.PyNode(event_args.skeletonRegion.End)
+        region_chain = rigging.skeleton.get_joint_chain(root_joint, end_joint)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
-
-        if character_category.remove_existing:
-            if component_type._hasattachment != 'root':
-                removed_node_list = rigging.rig_base.Component_Base.remove_rigging(root, exclude = 'end')
-            if component_type._hasattachment != 'end':
-                removed_node_list = rigging.rig_base.Component_Base.remove_rigging(end, exclude = 'root')
-
-        skeleton_dict = rigging.skeleton.get_skeleton_dict(root)
+        
+        freeform_utils.character_utils.remove_existing_rigging(component_type, region_chain)
+        skeleton_dict = rigging.skeleton.get_skeleton_dict(root_joint)
         character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(c_character.NodeName))
         control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)
 
