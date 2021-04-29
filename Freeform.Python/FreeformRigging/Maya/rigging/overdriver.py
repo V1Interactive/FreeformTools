@@ -68,21 +68,21 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
 
     @undoable
-    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_global_queue = False, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
-        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_queue = use_queue, **kwargs):
+        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_global_queue = use_global_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space_list, bake_controls, default_space)
 
         if bake_controls:
-            self.run_bake(use_queue)
+            self.run_bake(use_global_queue)
 
-        if use_queue:
-            maya_utils.baking.BakeQueue().add_post_process(self.save_animation, {})
-            maya_utils.baking.BakeQueue().add_post_process(self.bind_controls, {})
+        if use_global_queue:
+            maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})
+            maya_utils.baking.Global_Bake_Queue().add_post_process(self.bind_controls, {})
         else:
             self.save_animation()
             self.bind_controls()
@@ -100,6 +100,8 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
         keep_offset = True if len(object_space_list) > 1 else False
         overdriver_constraint = self.space_constraint(object_space_list, addon_network.group, mo=keep_offset)
+        if self.space_constraint == pm.parentConstraint or self.space_constraint == pm.orientConstraint:
+            overdriver_constraint.interpType.set(2)
 
         # Make sure the zero group is placed back on the control after space_constraint is added
         temp_constraint = pm.parentConstraint(control, driver_control.getParent(), mo=False)
@@ -145,11 +147,11 @@ class Overdriver(rigging.rig_base.Addon_Component):
         temp_constraint = pm.parentConstraint(control, driver_control, mo=False)
         return [temp_constraint]
 
-    def run_bake(self, use_queue):
-        if use_queue:
+    def run_bake(self, use_global_queue):
+        if use_global_queue:
             control_list = self.network['controls'].get_connections()
-            maya_utils.baking.BakeQueue().add_pre_process(self.attach_to_component, {}, 1)
-            maya_utils.baking.BakeQueue().add_bake_command(control_list, {'translate' : self.translate, 'rotate' : self.rotate, 'scale' : True, 'simulation' : False})
+            maya_utils.baking.Global_Bake_Queue().add_pre_process(self.attach_to_component, {}, 1)
+            maya_utils.baking.Global_Bake_Queue().add_bake_command(control_list, {'translate' : self.translate, 'rotate' : self.rotate, 'scale' : True, 'simulation' : False})
         else:
             temp_constraint = self.attach_to_component()
             self.bake_controls(translate = self.translate, rotate = self.rotate)
@@ -385,13 +387,13 @@ class Dynamic_Driver(Overdriver):
         self.maintain_offset = False
 
     @undoable
-    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_global_queue = False, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
-        bake_dynamics = not use_queue
-        use_queue = False
+        bake_dynamics = not use_global_queue
+        use_global_queue = False
 
-        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_queue, **kwargs):
+        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_global_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space)
@@ -475,10 +477,10 @@ class Pendulum(Aim):
         self.prefix = "PendulumDynamic"
         self.maintain_offset = False
 
-    def rig(self, component_node, control, bake_controls=False, default_space=None, use_queue=False, **kwargs):
+    def rig(self, component_node, control, bake_controls=False, default_space=None, use_global_queue=False, **kwargs):
         # Create the dynamic pendulum to be used as the Aim space for the overdriver
         self.network = self.create_meta_network(component_node)
-        #self.zero_character(self.network['character'], use_queue)
+        #self.zero_character(self.network['character'], use_global_queue)
 
         aim_up_group_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
         pre_dynamic_group = pm.group(empty=True, name=aim_up_group_name)
@@ -507,7 +509,7 @@ class Pendulum(Aim):
 
         self.reset_pendulum(object_space)
 
-        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_queue=use_queue, **kwargs):
+        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_global_queue=use_global_queue, **kwargs):
             return False
         
         driver_control = self.network['controls'].get_first_connection()
@@ -597,11 +599,11 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
 
     @undoable
 
-    def rig(self, component_node, control, object_space, attribute_list, use_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space, attribute_list, use_global_queue = False, **kwargs):
         # Disable queue for this type
-        use_queue = False
+        use_global_queue = False
 
-        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, use_queue = use_queue, **kwargs):
+        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, use_global_queue = use_global_queue, **kwargs):
             return False
 
         object_space = get_last_or_default(object_space)
@@ -728,7 +730,7 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
         self.prefix = "AttributeTranslator"
 
     @undoable
-    def rig(self, component_node, control, object_space_list, attribute_channel_dict, use_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space_list, attribute_channel_dict, use_global_queue = False, **kwargs):
         '''
         Args:
             component_node (PyNode): The component network.node object
@@ -736,9 +738,9 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
             object_space_list (list<PyNode>): The Maya scene objects that will be the object space for the addon component controls
         '''
         # Disable queue for this type
-        use_queue = False
+        use_global_queue = False
 
-        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, use_queue = use_queue, **kwargs):
+        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, use_global_queue = use_global_queue, **kwargs):
             return False
 
         object_space = get_first_or_default(object_space_list)

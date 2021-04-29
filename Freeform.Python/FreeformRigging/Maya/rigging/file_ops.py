@@ -397,7 +397,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     v1_core.v1_logging.get_logger().info("Rigging Created in {0} Seconds".format(time.clock() - create_time))
 
     queue_time = time.clock()
-    maya_utils.baking.BakeQueue().run_queue()
+    maya_utils.baking.Global_Bake_Queue().run_queue()
 
     for control_var_method, args in set_control_var_dict.iteritems():
         control_var_method(args)
@@ -431,7 +431,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     v1_core.v1_logging.get_logger().info("Addons Created in {0} Seconds".format(time.clock() - addon_time))
 
     queue_time = time.clock()
-    maya_utils.baking.BakeQueue().run_queue()
+    maya_utils.baking.Global_Bake_Queue().run_queue()
     v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.clock() - queue_time))
 
     pm.delete([x for x in imported_nodes if x.exists()])

@@ -124,10 +124,12 @@ class Aim_Constraint_Dialogue(object):
         aim_space.setParent(aim_parent)
 
         roll_object = pm.duplicate(target, po=True)[0]
+        maya_utils.node_utils.unlock_transforms(roll_object)
         roll_object.setParent(None)
         roll_object.rename(target.name() + "_temp_aimspace_roll_object")
 
         up_object = pm.duplicate(target, po=True)[0]
+        maya_utils.node_utils.unlock_transforms(up_object)
         up_object.setParent(roll_object)
         up_object.rename(target.name() + "_temp_aimspace_up_object")
 
