@@ -316,6 +316,19 @@ class BakeSettings(SettingsCategory):
 
         super(BakeSettings, self).__init__(settings_data)
 
+    def force_bake_key_range(self):
+        user_settings = [self.current_frame, self.time_range, self.frame_range, self.key_range]
+        self.current_frame = False
+        self.time_range = False
+        self.frame_range = False
+        self.key_range = True
+
+        return user_settings
+
+    def restore_bake_settings(self, bake_settings):
+        self.current_frame, self.time_range, self.frame_range, self.key_range = bake_settings
+
+
 class ExporterSettings(SettingsCategory):
     '''
     Settings for handling exporter UI

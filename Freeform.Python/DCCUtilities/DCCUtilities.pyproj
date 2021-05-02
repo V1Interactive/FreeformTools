@@ -45,6 +45,9 @@
     <Compile Include="Maya\maya_utils\usertools\frame_range_dialogue.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Maya\maya_utils\usertools\particle_constraint_dialogue.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\maya_utils\usertools\__init__.py" />
     <Compile Include="Maya\maya_utils\__init__.py" />
     <Compile Include="Maya\__root__.py" />

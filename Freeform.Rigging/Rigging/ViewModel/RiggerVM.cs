@@ -682,7 +682,7 @@ namespace Freeform.Rigging
             SetDefaultActiveCharacter();
         }
 
-        void SetDefaultActiveCharacter()
+        public void SetDefaultActiveCharacter()
         {
             if (CharacterList.FirstOrDefault() != null)
             {
@@ -888,13 +888,16 @@ namespace Freeform.Rigging
 
         public void UnloadCharacterCall(object sender)
         {
-            UnloadCharacter(ActiveCharacter);
+            UnloadCharacter(ActiveCharacter, true);
         }
 
-        public void UnloadCharacter(Character character)
+        public void UnloadCharacter(Character character, bool updateCharacter)
         {
             CharacterList.Remove(character);
-            SetDefaultActiveCharacter();
+            if (updateCharacter)
+            {
+                SetDefaultActiveCharacter();
+            }
         }
 
         public void BakeRangeCall(object sender)

@@ -1,22 +1,25 @@
-﻿namespace Freeform.Rigging.AimConstraintDialogue
+﻿namespace Freeform.Rigging.ParticleConstraintDialogue
 {
     using System;
     using System.Diagnostics;
+    using System.Text.RegularExpressions;
     using System.Windows;
+    using System.Windows.Input;
     using System.Windows.Interop;
 
+
     /// <summary>
-    /// Interaction logic for FrameRangeDialogue.xaml
+    /// Interaction logic for ParticleConstraintDialogue.xaml
     /// </summary>
-    public partial class AimConstraintDialogue : Window
+    public partial class ParticleConstraintDialogue : Window
     {
-        public AimConstraintDialogue()
+        public ParticleConstraintDialogue()
         {
             InitializeComponent();
             SetupDataContext();
         }
 
-        public AimConstraintDialogue(Process parent)
+        public ParticleConstraintDialogue(Process parent)
         {
             InitializeComponent();
 
@@ -28,7 +31,7 @@
 
         void SetupDataContext()
         {
-            AimConstraintDialogueVM vm = new AimConstraintDialogueVM();
+            ParticleConstraintDialogueVM vm = new ParticleConstraintDialogueVM();
             DataContext = vm;
             if (vm.CloseAction == null)
             {
@@ -39,8 +42,14 @@
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            AimConstraintDialogueVM vm = DataContext as AimConstraintDialogueVM;
+            ParticleConstraintDialogueVM vm = DataContext as ParticleConstraintDialogueVM;
             vm.Close();
+        }
+
+        private void TextInputFilter(object sender, TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9.-]+");
+            e.Handled = regex.IsMatch(e.Text);
         }
     }
 }

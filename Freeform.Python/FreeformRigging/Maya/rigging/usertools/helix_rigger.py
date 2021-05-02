@@ -846,7 +846,7 @@ class HelixRigger:
             vm (Rigging.RiggerVM): C# view model object sending the command
             event_args (None): None
         '''
-        v1_core.v1_logging.get_logger().info("-------------     Helix Rigger UI Updated     -------------")
+        v1_core.v1_logging.get_logger().info("-------------     Helix Rigger UI Updating     -------------")
 
         self.delete_orphaned_characters()
         self.clean_component_lookup()
@@ -854,7 +854,7 @@ class HelixRigger:
         remove_character_list = [x for x in self.vm.CharacterList if not pm.objExists(x.NodeName)]
 
         for c_character in remove_character_list:
-            self.vm.UnloadCharacter(c_character)
+            self.vm.UnloadCharacter(c_character, False)
 
         if self.vm.UiManualUpdate:
             update_character_list = [metadata.network_core.MetaNode.create_from_node(x) for x in [pm.PyNode(x.NodeName) for x in self.vm.CharacterList if pm.objExists(x.NodeName)]]
@@ -863,6 +863,8 @@ class HelixRigger:
 
         for character_network in update_character_list:
             self.update_or_load_character(character_network)
+
+        self.vm.SetDefaultActiveCharacter()
 
         # Animation Property updates
         export_definition_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.ExportDefinition)
@@ -2055,6 +2057,9 @@ class HelixRigger:
             c_object (Rigging.RigBarButton): C# view model object sending the command
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
+        bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
+        user_bake_settings = bake_settings.force_bake_key_range()
+
         sel_list = pm.ls(selection=True)
         component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
 
@@ -2065,6 +2070,7 @@ class HelixRigger:
         maya_utils.baking.Global_Bake_Queue().run_queue()
         maya_utils.scene_utils.set_current_frame()
 
+        bake_settings.restore_bake_settings(user_bake_settings)
         self.vm.UpdateRiggerInPlace()
 
     def force_remove_component(self, c_object, event_args):
@@ -2498,6 +2504,9 @@ class HelixRigger:
             v1_shared.usertools.message_dialogue.open_dialogue("No Region Selected", title="Unable To Rig")
             return
 
+        bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
+        user_bake_settings = bake_settings.force_bake_key_range()
+
         component_type = getattr(sys.modules[event_args.rigType[0]], event_args.rigType[1])
         root_joint = pm.PyNode(event_args.skeletonRegion.Root)
         end_joint = pm.PyNode(event_args.skeletonRegion.End)
@@ -2527,6 +2536,7 @@ class HelixRigger:
         if not character_category.remove_existing:
             component.open_rig_switcher()
 
+        bake_settings.restore_bake_settings(user_bake_settings)
         maya_utils.scene_utils.set_current_frame()
 
     def _remove_rigging_from_ui(self, component_node):
