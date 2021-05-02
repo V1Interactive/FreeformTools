@@ -145,7 +145,8 @@ def get_distance(obj_start, obj_end):
     '''
     end_ws = pm.dt.Vector(pm.xform(obj_end, q=True, ws=True, t=True))
     start_ws = pm.dt.Vector(pm.xform(obj_start, q=True, ws=True, t=True))
-    return (end_ws - start_ws).length()
+    length = (end_ws - start_ws).length()
+    return convert_scene_units(length)
 
 def get_world_space_position_at_time(obj, frame):
     '''

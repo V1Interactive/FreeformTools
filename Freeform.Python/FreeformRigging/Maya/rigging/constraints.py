@@ -18,7 +18,7 @@ CONSTRAINT_TYPES = [pm.nt.PointConstraint, pm.nt.OrientConstraint, pm.nt.ScaleCo
 # Which channels to bake per constraint type, Translate, Rotate, Scale
 CONSTRAINT_BAKE_SETTINGS = {pm.nt.PointConstraint : [True, False, False], pm.nt.OrientConstraint : [False, True, False], pm.nt.ScaleConstraint : [False, False, True], pm.nt.ParentConstraint : [True, True, True]}
 
-
+@undoable
 def aim_constraint(object_space, target, up_object, roll_object = None, **kwargs):
     scene_up = [0,0,10]
     aim_vector = get_offset_vector(target, object_space)
@@ -41,6 +41,50 @@ def aim_constraint(object_space, target, up_object, roll_object = None, **kwargs
 
     return pm.aimConstraint(object_space, target, aim=aim_vector, u=up_vector, wuo=up_object, wu=object_up_vector, wut='objectrotation', **kwargs)
 
+@undoable
+def particle_constraint(target, goal_weight, goal_smooth, start_offset):
+    user_scene_time = maya_utils.scene_utils.get_scene_times()
+    start_frame = user_scene_time[0] - start_offset
+    lico_particle = pm.particle(name="lico_particle_dynamic", c=1, p=[0,0,0])[1]
+
+    temp_locator_a = pm.spaceLocator(n="temp_locator_a", p=[0,0,0])
+    temp_locator_b = pm.spaceLocator(n="temp_locator_b", p=[0,0,0])
+    temp_locator_correction = pm.spaceLocator(n="temp_locator_orient_correction", p=[0,0,0])
+
+    pm.pointConstraint(target, temp_locator_correction, mo=False)
+    pm.delete( pm.pointConstraint(temp_locator_correction, lico_particle.getParent(), offset=[0,0,2], mo=False) )
+
+    pm.goal(lico_particle, w=0.5, utr=0, g=temp_locator_correction)
+    lico_particle.worldCentroid >> temp_locator_a.translate
+
+    dynamic_scene_time = (start_frame, start_frame, user_scene_time[2], user_scene_time[3])
+    maya_utils.scene_utils.set_scene_times(dynamic_scene_time)
+
+    lico_particle.goalWeight[0].set(goal_weight)
+    lico_particle.goalSmoothness.set(goal_smooth)
+    lico_particle.startFrame.set(start_frame)
+
+    delete_constraint = pm.parentConstraint(temp_locator_a, temp_locator_b, mo=False)
+    maya_utils.baking.bake_objects([temp_locator_b], True, True, True, simulation = True)
+    pm.delete(delete_constraint)
+
+    maya_utils.scene_utils.set_scene_times(user_scene_time)
+
+    return [lico_particle, temp_locator_a, temp_locator_b, temp_locator_correction]
+
+@undoable
+def apply_particle_constraint(goal_weight, goal_smooth, start_offset):
+    target = get_first_or_default(pm.ls(sl=True))
+
+    if target:
+        lico_particle, temp_locator_a, temp_locator_b, temp_locator_correction = particle_constraint(target, goal_weight, goal_smooth, start_offset)
+
+        delete_constraint = pm.pointConstraint(temp_locator_b, target, mo=True)
+        maya_utils.baking.bake_objects([target], True, True, True)
+        pm.delete(delete_constraint)
+        pm.delete([lico_particle, temp_locator_a, temp_locator_b, temp_locator_correction])
+    else:
+        v1_shared.usertools.message_dialogue.open_dialogue("Please Select Something to apply the constraint to", "Nothing Selected")
 
 def set_constraint_weights(constraint_type, target_obj, driver_list, weight_list):
     '''

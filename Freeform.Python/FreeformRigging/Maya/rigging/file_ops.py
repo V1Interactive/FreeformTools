@@ -356,6 +356,9 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
         character_network (PyNode): The Maya scene character network node for the character to save
         file_path (str): Full file path to the location to save the json file
     '''
+    bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
+    user_bake_settings = bake_settings.force_bake_key_range()
+
     rig_file_path = v1_shared.file_path_utils.full_path_to_relative(file_path)
     character_network.set('rig_file_path', rig_file_path)
 
@@ -434,6 +437,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     maya_utils.baking.Global_Bake_Queue().run_queue()
     v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.clock() - queue_time))
 
+    bake_settings.restore_bake_settings(user_bake_settings)
     pm.delete([x for x in imported_nodes if x.exists()])
     v1_core.v1_logging.get_logger().info("Rigging Completed in {0} Seconds".format(time.clock() - start_time))
 

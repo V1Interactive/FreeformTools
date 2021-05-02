@@ -1805,7 +1805,10 @@ class Rig_Component(Component_Base):
         elif local_queue:
             local_queue.add_bake_command(bake_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
         else:
+            bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
+            user_bake_settings = bake_settings.force_bake_key_range()
             maya_utils.baking.bake_objects(bake_list, translate, rotate, scale, use_settings = True, simulation = simulation)
+            bake_settings.restore_bake_settings(user_bake_settings)
 
     @undoable
     def bake_and_remove(self, use_global_queue = True, local_queue = None):

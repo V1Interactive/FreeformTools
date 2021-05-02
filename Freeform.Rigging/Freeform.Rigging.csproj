@@ -119,6 +119,10 @@
     <Compile Include="MessageDialogue\View\MessageDialogue.xaml.cs">
       <DependentUpon>MessageDialogue.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ParticleConstraintDialogue\ViewModel\ParticleConstraintDialogueVM.cs" />
+    <Compile Include="ParticleConstraintDialogue\View\ParticleConstraintDialogue.xaml.cs">
+      <DependentUpon>ParticleConstraintDialogue.xaml</DependentUpon>
+    </Compile>
     <Compile Include="RegionEditor\Model\Region.cs" />
     <Compile Include="RegionEditor\ViewModel\RegionEditorVM.cs" />
     <Compile Include="RegionEditor\View\RegionEditor.xaml.cs">
@@ -231,6 +235,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MessageDialogue\View\MessageDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ParticleConstraintDialogue\View\ParticleConstraintDialogue.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

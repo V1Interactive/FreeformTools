@@ -47,6 +47,7 @@ class MetaNode(object):
     __metaclass__ = ABCMeta
 
     type_dict = {str : "string", int : "short", float : 'double', bool : "bool", list : 'double3', pm.dt.Vector : 'double3'}
+    type_match = {str : [str, None]}
 
     #region Static Methods
     @staticmethod
@@ -222,7 +223,9 @@ class MetaNode(object):
                         attr_type = list
 
                     if attr_type != type(value):
-                        self.node.deleteAttr(attr_name)
+                        attr_match = self.type_match.get(attr_type)
+                        if attr_match and type(value) not in attr_match:
+                            self.node.deleteAttr(attr_name)
                 # Add any new attributes
                 else:
                     self.add_attr(attr_name, value_type)
@@ -630,17 +633,10 @@ class ExportDefinition(DependentNode):
     dependent_node = ExportCore
 
     def __init__(self, parent = None, node_name = 'v1_export_definition', node = None, namespace = ""):
-        super(ExportDefinition, self).__init__(parent, node_name, node, namespace)
+        super(ExportDefinition, self).__init__(parent, node_name, node, namespace, ui_index = (0, 'short'), definition_name = ("", 'string'), start_frame = (0, 'short'), 
+                                               end_frame = (0, 'short'), frame_range = (False, 'bool'), use_scene_name = (False, 'bool'), do_export = (True, 'bool'))
         if not node:
-            self.add_attr('ui_index', 'short')
-            self.add_attr('definition_name', 'string')
             self.node.definition_name.set("New_Export_Definition")
-            self.add_attr('start_frame', 'short')
-            self.add_attr('end_frame', 'short')
-            self.add_attr('frame_range', 'bool')
-            self.add_attr('use_scene_name', 'bool')
-            self.add_attr('do_export', 'bool')
-            self.set('do_export', True, 'bool')
 
     def set_time_range(self):
         if self.node.frame_range.get():
@@ -683,22 +679,17 @@ class CharacterCore(DependentNode):
     dependent_node = Core
 
     def __init__(self, parent = None, node_name = 'v1_character', node = None, namespace = ""):
-        super(CharacterCore, self).__init__(parent, node_name, node, namespace)
+        super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = ("", 'string'), character_name = ("", 'string'), root_path = ("", 'string'),
+                                            sub_paths = ("", 'string'), rig_file_path = ("", 'string'), color_set = ("", 'string'), scalar = (1.0, 'float'))
         if not node:
-            self.add_attr('version', 'string')
             self.set('version', v1_core.json_utils.get_version("CharacterSettings", "Maya"))
-
-            self.add_attr('character_name', 'string')
             self.set('character_name', node_name)
-
-            self.add_attr('root_path', 'string')
-            self.add_attr('sub_paths', 'string')
-            self.add_attr('rig_file_path', 'string')
-
-            self.add_attr('color_set', 'string')
 
             char_grp = pm.group(empty=True, name= "{0}_Character".format(node_name))
             self.connect_node(char_grp)
+        else:
+            if self.get('scalar') == 0:
+                self.set('scalar', 1.0)
 
     def get_character_path_list(self):
         root_path = self.get('root_path')
@@ -840,6 +831,7 @@ class RigComponent(DependentNode):
     def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = "", **kwargs):
         super(RigComponent, self).__init__(parent, node_name, node, namespace, **kwargs)
         if not node:
+            # Auto add attributes doesn't allow adding multi type attributes, so we add them here
             pm.addAttr(self.node, ln="translate_save", multi=True, type='double')
             pm.addAttr(self.node, ln="rotate_save", multi=True, type='doubleAngle')
             pm.addAttr(self.node, ln="scale_save", multi=True, type='double')
@@ -909,13 +901,10 @@ class ComponentCore(RigComponent):
     dependent_node = RigCore
 
     def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):
-        super(ComponentCore, self).__init__(parent, node_name, node, namespace)
+        super(ComponentCore, self).__init__(parent, node_name, node, namespace, component_type = ("", 'string'), side = ("", 'string'), region = ("", 'string'), 
+                                            group_name = ("", 'string'), selection_lock = ("", 'string'))
         if not node:
-            self.add_attr('component_type', 'string')
-            self.add_attr('side', 'string')
-            self.add_attr('region', 'string')
-            self.add_attr('group_name', 'string')
-            self.add_attr('selection_lock', 'string')
+            pass
 
     def delete(self):
         pm.delete(self.get_connections())
@@ -1019,13 +1008,9 @@ class AddonCore(RigComponent):
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'addon_core', node = None, namespace = ""):
-        super(AddonCore, self).__init__(parent, node_name, node, namespace)
+        super(AddonCore, self).__init__(parent, node_name, node, namespace, component_type = ("", 'string'), target_type = ("", 'string'), 
+                                        target_data = ("", 'string'), target_weight = ("", 'string'))
         if not node:
-            self.add_attr('component_type', 'string')
-            self.add_attr('target_type', 'string')
-            self.add_attr('target_data', 'string')
-            self.add_attr('target_weight', 'string')
-
             addon_grp = pm.group(empty=True, name= namespace + node_name.replace("_core", "_grp"))
             self.connect_node(addon_grp)
 

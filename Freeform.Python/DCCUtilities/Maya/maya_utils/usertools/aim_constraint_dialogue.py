@@ -26,6 +26,7 @@ import Freeform.Rigging
 import os
 
 import rigging
+import metadata
 import maya_utils
 
 import v1_core
@@ -110,9 +111,17 @@ class Aim_Constraint_Dialogue(object):
             target = selection_list[0]
             aim_space = pm.spaceLocator(n=target.name() + "_temp_aimspace_target")
             aim_space.localScale.set(10,10,10)
+
+            character_network = metadata.network_core.MetaNode.get_first_network_entry(target, metadata.network_core.CharacterCore)
+            if character_network:
+                scalar = character_network.get('scalar', 'float')
+                scalar = 1 if not scalar else scalar
+                distance *= scalar
         else:
             v1_shared.usertools.message_dialogue.open_dialogue("Please select something", "Nothing Selected")
             return
+
+        distance = maya_utils.node_utils.convert_scene_units(distance)
         
         if event_vector == pm.dt.Vector.zero:
             event_vector = rigging.constraints.get_offset_vector(target, aim_space)
