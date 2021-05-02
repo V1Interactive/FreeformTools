@@ -44,7 +44,7 @@ def aim_constraint(object_space, target, up_object, roll_object = None, **kwargs
 @undoable
 def particle_constraint(target, goal_weight, goal_smooth, start_offset):
     user_scene_time = maya_utils.scene_utils.get_scene_times()
-    start_frame = user_scene_time[0] - start_offset
+    start_frame = user_scene_time[0] - abs(start_offset)
     lico_particle = pm.particle(name="lico_particle_dynamic", c=1, p=[0,0,0])[1]
 
     temp_locator_a = pm.spaceLocator(n="temp_locator_a", p=[0,0,0])
