@@ -375,10 +375,18 @@ class HelixRigger:
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.open_aim_constraint_ui
-        new_button.Name = "Aim Constraint..."
+        new_button.Name = "Aim Constraint"
         new_button.ImagePath = "../../Resources/aim_constraint.png"
         new_button.StatusImagePath = "../../Resources/pendulum.png"
         new_button.Tooltip = "Open the UI to build an Aim Constraint on the selected object"
+        dynamic_category.AddButton(new_button)
+
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.open_particle_constraint_ui
+        new_button.Name = "Particle Constraint"
+        new_button.ImagePath = "../../Resources/particle_constraint.png"
+        new_button.StatusImagePath = "../../Resources/pendulum.png"
+        new_button.Tooltip = "Open the UI to build an Particle Constraint on the selected object to apply overlapping motion"
         dynamic_category.AddButton(new_button)
 
         component_category = self.create_category("Component Switching")
@@ -2175,6 +2183,19 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         maya_utils.usertools.aim_constraint_dialogue.Aim_Constraint_Dialogue().show()
+
+    @csharp_error_catcher
+    def open_particle_constraint_ui(self, c_rig_button, event_args):
+        '''
+        open_particle_constraint_ui(self, c_rig_button, event_args)
+        Opens the Aim Constraint Dialogue
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        maya_utils.usertools.particle_constraint_dialogue.Particle_Constraint_Dialogue().show()
+        
 
     @csharp_error_catcher
     @undoable
