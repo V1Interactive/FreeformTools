@@ -255,6 +255,9 @@ namespace Freeform.Rigging.DCCAssetExporter
         public string GetExportPath(string definitionName, string scenePath, bool is_animation)
         {
             ExporterConfig exporterConfig = (ExporterConfig)new ConfigManager().GetCategory(SettingsCategories.EXPORTER);
+            ProjectConfig projectConfig = (ProjectConfig)new ConfigManager().GetCategory(SettingsCategories.PROJECT);
+            string exportPattern = exporterConfig.ExportPattern;
+
             string returnDirectory = "";
 
             if (UseExportPath && ExportPath != string.Empty)
@@ -262,12 +265,19 @@ namespace Freeform.Rigging.DCCAssetExporter
                 returnDirectory = ExportPath;
                 if (returnDirectory.Contains(".."))
                 {
-                    returnDirectory = returnDirectory.Replace("..", Environment.GetEnvironmentVariable("CONTENT_ROOT"));
+                    returnDirectory = returnDirectory.Replace("..", projectConfig.GetContentRoot());
                 }
+            }
+            else if (exportPattern.Contains("<CONTENT_ROOT>"))
+            {
+                returnDirectory = exportPattern.Replace("<CONTENT_ROOT>", projectConfig.GetContentRoot());
+            }
+            else if (exportPattern.Contains("<PROJECT_ROOT>"))
+            {
+                returnDirectory = exportPattern.Replace("<PROJECT_ROOT>", projectConfig.GetProjectRoot());
             }
             else
             {
-                string exportPattern = exporterConfig.ExportPattern;
                 string sceneDirectory = Path.GetDirectoryName(scenePath);
                 returnDirectory = Path.GetDirectoryName(scenePath);
 
@@ -307,7 +317,7 @@ namespace Freeform.Rigging.DCCAssetExporter
                     }
                 }
 
-                if(exporterConfig.MatchDirectory == true)
+                if(exporterConfig.MatchDirectory == true && returnDirectory.Length < sceneDirectory.Length)
                 {
                     string removedDirectory = sceneDirectory.Remove(0, returnDirectory.Length + 1); // + 1 accounts for 0 based index and 1 based length count
                     removedDirectory = removedDirectory.TrimStart(Path.DirectorySeparatorChar);

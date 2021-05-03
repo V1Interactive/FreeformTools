@@ -197,6 +197,11 @@ namespace Freeform.Core.ConfigSettings
         {
             return Path.Combine(ProjectDrive, ProjectRootPath, ContentRootPath);
         }
+
+        public string GetProjectRoot()
+        {
+            return Path.Combine(ProjectDrive, ProjectRootPath);
+        }
     }
 
     public class ExporterConfig : ConfigGroup

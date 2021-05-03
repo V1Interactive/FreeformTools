@@ -376,20 +376,22 @@ def get_bake_time_range(obj_list, settings):
     time_range = [int(time_range[0]), int(time_range[1])]
     return time_range
 
-def check_constraints_for_key_range(obj, start_frame, end_frame):
+def check_constraints_for_key_range(obj, start_frame, end_frame, checked_list = []):
     first_frame, last_frame = start_frame, end_frame
-    constraint_list = list(set(pm.listConnections(obj, type='constraint', s=True, d=False)))
-    for constraint in constraint_list:
-        for constraint_obj in list(set(pm.listConnections(constraint.target, type='joint', s=True, d=False))):
-            first_frame, last_frame = maya_utils.anim_attr_utils.get_key_range(constraint_obj, start_frame, end_frame)
-            # Only check hierarchy if we haven't found any keys
-            if first_frame == None and last_frame == None:
-                first_frame, last_frame = check_hierarchy_for_key_range(constraint_obj, first_frame, last_frame)
-            first_frame, last_frame = check_constraints_for_key_range(constraint_obj, first_frame, last_frame)
+    if obj not in checked_list:
+        checked_list.append(obj)
+        constraint_list = list(set(pm.listConnections(obj, type='constraint', s=True, d=False)))
+        for constraint in constraint_list:
+            for constraint_obj in list(set(pm.listConnections(constraint.target, type='joint', s=True, d=False))):
+                first_frame, last_frame = maya_utils.anim_attr_utils.get_key_range(constraint_obj, start_frame, end_frame)
+                # Only check hierarchy if we haven't found any keys
+                if first_frame == None and last_frame == None:
+                    first_frame, last_frame = check_hierarchy_for_key_range(constraint_obj, first_frame, last_frame)
+                first_frame, last_frame = check_constraints_for_key_range(constraint_obj, first_frame, last_frame, checked_list)
 
     pair_blend_list = list(set([x for x in pm.listConnections(obj, s=True, d=False) if type(x) == pm.nt.PairBlend]))
     for pair_blend in pair_blend_list:
-        first_frame, last_frame = check_constraints_for_key_range(pair_blend, first_frame, last_frame)
+        first_frame, last_frame = check_constraints_for_key_range(pair_blend, first_frame, last_frame, checked_list)
 
     return first_frame, last_frame
 

@@ -88,9 +88,23 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 </MultiBinding.Bindings>
                                             </MultiBinding>
                                         </Border.Style>
-                                        <Image Source="{Binding ImagePath}"
-                                               Width="100"
-                                               Height="100"/>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <Image Source="{Binding ImagePath}"
+                                                   Width="100"
+                                                   Height="100"
+                                                   Grid.Row="0"/>
+                                            <TextBlock Text="{Binding Name}"
+                                                       Style="{StaticResource HighlightTextBlock}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2"
+                                                       Grid.Row="1"/>
+                                        </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ListView.ItemTemplate>
@@ -135,51 +149,53 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         </ItemsControl>
                     </Expander.Header>
 
-                    <Grid Margin="2" Style="{StaticResource SubGrid}">
-                        <!-- First grid margin changes the border size of the expander, so we use a second
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <Grid Margin="2" Style="{StaticResource SubGrid}">
+                            <!-- First grid margin changes the border size of the expander, so we use a second
                             Grid to add a real margin to the content in the expander -->
-                        <Grid Margin="6,0,16,0" Style="{StaticResource SubGrid}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                            <Grid Margin="6,0,16,0" Style="{StaticResource SubGrid}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <TextBlock Style="{StaticResource HighlightTextBlock}" 
+                                <TextBlock Style="{StaticResource HighlightTextBlock}" 
                                        Text="{Binding SelectedTemplateGroup.SelectedItem.Name}" 
                                        Margin="4" 
                                        Grid.Row="0"/>
 
-                            <TextBlock Text="Sides:" 
+                                <TextBlock Text="Sides:" 
                                        Margin="4" 
                                        Grid.Row="1"/>
 
-                            <ItemsControl ItemsSource="{Binding SelectedTemplateGroup.SelectedItem.SideListViewSource.View}" 
+                                <ItemsControl ItemsSource="{Binding SelectedTemplateGroup.SelectedItem.SideListViewSource.View}" 
                                           Margin="20,0,0,0" 
                                           Grid.Row="2">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                            <TextBlock Text="Region:" 
+                                <TextBlock Text="Region:" 
                                        Margin="4" 
                                        Grid.Row="3"/>
-                            <ItemsControl ItemsSource="{Binding SelectedTemplateGroup.SelectedItem.RegionListViewSource.View}" 
+                                <ItemsControl ItemsSource="{Binding SelectedTemplateGroup.SelectedItem.RegionListViewSource.View}" 
                                           Margin="20,0,0,0" 
                                           Grid.Row="4">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    </ScrollViewer>
                 </Expander>
             </Grid>
         </Grid>

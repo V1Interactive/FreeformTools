@@ -141,10 +141,9 @@ class RigBuilder(object):
                 self.vm.TemplateList.Add(new_template_group)
                 for file_path in json_file_list:
                     file_name = file_path.replace(directory_path, "")
-                    rig_item = new_template_group.AddItem(file_name.split('.')[0], file_path)
-
                     file_data = v1_core.json_utils.read_json(file_path)
                     if not file_data.get('filetype'):
+                        rig_item = new_template_group.AddItem(file_name.split('.')[0], file_path)
                         for side, side_data in file_data["rigging"].iteritems():
                             rig_item.AddSide(side)
                             for region in side_data.keys():
