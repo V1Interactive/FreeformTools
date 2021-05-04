@@ -37,9 +37,7 @@ namespace Freeform.Rigging.RegionEditor
         public event EventHandler PickEventHandler;
         public event EventHandler AddRegionEventHandler;
         public event EventHandler RemoveRegionEventHandler;
-        public event EventHandler SideChangedEventHandler;
-        public event EventHandler RegionChangedEventHandler;
-        public event EventHandler GroupChangedEventHandler;
+        public event EventHandler RegionDataChangedEventHandler;
         public event EventHandler RootChangedEventHandler;
         public event EventHandler EndChangedEventHandler;
         public event EventHandler SelectionChangedEventHandler;
@@ -151,6 +149,9 @@ namespace Freeform.Rigging.RegionEditor
                         Side = SelectedRegionItem.Side;
                         Region = SelectedRegionItem.Name;
                         Group = SelectedRegionItem.Group;
+                        ComObject = SelectedRegionItem.ComObject;
+                        ComRegion = SelectedRegionItem.ComRegion;
+                        ComWeight = SelectedRegionItem.ComWeight;
                         Root = SelectedRegionItem.Root;
                         End = SelectedRegionItem.End;
                     }
@@ -161,6 +162,9 @@ namespace Freeform.Rigging.RegionEditor
                         Side = "";
                         Region = "";
                         Group = "";
+                        ComObject = "";
+                        ComRegion = "";
+                        ComWeight = 0.0f;
                         Root = "";
                         End = "";
                     }
@@ -273,7 +277,7 @@ namespace Freeform.Rigging.RegionEditor
                     _side = value;
                     if(SelectedRegionItem != null)
                     {
-                        SideChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Value = value });
+                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "side", Value = value });
                         SelectedRegionItem.Side = value;
                     }
                     RaisePropertyChanged("Side");
@@ -292,7 +296,7 @@ namespace Freeform.Rigging.RegionEditor
                     _region = value;
                     if (SelectedRegionItem != null)
                     {
-                        RegionChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Value = value });
+                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "region", Value = value });
                         SelectedRegionItem.Name = value;
                     }
                     RaisePropertyChanged("Region");
@@ -311,10 +315,67 @@ namespace Freeform.Rigging.RegionEditor
                     _group = value;
                     if (SelectedRegionItem != null)
                     {
-                        GroupChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Value = value });
+                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "group", Value = value });
                         SelectedRegionItem.Group = value;
                     }
                     RaisePropertyChanged("Group");
+                }
+            }
+        }
+
+        float _comWeight;
+        public float ComWeight
+        {
+            get { return _comWeight; }
+            set
+            {
+                if (_comWeight != value)
+                {
+                    _comWeight = value;
+                    if (SelectedRegionItem != null)
+                    {
+                        RegionDataChangedEventHandler?.Invoke(this, new FloatRegionEventArgs() { Region = SelectedRegionItem, Data = "com_weight", Value = value });
+                        SelectedRegionItem.ComWeight = value;
+                    }
+                    RaisePropertyChanged("ComWeight");
+                }
+            }
+        }
+
+        string _comObject;
+        public string ComObject
+        {
+            get { return _comObject; }
+            set
+            {
+                if (_comObject != value)
+                {
+                    _comObject = value;
+                    if (SelectedRegionItem != null)
+                    {
+                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "com_object", Value = value });
+                        SelectedRegionItem.ComObject = value;
+                    }
+                    RaisePropertyChanged("ComObject");
+                }
+            }
+        }
+
+        string _comRegion;
+        public string ComRegion
+        {
+            get { return _comRegion; }
+            set
+            {
+                if (_comRegion != value)
+                {
+                    _comRegion = value;
+                    if (SelectedRegionItem != null)
+                    {
+                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "com_region", Value = value });
+                        SelectedRegionItem.ComRegion = value;
+                    }
+                    RaisePropertyChanged("ComRegion");
                 }
             }
         }
@@ -418,6 +479,9 @@ namespace Freeform.Rigging.RegionEditor
             Side = "";
             Region = "";
             Group = "";
+            ComObject = "";
+            ComRegion = "";
+            ComWeight = 0f;
             Root = "";
             End = "";
             GridStyle = "V1Grid";
@@ -445,9 +509,9 @@ namespace Freeform.Rigging.RegionEditor
 
 
 
-        public void AddRegion(string side, string name, string group, string root, string end)
+        public void AddRegion(string side, string name, string group, string root, string end, string comObject, string comRegion, float comWeight)
         {
-            RegionList.Add(new Region(side, name, group, root, end));
+            RegionList.Add(new Region(side, name, group, root, end, comObject, comRegion, comWeight));
         }
 
 
@@ -469,7 +533,7 @@ namespace Freeform.Rigging.RegionEditor
         {
             RegionEventArgs eventArgs = new RegionEventArgs()
             {
-                Region = new Region(Side, Region, Group, Root, End)
+                Region = new Region(Side, Region, Group, Root, End, ComObject, ComRegion, ComWeight)
             };
             AddRegionEventHandler?.Invoke(this, eventArgs);
 
@@ -609,8 +673,17 @@ namespace Freeform.Rigging.RegionEditor
         public class RegionEventArgs : EventArgs
         {
             public Region Region = null;
+            public string Data = "";
             public bool Success = false;
             public string Value = "";
+        }
+
+        public class FloatRegionEventArgs : EventArgs
+        {
+            public Region Region = null;
+            public string Data = "";
+            public bool Success = false;
+            public float Value = 0.0f;
         }
 
         public class StringEventArgs : EventArgs

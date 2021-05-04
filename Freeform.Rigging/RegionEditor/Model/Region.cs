@@ -99,6 +99,48 @@ namespace Freeform.Rigging.RegionEditor
             }
         }
 
+        float _comWeight;
+        public float ComWeight
+        {
+            get { return _comWeight; }
+            set
+            {
+                if (_comWeight != value)
+                {
+                    _comWeight = value;
+                    RaisePropertyChanged("ComWeight");
+                }
+            }
+        }
+
+        string _comObject;
+        public string ComObject
+        {
+            get { return _comObject; }
+            set
+            {
+                if (_comObject != value)
+                {
+                    _comObject = value;
+                    RaisePropertyChanged("ComObject");
+                }
+            }
+        }
+
+        string _comRegion;
+        public string ComRegion
+        {
+            get { return _comRegion; }
+            set
+            {
+                if (_comRegion != value)
+                {
+                    _comRegion = value;
+                    RaisePropertyChanged("ComRegion");
+                }
+            }
+        }
+
         string _gridStyle;
         public string GridStyle
         {
@@ -126,7 +168,7 @@ namespace Freeform.Rigging.RegionEditor
         }
 
 
-        public Region(string side, string name, string group, string root, string end)
+        public Region(string side, string name, string group, string root, string end, string comObject, string comRegion, float comWeight)
         {
             GridStyle = "V1Grid";
 
@@ -135,6 +177,9 @@ namespace Freeform.Rigging.RegionEditor
             Group = group;
             Root = root;
             End = end;
+            ComObject = comObject;
+            ComRegion = comRegion;
+            ComWeight = comWeight;
         }
 
 

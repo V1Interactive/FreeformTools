@@ -24,6 +24,7 @@ namespace Freeform.Rigging.MessageDialogue
     using System.Collections.ObjectModel;
     using System.ComponentModel;
     using System.Linq;
+    using System.Timers;
     using System.Windows.Controls;
     using System.Windows.Data;
     using System.Windows.Forms;
@@ -93,6 +94,8 @@ namespace Freeform.Rigging.MessageDialogue
             }
         }
 
+        readonly System.Timers.Timer closeTimer;
+
         public MessageDialogueVM()
         {
             WindowTitle = "Message Dialogue";
@@ -102,18 +105,34 @@ namespace Freeform.Rigging.MessageDialogue
 
             ConfirmCommand = new RelayCommand(ConfirmCall);
             CancelCommand = new RelayCommand(CancelCall);
+
+            closeTimer = new System.Timers.Timer(15000);
+            closeTimer.Elapsed += AutoCloseEvent;
+            closeTimer.Start();
         }
 
         public void ConfirmCall(object sender)
         {
+            closeTimer.Stop();
             Confirmed = true;
             Dismissed = true;
             ConfirmHandler?.Invoke(this, null);
             Close();
         }
 
+        private void AutoCloseEvent(object source, ElapsedEventArgs e)
+        {
+            DispatcherHelper.CheckBeginInvokeOnUI(
+            () =>
+            {
+                // Dispatch back to the main thread
+                CancelCall(null);
+            });
+        }
+
         public void CancelCall(object sender)
         {
+            closeTimer.Stop();
             Confirmed = false;
             Dismissed = true;
             CancelHandler?.Invoke(this, null);

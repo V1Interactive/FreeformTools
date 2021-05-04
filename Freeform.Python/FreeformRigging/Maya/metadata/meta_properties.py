@@ -325,7 +325,8 @@ class RigMarkupProperty(JointProperty):
 
     def __init__(self, node_name = 'rig_markup_property', node = None, namespace = ""):
         super(RigMarkupProperty, self).__init__(node_name, node, namespace, side = ("", 'string'), region = ("", 'string'), 
-                                                tag = ("", 'string'), group = ("", 'string'), temporary = (False, 'bool'), locked_list = ("", 'string'))
+                                                tag = ("", 'string'), group = ("", 'string'), temporary = (False, 'bool'), locked_list = ("", 'string'),
+                                                com_weight = (0.0, 'float'), com_region = ("", 'string'), com_object = ("", 'string'))
 
     def compare(self, data):
         '''

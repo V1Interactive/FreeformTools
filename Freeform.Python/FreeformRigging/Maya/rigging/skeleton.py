@@ -25,11 +25,13 @@ import os
 import time
 
 import v1_core
+import v1_shared.usertools
 
 import maya_utils
 import metadata
 
 import rigging.rig_tools
+import rigging.constraints
 
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -240,6 +242,56 @@ def remove_invalid_rig_markup(jnt):
                         if rig_markup.get('side') == side and rig_markup.get('region') == region:
                             pm.delete(rig_markup.node)
 
+def create_center_of_mass(obj):
+    com_weight_dict = get_com_weight_dictionary(obj)
+
+    if not com_weight_dict.get('body'):
+        v1_shared.usertools.message_dialogue.open_dialogue("No Center of Mass Settings Found, please fill in region details with center of mass information", "No COM")
+        return None
+
+    com_obj = pm.polyPrimitive(r=12, l=4.843, ax=[0, 1, 0], pt=0, cuv=4, ch=1, n="CenterOfMass")[0]
+    com_head_obj = pm.spaceLocator(n="HeadCenterOfMassAverage")
+
+    com_obj.rotate.lock()
+    com_obj.scale.lock()
+        
+    if com_weight_dict.get('head'):
+        # Constrain Averages to body so we can get the center of the head
+        head_obj_list = [x[0] for x in com_weight_dict['head']]
+        head_weight_list = [x[1] for x in com_weight_dict['head']]
+        pm.pointConstraint(head_obj_list, com_head_obj, mo=False)
+        rigging.constraints.set_constraint_weights(pm.pointConstraint, com_head_obj, head_obj_list, head_weight_list)
+
+    if com_weight_dict.get('body'):
+        # Constrain "CenterOfMass". The -weight field below alters the relative weight of the body part
+        com_obj_list = [com_head_obj] + [x[0] for x in com_weight_dict['body'] if x]
+        com_weight_list = [0.9] + [x[1] for x in com_weight_dict['body'] if x]
+        delete_constraint = pm.pointConstraint(com_obj_list, com_obj, mo=False)
+        rigging.constraints.set_constraint_weights(pm.pointConstraint, com_obj, com_obj_list, com_weight_list)
+        maya_utils.baking.bake_objects([com_obj], True, False, False)
+        pm.delete(delete_constraint)
+
+    pm.delete(com_head_obj)
+
+    return com_obj
+
+def get_com_weight_dictionary(obj):
+    character_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.CharacterCore)
+    joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
+    skeleton_dict = rigging.skeleton.get_skeleton_dict(joints_network.root)
+    regions_network = character_network.get_downstream(metadata.network_core.RegionsCore)
+
+    com_weight_dict = {}
+    obj_added_list = []
+    for region_node in regions_network.get_connections():
+        if region_node.com_weight.get() != 0:
+            com_weight_dict.setdefault(region_node.com_region.get(), [])
+            com_obj = skeleton_dict[region_node.side.get()][region_node.region.get()][region_node.com_object.get()]
+            if com_obj not in obj_added_list:
+                com_weight_dict[region_node.com_region.get()].append([com_obj, region_node.com_weight.get()])
+            obj_added_list.append(com_obj)
+
+    return com_weight_dict
 
 def create_single_joint_skeleton_dict(jnt):
     '''

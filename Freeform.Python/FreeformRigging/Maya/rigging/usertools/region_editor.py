@@ -41,7 +41,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 class RegionEditor(object):
     '''
     UI Wrapper and Maya functionality for the Region Editor tool.  UI to manage rig region markup on all joints of
-    a character.  Adding, removing, and editing fields in place.
+    a character.  Adding, removing, and editing fields in place.AddRegion
 
     Args:
         character_node_name (str): Name of the scene character network node to edit
@@ -67,7 +67,7 @@ class RegionEditor(object):
             for region, joint_dict in region_dict.iteritems():
                 markup_properties = metadata.meta_properties.get_properties([pm.PyNode(joint_dict['root'].name())], metadata.meta_properties.RigMarkupProperty)
                 markup = get_first_or_default([x for x in markup_properties if x.data['side'] == side and x.data['region'] == region])
-                self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name())
+                self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name(), markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
 
         self.vm.CharacterName = self.character_node.name()
 
@@ -77,9 +77,7 @@ class RegionEditor(object):
         self.vm.PickEventHandler += self.pick_from_scene
         self.vm.RemoveRegionEventHandler += self.remove_region
         self.vm.AddRegionEventHandler += self.add_region
-        self.vm.SideChangedEventHandler += self.side_changed
-        self.vm.RegionChangedEventHandler += self.region_changed
-        self.vm.GroupChangedEventHandler += self.group_changed
+        self.vm.RegionDataChangedEventHandler += self.data_changed
         self.vm.RootChangedEventHandler += self.root_changed
         self.vm.EndChangedEventHandler += self.end_changed
         self.vm.SelectionChangedEventHandler += self.ui_selection_changed
@@ -108,9 +106,7 @@ class RegionEditor(object):
         self.vm.PickEventHandler -= self.pick_from_scene
         self.vm.RemoveRegionEventHandler -= self.remove_region
         self.vm.AddRegionEventHandler -= self.add_region
-        self.vm.SideChangedEventHandler -= self.side_changed
-        self.vm.RegionChangedEventHandler -= self.region_changed
-        self.vm.GroupChangedEventHandler -= self.group_changed
+        self.vm.RegionDataChangedEventHandler -= self.data_changed
         self.vm.RootChangedEventHandler -= self.root_changed
         self.vm.EndChangedEventHandler -= self.end_changed
         self.vm.SelectionChangedEventHandler -= self.ui_selection_changed
@@ -196,7 +192,7 @@ class RegionEditor(object):
             self._add_rigging_properties(mirror_root, mirror_side, event_args.Region.Name, "root", event_args.Region.Group)
             self._add_rigging_properties(mirror_end, mirror_side, event_args.Region.Name, "end", event_args.Region.Group)
 
-            new_region = Freeform.Rigging.RegionEditor.Region(mirror_side, event_args.Region.Name, event_args.Region.Group, mirror_root_name, mirror_end_name)
+            new_region = Freeform.Rigging.RegionEditor.Region(mirror_side, event_args.Region.Name, event_args.Region.Group, mirror_root_name, mirror_end_name, event_args.Region.ComObject, event_args.Region.ComRegion, event_args.Region.ComWeight)
             event_args.NewRegion = new_region
 
     @csharp_error_catcher
@@ -250,8 +246,8 @@ class RegionEditor(object):
 
         valid_check = rigging.skeleton.is_joint_below_hierarchy(end_joint, root_joint)
         if valid_check and not markup_exists and root_joint and end_joint:
-            self._add_rigging_properties(root_joint, event_args.Region.Side, event_args.Region.Name, "root", event_args.Region.Group)
-            self._add_rigging_properties(end_joint, event_args.Region.Side, event_args.Region.Name, "end", event_args.Region.Group)
+            self._add_rigging_properties(root_joint, event_args.Region.Side, event_args.Region.Name, "root", event_args.Region.Group, event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
+            self._add_rigging_properties(end_joint, event_args.Region.Side, event_args.Region.Name, "end", event_args.Region.Group, event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
 
             event_args.Success = True
         else:
@@ -261,7 +257,7 @@ class RegionEditor(object):
 
         pm.select(selection, r=True)
 
-    def _add_rigging_properties(self, jnt, side, region, tag, group):
+    def _add_rigging_properties(self, jnt, side, region, tag, group, com_region, com_object, com_weight):
         '''
         Helper method to add RigMarkupProperty's to the passed in joint
 
@@ -272,7 +268,7 @@ class RegionEditor(object):
             tag (str): Whether we're adding a root or end property. Valid strings are 'root' and 'end'
         '''
         rig_prop = metadata.meta_properties.add_property(jnt, metadata.meta_properties.RigMarkupProperty)
-        rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group' : group}
+        rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group' : group, 'com_region' : com_region, 'com_object' : com_object, 'com_weight' : com_weight}
 
     def _update_rigging(self, c_region, attr, value):
         root_jnt = pm.PyNode(c_region.Root)
@@ -284,9 +280,9 @@ class RegionEditor(object):
             getattr(root_component.node, attr).set(value)
 
     @csharp_error_catcher
-    def side_changed(self, vm, event_args):
+    def data_changed(self, vm, event_args):
         '''
-        side_changed(self, vm, event_args)
+        data_changed(self, vm, event_args)
         Updates the side property of the scene network node for the rig markup region
 
         Args:
@@ -294,44 +290,12 @@ class RegionEditor(object):
             event_args (RegionEventArgs): Passes the selected region from the UI
         '''
         markup_to_change = self.get_markup_to_edit(event_args.Region)
+        value = event_args.Value if event_args.Value != None else ""
         for markup in markup_to_change:
-            markup.data = {'side': event_args.Value}
+            markup.data = {event_args.Data: value}
 
-        self._update_rigging(event_args.Region, 'side', event_args.Value)
-
-    @csharp_error_catcher
-    def region_changed(self, vm, event_args):
-        '''
-        region_changed(self, vm, event_args)
-        Updates the region name property of the scene network node for the rig markup region
-
-        Args:
-            vm (RegionEditor.RegionEditorVM): C# view model object sending the command
-            event_args (RegionEventArgs): Passes the selected region from the UI
-        '''
-        markup_to_change = self.get_markup_to_edit(event_args.Region)
-        for markup in markup_to_change:
-            markup.data = {'region': event_args.Value}
-
-        self._update_rigging(event_args.Region, 'region', event_args.Value)
-
-    @csharp_error_catcher
-    def group_changed(self, vm, event_args):
-        '''
-        group_changed(self, vm, event_args)
-        Updates the group property of the scene network node for the rig markup region
-
-        Args:
-            vm (RegionEditor.RegionEditorVM): C# view model object sending the command
-            event_args (RegionEventArgs): Passes the selected region from the UI
-        '''
-        markup_to_change = self.get_markup_to_edit(event_args.Region)
-        for markup in markup_to_change:
-            if not hasattr(markup.node, 'group'):
-                markup.node.addAttr('group', type='string')
-            markup.data = {'group': (event_args.Value if event_args.Value else "")}
-
-        self._update_rigging(event_args.Region, 'group_name', event_args.Value)
+        self._update_rigging(event_args.Region, event_args.Data, value)
+    
 
     @csharp_error_catcher
     def root_changed(self, vm, event_args):
