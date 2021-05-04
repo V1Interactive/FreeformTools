@@ -389,6 +389,13 @@ class HelixRigger:
         new_button.Tooltip = "Open the UI to build an Particle Constraint on the selected object to apply overlapping motion"
         dynamic_category.AddButton(new_button)
 
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.create_center_of_mass
+        new_button.Name = "Center Of Mass"
+        new_button.ImagePath = "../../Resources/center_of_mass.png"
+        new_button.Tooltip = "Creates an object tracking the center of mass of the character based on Region markup data"
+        dynamic_category.AddButton(new_button)
+
         component_category = self.create_category("Component Switching")
         component_category.ImagePath = "../../Resources/space_switcher.ico"
         component_category.Tooltip = "Tools for switching Components or Overdrivers to new Components or spaces"
@@ -2196,6 +2203,21 @@ class HelixRigger:
         '''
         maya_utils.usertools.particle_constraint_dialogue.Particle_Constraint_Dialogue().show()
         
+    @csharp_error_catcher
+    def create_center_of_mass(self, c_rig_button, event_args):
+        '''
+        open_particle_constraint_ui(self, c_rig_button, event_args)
+        Opens the Aim Constraint Dialogue
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        selection_list = pm.ls(sl=True)
+        if selection_list:
+            rigging.skeleton.create_center_of_mass(selection_list[0])
+        else:
+            v1_shared.usertools.message_dialogue.open_dialogue("Please select something", "Nothing Selected")
 
     @csharp_error_catcher
     @undoable

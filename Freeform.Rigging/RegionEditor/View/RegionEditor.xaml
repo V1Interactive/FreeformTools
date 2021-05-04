@@ -262,8 +262,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+            
             <Grid Grid.Row="0">
                 <Grid.Style>
                     <MultiBinding Converter="{StaticResource StyleConverter}">
@@ -313,6 +315,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                          Margin="4,2,10,2" 
                          Grid.Column="3"/>
             </Grid>
+            
             <Grid Grid.Row="1">
                 <Grid.Style>
                     <MultiBinding Converter="{StaticResource StyleConverter}">
@@ -344,7 +347,120 @@ If not, see <https://www.gnu.org/licenses/>.-->
                          Margin="4,2,10,2" 
                          Grid.Column="1"/>
             </Grid>
+
             <Grid Grid.Row="2">
+                <Grid.Style>
+                    <MultiBinding Converter="{StaticResource StyleConverter}">
+                        <MultiBinding.Bindings>
+                            <Binding RelativeSource="{RelativeSource Self}"/>
+                            <Binding Path="GridStyle"/>
+                        </MultiBinding.Bindings>
+                    </MultiBinding>
+                </Grid.Style>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <Grid Margin="10,2,2,2" Grid.Column="0">
+                    <Grid.Style>
+                        <MultiBinding Converter="{StaticResource StyleConverter}">
+                            <MultiBinding.Bindings>
+                                <Binding RelativeSource="{RelativeSource Self}"/>
+                                <Binding Path="GridStyle"/>
+                            </MultiBinding.Bindings>
+                        </MultiBinding>
+                    </Grid.Style>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="COM: "
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Grid.Column="0">
+                        <TextBlock.Style>
+                            <MultiBinding Converter="{StaticResource StyleConverter}">
+                                <MultiBinding.Bindings>
+                                    <Binding RelativeSource="{RelativeSource Self}"/>
+                                    <Binding Path="TextStyle"/>
+                                </MultiBinding.Bindings>
+                            </MultiBinding>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBox Text="{Binding ComObject, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                             Margin="2" 
+                             Grid.Column="1"/>
+                </Grid>
+
+                <Grid Margin="2" Grid.Column="1">
+                    <Grid.Style>
+                        <MultiBinding Converter="{StaticResource StyleConverter}">
+                            <MultiBinding.Bindings>
+                                <Binding RelativeSource="{RelativeSource Self}"/>
+                                <Binding Path="GridStyle"/>
+                            </MultiBinding.Bindings>
+                        </MultiBinding>
+                    </Grid.Style>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Region: "
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Grid.Column="0">
+                        <TextBlock.Style>
+                            <MultiBinding Converter="{StaticResource StyleConverter}">
+                                <MultiBinding.Bindings>
+                                    <Binding RelativeSource="{RelativeSource Self}"/>
+                                    <Binding Path="TextStyle"/>
+                                </MultiBinding.Bindings>
+                            </MultiBinding>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBox Text="{Binding ComRegion, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                             Margin="2" 
+                             Grid.Column="1"/>
+                </Grid>
+
+                <Grid Margin="2,2,10,2" Grid.Column="2">
+                    <Grid.Style>
+                        <MultiBinding Converter="{StaticResource StyleConverter}">
+                            <MultiBinding.Bindings>
+                                <Binding RelativeSource="{RelativeSource Self}"/>
+                                <Binding Path="GridStyle"/>
+                            </MultiBinding.Bindings>
+                        </MultiBinding>
+                    </Grid.Style>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Weight: "
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Grid.Column="0">
+                        <TextBlock.Style>
+                            <MultiBinding Converter="{StaticResource StyleConverter}">
+                                <MultiBinding.Bindings>
+                                    <Binding RelativeSource="{RelativeSource Self}"/>
+                                    <Binding Path="TextStyle"/>
+                                </MultiBinding.Bindings>
+                            </MultiBinding>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBox Text="{Binding ComWeight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                             Margin="2" 
+                             Grid.Column="1"/>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Row="3">
                 <Grid.Style>
                     <MultiBinding Converter="{StaticResource StyleConverter}">
                         <MultiBinding.Bindings>
@@ -385,7 +501,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     <Image Source="pack://application:,,,/HelixResources;component/Resources/pick.ico"/>
                 </Button>
             </Grid>
-            <Grid Grid.Row="3">
+            
+            <Grid Grid.Row="4">
                 <Grid.Style>
                     <MultiBinding Converter="{StaticResource StyleConverter}">
                         <MultiBinding.Bindings>

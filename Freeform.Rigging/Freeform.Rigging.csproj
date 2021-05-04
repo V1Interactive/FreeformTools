@@ -435,5 +435,8 @@
   <ItemGroup>
     <Resource Include="Resources\particle_constraint.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\center_of_mass.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

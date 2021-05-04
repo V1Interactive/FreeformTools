@@ -31,6 +31,8 @@
 
         void SetupDataContext()
         {
+            DispatcherHelper.UIDispatcher = Dispatcher;
+
             MessageDialogueVM vm = new MessageDialogueVM();
             DataContext = vm;
             if (vm.CloseAction == null)

@@ -284,6 +284,8 @@ class MetaNode(object):
 
         set_attr = getattr(self.node, attr_name)
         if set_attr.get(type=True) != 'message':
+            if getattr(self.node, attr_name).type() == 'string' and value == None:
+                value = ""
             set_attr.set(value)
 
     def add_attr(self, attr_name, value_type):
