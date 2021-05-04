@@ -175,6 +175,3 @@ def delete_all_pyc():
 def set_environment():
     # Set program level CONTENT_ROOT environment variables for C# access
     os.environ["CONTENT_ROOT"] = get_content_root()
-
-    if not "Python27" in os.environ.get("Path"):
-        os.environ["Path"] = os.environ.get("Path") + r":C:\Python27"
