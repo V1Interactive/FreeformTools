@@ -54,7 +54,8 @@ def setup_joint(jnt, joints_core):
         pm.addAttr(jnt, ln='bind_rotate', dt='double3')
     jnt.bind_translate.set(jnt.translate.get())
     jnt.bind_rotate.set(jnt.rotate.get())
-    jnt.scale.set([1,1,1])
+    if not maya_utils.node_utils.attribute_is_locked(jnt.scale):
+        jnt.scale.set([1,1,1])
 
 
 def setup_joints(character_node):
@@ -784,12 +785,14 @@ def zero_skeleton_joints(joint_list, offset_dict = None):
             {nt.Joint(u'gua:foot_l'): {'rotate': dt.Vector([0.0, 0.0, 20.0]), 'translate': dt.Vector([0.0, 0.0, 0.0])}}
     '''
     for jnt in joint_list:
-        if pm.attributeQuery('bind_translate', node=jnt, exists=True):
+        if pm.attributeQuery('bind_translate', node=jnt, exists=True) and not maya_utils.node_utils.attribute_is_locked(jnt.translate):
             jnt.translate.set(jnt.bind_translate.get(), force=True)
             if offset_dict and jnt in offset_dict.keys():
                 jnt.translate.set(jnt.translate.get() + offset_dict[jnt]['translate'], force=True)
         # ignore twist joints, any joints with a unitConversion input on rotate x
-        if pm.attributeQuery('bind_rotate', node=jnt, exists=True) and not 'unitConversion' in [x.type() for x in jnt.rx.listConnections(s=True, d=False)]:
+        if (pm.attributeQuery('bind_rotate', node=jnt, exists=True) 
+            and not 'unitConversion' in [x.type() for x in jnt.rx.listConnections(s=True, d=False)] 
+            and not maya_utils.node_utils.attribute_is_locked(jnt.rotate)):
             jnt.rotate.set(jnt.bind_rotate.get(), force=True)
             if offset_dict and jnt in offset_dict.keys():
                 jnt.rotate.set(jnt.rotate.get() + offset_dict[jnt]['rotate'], force=True)

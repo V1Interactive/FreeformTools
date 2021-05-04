@@ -110,9 +110,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     joints_core.root.rename(character_namespace + joints_core.root.stripNamespace())
     joints_core.root.setParent(character_network.group)
 
-    top_level_meshes = [x for x in pm.ls(assemblies=True) if x.getShape() and isinstance(x.getShape(), pm.nt.Mesh)]
-    pm.select(top_level_meshes)
-    mesh_group = pm.group(name=character_namespace + "{0}_meshes".format(name))
+    mesh_group = pm.group(name=character_namespace + "{0}_meshes".format(name), empty=True)
     mesh_group.setParent(character_network.group)
     pm.select(None)
 

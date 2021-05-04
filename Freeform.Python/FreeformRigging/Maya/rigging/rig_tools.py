@@ -89,6 +89,7 @@ def freeze_xform_rig(character_network):
     new_root.rename(root.stripNamespace())
 
     for jnt in new_skeleton:
+        maya_utils.node_utils.unlock_transforms(jnt)
         jnt.translate.set(jnt.bind_translate.get())
         jnt.rotate.set(jnt.bind_rotate.get())
 

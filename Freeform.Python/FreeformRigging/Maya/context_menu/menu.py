@@ -52,7 +52,9 @@ class V1_Context_Menu(object):
         '''
         Create's the base menu associated to the current model panel(which should always be the active viewport)
         '''
-        self.model_panel = [x for x in pm.getPanel(type='modelPanel') if x in pm.getPanel(vis=True)][0]
+        model_panel_list = pm.getPanel(type='modelPanel')
+        visible_panel_list = pm.getPanel(vis=True)
+        self.model_panel = [x for x in model_panel_list if x in visible_panel_list][0]
         self.menu = pm.popupMenu(p=self.model_panel, button=1, alt=True, ctl=True, mm=True, pmc=self.build_menu)
 
     def delete_menu(self):
