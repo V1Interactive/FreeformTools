@@ -48,7 +48,7 @@ class MessageDialogue(object):
         '''
 
         '''
-        self.ui.ShowDialog()
+        self.ui.Show()
 
     def close(self, vm, event_args):
         '''

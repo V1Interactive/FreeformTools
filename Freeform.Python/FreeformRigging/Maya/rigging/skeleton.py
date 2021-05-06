@@ -293,7 +293,7 @@ def get_com_weight_dictionary(obj):
 
     return com_weight_dict
 
-def create_single_joint_skeleton_dict(jnt):
+def create_single_joint_skeleton_dict(jnt, temporary = False):
     '''
     Run through all joints in a skeleton and add a pair of RigMarkupProperty nodes to each joint, using the
     joint name as the region
@@ -321,9 +321,16 @@ def create_single_joint_skeleton_dict(jnt):
             if not markup_property_list or not [x for x in markup_property_list if (x.data['side'] == side and x.data['region'] == region and x.data['tag'] == 'root')]:
                 rig_prop = metadata.meta_properties.add_property(skeleton_joint, metadata.meta_properties.RigMarkupProperty)
                 rig_prop.data = {'side':side, 'region':region, 'tag':'root'}
+                if temporary:
+                    rig_prop.set('group', 'Temporary')
+                    rig_prop.set('temporary', True)
+
             if not markup_property_list or not [x for x in markup_property_list if (x.data['side'] == side and x.data['region'] == region and x.data['tag'] == 'end')]:
                 rig_prop = metadata.meta_properties.add_property(skeleton_joint, metadata.meta_properties.RigMarkupProperty)
                 rig_prop.data = {'side':side, 'region':region, 'tag':'end'}
+                if temporary:
+                    rig_prop.set('group', 'Temporary')
+                    rig_prop.set('temporary', True)
 
             skeleton_dict.setdefault(side, {})
             skeleton_dict[side].setdefault(region, {})

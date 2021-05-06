@@ -74,8 +74,9 @@ def particle_constraint(target, goal_weight, goal_smooth, start_offset):
     return [lico_particle, temp_locator_a, temp_locator_b, temp_locator_correction]
 
 @undoable
-def apply_particle_constraint(goal_weight, goal_smooth, start_offset):
-    target = get_first_or_default(pm.ls(sl=True))
+def apply_particle_constraint(goal_weight, goal_smooth, start_offset, target=None):
+    if target == None:
+        target = get_first_or_default(pm.ls(sl=True))
 
     if target:
         lico_particle, temp_locator_a, temp_locator_b, temp_locator_correction = particle_constraint(target, goal_weight, goal_smooth, start_offset)
@@ -83,7 +84,7 @@ def apply_particle_constraint(goal_weight, goal_smooth, start_offset):
         delete_constraint = pm.pointConstraint(temp_locator_b, target, mo=True)
         maya_utils.baking.bake_objects([target], True, True, True)
         pm.delete(delete_constraint)
-        pm.delete([lico_particle, temp_locator_a, temp_locator_b, temp_locator_correction])
+        pm.delete([lico_particle.getParent(), temp_locator_a, temp_locator_b, temp_locator_correction])
     else:
         v1_shared.usertools.message_dialogue.open_dialogue("Please Select Something to apply the constraint to", "Nothing Selected")
 

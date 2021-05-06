@@ -619,7 +619,7 @@ class Component_Base(object):
             pm.confirmDialog( title="Mirror Doesn't Exist", message="The mirror region could not be found", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
 
     @staticmethod
-    def quick_fk_rig(character_network):
+    def quick_fk_rig(character_network, temporary = False):
         '''
         Create a quick FK rig, every rig region found on the skeleton will be rigged with an FK component
 
@@ -629,7 +629,7 @@ class Component_Base(object):
         joint_list = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
         jnt = get_first_or_default(joint_list)
 
-        skeleton_dict = rigging.skeleton.create_single_joint_skeleton_dict(jnt)
+        skeleton_dict = rigging.skeleton.create_single_joint_skeleton_dict(jnt, temporary)
 
         control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)
 
