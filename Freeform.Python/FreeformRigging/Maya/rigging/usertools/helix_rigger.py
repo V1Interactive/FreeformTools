@@ -2213,11 +2213,14 @@ class HelixRigger:
             c_rig_button (Rigging.RigBarButton): C# view model object sending the command
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
-        selection_list = pm.ls(sl=True)
-        if selection_list:
-            rigging.skeleton.create_center_of_mass(selection_list[0])
+
+        if pm.objExists(self.vm.ActiveCharacter.NodeName):
+            character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
+            rigging.skeleton.create_center_of_mass(character_network.get_downstream(metadata.network_core.JointsCore).root)
         else:
-            v1_shared.usertools.message_dialogue.open_dialogue("Please select something", "Nothing Selected")
+            selection_list = pm.ls(sl=True)
+            if selection_list:
+                rigging.skeleton.create_center_of_mass(selection_list[0])
 
     @csharp_error_catcher
     @undoable
