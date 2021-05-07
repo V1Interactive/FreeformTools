@@ -143,15 +143,15 @@ def switch_rigging(component_network):
         # We use a copy of component.data because the component node may get deleted before
         # all switching is done
         if switch_network.is_match(component_data):
-            region = switch_network.get('switch_region')
-            side = switch_network.get('switch_side')
+            switch_region = switch_network.get('switch_region')
+            switch_side = switch_network.get('switch_side')
             switch_type = switch_network.get('switch_type')
 
-            if side != '' and region != '':
+            if switch_side != '' and switch_region != '':
                 module, type = v1_shared.shared_utils.get_class_info( switch_type )
                 switch_component_type = getattr(sys.modules[module], type)
 
-                rig_region(skeleton_dict, side, region, character_network, switch_component_type)
+                rig_region(skeleton_dict, switch_side, region, character_network, switch_component_type)
             else:
                 # Switching by loading a json file is necessary for any switch that requires overdrivers to complete
                 switch_file = v1_shared.file_path_utils.relative_path_to_content(switch_type)

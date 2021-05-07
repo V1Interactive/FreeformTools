@@ -112,6 +112,26 @@ def get_rig_file(directory_path):
     rig_path = rig_file_list[0] if rig_file_list else None
     return rig_path
 
+def get_character_rig_profiles(character_network):
+    '''
+    Finds all rigging files in the character folder and populates the UI menu with them
+    '''
+    config_manager = v1_core.global_settings.ConfigManager()
+    character_folder = config_manager.get_character_directory()
+    rigging_folder = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING).get("RigFolder")
+    general_rigging_folder = os.path.join(character_folder, rigging_folder)
+
+    folder_path_list = character_network.character_folders
+    folder_path_list.append(general_rigging_folder)
+    folder_path_list = [x for x in folder_path_list if os.path.exists(x)]
+    file_path_list = []
+    for folder in folder_path_list:
+        for file in [x for x in os.listdir(folder) if x.endswith(".json") and "settings" not in x.lower() and "skin" not in x.lower()]:
+            full_path = os.path.join(folder, file)
+            file_path_list.append(full_path)
+
+    return file_path_list
+
 #region settings file ops
 def get_settings_files(directory_path, type, varient = None):
     '''

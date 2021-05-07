@@ -467,21 +467,6 @@ namespace Freeform.Rigging
             }
         }
 
-        bool _overdriverRemoveParentSpace;
-        public bool OverdriverRemoveParentSpace
-        {
-            get { return _overdriverRemoveParentSpace; }
-            set
-            {
-                if (_overdriverRemoveParentSpace != value)
-                {
-                    _overdriverRemoveParentSpace = value;
-                    RaisePropertyChanged("OverdriverRemoveParentSpace");
-                    SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "overdriver_remove_parent_space", value = _overdriverRemoveParentSpace, category = "CharacterSettings" });
-                }
-            }
-        }
-
         string _sideEntry;
         public string SideEntry
         {
