@@ -360,15 +360,9 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
             if overdriver_list:
                 for od in overdriver_list:
                     od.remove()
-    
-            character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
-            remove_parent_setting = character_settings.overdriver_remove_parent_space
-            character_settings.overdriver_remove_parent_space = True
 
             ik_handle = leg_ik_component.get_control('ik_handle')
             leg_ik_component.switch_space(ik_handle, rigging.overdriver.Overdriver, [attachment_control])
-
-            character_settings.overdriver_remove_parent_space = remove_parent_setting
 
     def get_rigger_methods(self):
         method_dict = {}

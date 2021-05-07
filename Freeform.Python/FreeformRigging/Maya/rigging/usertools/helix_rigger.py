@@ -95,7 +95,6 @@ class HelixRigger:
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         self.vm.LightweigntRigging = character_category.lightweight_rigging
-        self.vm.OverdriverRemoveParentSpace = character_category.overdriver_remove_parent_space
         self.vm.BakeComponent = character_category.bake_component
         self.vm.RevertAnimation = character_category.revert_animation
         self.vm.ForceRemove = character_category.force_remove
@@ -630,21 +629,11 @@ class HelixRigger:
         '''
         Finds all rigging files in the character folder and populates the UI menu with them
         '''
-        config_manager = v1_core.global_settings.ConfigManager()
-        character_folder = config_manager.get_character_directory()
-        rigging_folder = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING).get("RigFolder")
-        general_rigging_folder = os.path.join(character_folder, rigging_folder)
-
         character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName)
         character_network = metadata.network_core.MetaNode.create_from_node(character_node)
-
-        folder_path_list = character_network.character_folders
-        folder_path_list.append(general_rigging_folder)
-        folder_path_list = [x for x in folder_path_list if os.path.exists(x)]
-        for folder in folder_path_list:
-            for file in [x for x in os.listdir(folder) if x.endswith(".json") and "settings" not in x.lower() and "skin" not in x.lower()]:
-                full_path = os.path.join(folder, file)
-                self.create_menu_item(full_path, self.load_rigging_profile, self.vm.RiggingMenuItems)
+        rig_profile_list = rigging.file_ops.get_character_rig_profiles(character_network)
+        for profile_full_path in rig_profile_list:
+            self.create_menu_item(profile_full_path, self.load_rigging_profile, self.vm.RiggingMenuItems)
 
     @csharp_error_catcher
     def save_setting(self, vm, event_args):
@@ -2294,13 +2283,13 @@ class HelixRigger:
             component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.RigComponent)
             if component_network:
                 component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
-
-                if type(component) == rigging.ik.IK:
-                    component.switch_to_fk()
-                elif type(component) == rigging.fk.FK:
-                    component.switch_to_ik()
-                else:
-                    component.switch_rigging()
+                meta_switch = component.switch_rigging()
+                if not meta_switch:
+                    if type(component) == rigging.ik.IK:
+                        component.switch_to_fk()
+                    elif type(component) == rigging.fk.FK:
+                        component.switch_to_ik()
+                    
 
     @csharp_error_catcher
     def open_switcher(self, c_rig_button, event_args):

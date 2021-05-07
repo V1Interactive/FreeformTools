@@ -1089,12 +1089,6 @@ class Addon_Component(Component_Base):
         control_info = control_component.get_control_info(control)
         self.create_controls(addon_control, control)
 
-        # Add parent joint space to any overdrivers that aren't using the rig/bake queue
-        jnt = control_component.get_control_joint(control)
-        jnt_parent = jnt.getParent() if jnt else None
-        if jnt and jnt_parent not in object_space_list and not use_global_queue and not character_settings.overdriver_remove_parent_space:
-            object_space_list.insert(0, jnt_parent)
-
         target_type_str = ''
         target_data_str = ''
         object_space_list = [x for x in object_space_list if x]
@@ -2389,6 +2383,7 @@ class Rig_Component(Component_Base):
                     else:
                         attr_name, operation_name = split_name
                         if operation_name == "constraint":
+                            locked_attr_list = maya_utils.node_utils.unlock_transforms(control)
                             driver_list = []
                             weight_list = []
                             for obj_info in value:
@@ -2398,6 +2393,8 @@ class Rig_Component(Component_Base):
                             constraint_type = getattr(pm, attr_name)
                             constraint_obj = constraint_type(driver_list, control, mo=True)
                             rigging.constraints.set_constraint_weights(constraint_type, control, driver_list, weight_list)
+                            for locked_attr in locked_attr_list:
+                                locked_attr.lock()
                 # Locking needs to happen after constraints
                 for attr_name, value in control_dict.iteritems():
                     split_name = attr_name.split(".", 1)
