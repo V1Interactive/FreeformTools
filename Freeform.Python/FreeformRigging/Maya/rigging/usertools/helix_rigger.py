@@ -123,7 +123,7 @@ class HelixRigger:
         self.vm.UpdateEventHandler += self.update_from_scene
         self.vm.UpdateCharacterHandler += self.run_character_update
         self.vm.RemoveAnimationHandler += self.remove_animation
-        self.vm.SelectAllAnimatedHandler += self.select_all_animated
+        self.vm.SelectAllHandler += self.select_all
         self.vm.AddNewJointsHandler += self.add_new_joints
         self.vm.UpdateCharacterNamespaceHandler += self.update_namespace
         self.vm.UpdateCharacterNameHandler += self.update_character_name
@@ -192,7 +192,7 @@ class HelixRigger:
         self.vm.UpdateEventHandler -= self.update_from_scene
         self.vm.UpdateCharacterHandler -= self.run_character_update
         self.vm.RemoveAnimationHandler -= self.remove_animation
-        self.vm.SelectAllAnimatedHandler -= self.select_all_animated
+        self.vm.SelectAllHandler -= self.select_all
         self.vm.AddNewJointsHandler -= self.add_new_joints
         self.vm.UpdateCharacterNamespaceHandler -= self.update_namespace
         self.vm.UpdateCharacterNameHandler -= self.update_character_name
@@ -831,13 +831,16 @@ class HelixRigger:
 
     @csharp_error_catcher
     @undoable
-    def select_all_animated(self, vm, event_args):
+    def select_all(self, vm, event_args):
         '''
         Select all animated objects that are driving the character
         '''
         c_character = event_args.character
         character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(c_character.NodeName))
-        freeform_utils.character_utils.select_all_animated(character_network)
+        if event_args.animated:
+            freeform_utils.character_utils.select_all_animated(character_network)
+        else:
+            freeform_utils.character_utils.force_select_all(character_network)
 
     @csharp_error_catcher
     def update_from_scene(self, vm, event_args):
@@ -2046,8 +2049,9 @@ class HelixRigger:
         component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
 
         for component_network in component_network_list:
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
-            rig_component.remove()
+            if pm.objExists(component_network.node):
+                rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+                rig_component.remove()
 
         self.vm.UpdateRiggerInPlace()
 
@@ -2068,8 +2072,9 @@ class HelixRigger:
         component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
 
         for component_network in component_network_list:
-            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
-            rig_component.bake_and_remove()
+            if pm.objExists(component_network.node):
+                rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+                rig_component.bake_and_remove()
 
         maya_utils.baking.Global_Bake_Queue().run_queue()
         maya_utils.scene_utils.set_current_frame()
@@ -2321,7 +2326,7 @@ class HelixRigger:
                     component.open_space_switcher()
             else:
                 component_jnt = component.network.get('skeleton').get_first_connection()
-                component_network_list = rigging.skeleton.get_all_rig_networks(component_jnt)
+                component_network_list = rigging.skeleton.get_active_rig_network(component_jnt)
                 if len(component_network_list) != 1:
                     component.open_rig_switcher()
 

@@ -646,7 +646,7 @@ def get_rig_network(jnt):
         MetaNode. ComponentCore if the joint is rigged, Addon Component if the rig control for that joint
             is controlled by an overdriver
     '''
-    component_net_list = get_all_rig_networks(jnt)
+    component_net_list = get_active_rig_network(jnt)
     first_component_network = get_first_or_default(component_net_list)
         
     return_comp_network = None
@@ -666,25 +666,59 @@ def get_rig_network(jnt):
     
     return return_comp_network
 
-def get_all_rig_networks(jnt):
+def get_active_rig_network(jnt):
     '''
-    Get all rigging components that the provided Maya scene joint is part of.
+    Get the active rigging component that the provided Maya scene joint is part of.
 
     Args:
-        jnt (PyNode): The Maya scene joint node that's part of a skeleton
+        jnt (PyNode): The Maya scene joint node that's part of a character
 
     Returns:
         MetaNode. ComponentCore if the joint is rigged, Addon Component if the rig control for that joint
             is controlled by an overdriver
     '''
-    network_entry_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.AddonCore)
-    if not network_entry_list:
-        network_entry_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.ComponentCore)
+    component_network_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.AddonCore)
+    if not component_network_list:
+        component_network_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.ComponentCore)
+
+    return filter_component_networks(jnt, component_network_list)
+
+def get_primary_rig_network(jnt):
+    '''
+    Get the primary component that the provided Maya scene joint is part of.
+
+    Args:
+        jnt (PyNode): The Maya scene joint node that's part of a character
+
+    Returns:
+        List<MetaNode>. All ComponentCore and AddonCore influencing the rig control
+    '''
+    component_network_list = []
+    network_entry = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.AddonControls)
+    if not network_entry:
+        network_entry = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.ControlJoints)
+        component_network_list.append( network_entry.get_upstream(metadata.network_core.ComponentCore) )
+    else:
+        component_network_list.append( network_entry.get_upstream(metadata.network_core.AddonCore) )
+
+    return filter_component_networks(jnt, component_network_list)
+
+def filter_component_networks(jnt, component_network_list):
+    '''
+    filter a list of component_network objects gathered from a joint to exclude any where the joint is marked as excluded
+    from the component
+
+    Args:
+        jnt (PyNode): The Maya scene joint node that's part of the character
+        List<MetaNode>: List of component MetaNode objects, ComponentCore or AddonCore, to filter
+
+    Returns:
+        List<MetaNode>. All ComponentCore and AddonCore that weren't filtered
+    '''
     component_net_list = []
-    if network_entry_list:
-        for component_network in network_entry_list:
-            if not component_network in component_net_list:
-                component_net_list.append( component_network )
+    for component_network in component_network_list:
+        if not component_network in component_net_list:
+            component_net_list.append( component_network )
 
     # If the joint is in a component but marked to be excluded from that component, don't include the component in the
     # returned list.

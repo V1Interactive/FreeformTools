@@ -310,7 +310,7 @@ def mirror_rig_animation(joint, mirror_key_dict = {'left' : 'right'}, axis = 'x'
 
         for region in region_dict.keys():
             region_root = region_dict.get(region).get('root')
-            region_network_list = rigging.skeleton.get_all_rig_networks(region_root)
+            region_network_list = rigging.skeleton.get_active_rig_network(region_root)
             for region_network in region_network_list:
                 mirror_center_region(region_network, axis)
 
@@ -464,6 +464,23 @@ def select_all_animated(character_network):
     all_animated = control_list + animated_skeleton
     pm.select(all_animated, r=True)
 
+def force_select_all(character_network):
+    '''
+    Select all objects that control the character
+    '''
+    component_network_list = character_network.get_all_downstream(metadata.network_core.ComponentCore)
+    control_list = []
+    for component_network in component_network_list:
+        control_network = component_network.get_downstream(metadata.network_core.ControlJoints)
+        control_list.extend( control_network.get_connections() )
+
+    component_network_list = character_network.get_all_downstream(metadata.network_core.AddonCore)
+    for component_network in component_network_list:
+        control_network = component_network.get_downstream(metadata.network_core.AddonControls)
+        control_list.extend( control_network.get_connections() )
+
+    pm.select(control_list, r=True)
+
 
 def get_addon_from_control(control_obj):
     '''
@@ -487,9 +504,10 @@ def get_component_network_list(obj_list):
     control_list = [x for x in obj_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
     component_network_list = []
     for control in control_list:
-        component_network_list.append(rigging.skeleton.get_rig_network(control))
+        component_network_list.extend(rigging.skeleton.get_primary_rig_network(control))
 
     return list(set(component_network_list))
+
 
 def get_control_info(control):
     '''

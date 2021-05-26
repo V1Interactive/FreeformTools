@@ -50,7 +50,7 @@ namespace Freeform.Rigging
         public event EventHandler SaveRiggingHandler;
         public event EventHandler LoadRiggingHandler;
         public event EventHandler RemoveAnimationHandler;
-        public event EventHandler SelectAllAnimatedHandler;
+        public event EventHandler SelectAllHandler;
         public event EventHandler UpdateCharacterHandler;
         public event EventHandler AddNewJointsHandler;
         public event EventHandler UpdateCharacterNamespaceHandler;
@@ -106,6 +106,7 @@ namespace Freeform.Rigging
         public RelayCommand ImportUE4AnimationCommand { get; set; }
         public RelayCommand RemoveAnimationCommand { get; set; }
         public RelayCommand SelectAllAnimatedCommand { get; set; }
+        public RelayCommand SelectAllCommand { get; set; }
         public RelayCommand MirrorAnimationCommand { get; set; }
         public RelayCommand ZeroRigCommand { get; set; }
         public RelayCommand ZeroCharacterCommand { get; set; }
@@ -747,6 +748,7 @@ namespace Freeform.Rigging
             QuickFKCharacterCommand = new RelayCommand(QuickFKCharacterCall);
             RemoveAnimationCommand = new RelayCommand(RemoveAnimationCall);
             SelectAllAnimatedCommand = new RelayCommand(SelectAllAnimatedCall);
+            SelectAllCommand = new RelayCommand(SelectAllCall);
             ZeroRigCommand = new RelayCommand(ZeroRigCall);
             ZeroCharacterCommand = new RelayCommand(ZeroCharacterCall);
             SwapCharacterCommand = new RelayCommand(SwapCharacterCall);
@@ -1088,11 +1090,22 @@ namespace Freeform.Rigging
 
         public void SelectAllAnimatedCall(object sender)
         {
-            CharacterEventArgs eventArgs = new CharacterEventArgs()
+            SelectionEventArgs eventArgs = new SelectionEventArgs()
             {
-                character = (Character)sender
+                character = (Character)sender,
+                animated = true
             };
-            SelectAllAnimatedHandler?.Invoke(this, eventArgs);
+            SelectAllHandler?.Invoke(this, eventArgs);
+        }
+
+        public void SelectAllCall(object sender)
+        {
+            SelectionEventArgs eventArgs = new SelectionEventArgs()
+            {
+                character = (Character)sender,
+                animated = false
+            };
+            SelectAllHandler?.Invoke(this, eventArgs);
         }
 
         public void SetActiveCharacterCall(object sender)
@@ -1366,6 +1379,12 @@ namespace Freeform.Rigging
         public class CharacterEventArgs : EventArgs
         {
             public Character character = null;
+        }
+
+        public class SelectionEventArgs : EventArgs
+        {
+            public Character character = null;
+            public bool animated = true;
         }
 
         public class CharacterListEventArgs : EventArgs

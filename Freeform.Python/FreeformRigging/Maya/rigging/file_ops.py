@@ -297,8 +297,8 @@ def load_settings_from_json(character_grp, file_path, binding_list = rigging.set
             if rigging.settings_binding.Properties_Binding in [type(x) for x in binding_list]:
                 rigging.settings_binding.Properties_Binding().load_data(data, load_property_jnt)
 
-    if load_property_jnt:
-        rigging.skeleton.remove_invalid_rig_markup(load_property_jnt)
+    for load_jnt in joints_network.get_connections():
+        rigging.skeleton.remove_invalid_rig_markup(load_jnt)
 
     pm.autoKeyframe(state=autokey_state)
 

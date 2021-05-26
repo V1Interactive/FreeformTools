@@ -305,7 +305,7 @@ class Component_Base(object):
         Returns:
             str: The long scene name for the rig component network node, or None
         '''
-        component_network_list = rigging.skeleton.get_all_rig_networks(jnt)
+        component_network_list = rigging.skeleton.get_active_rig_network(jnt)
         remove_node_list = []
         for component_network in component_network_list:
             remove_node_list.append(component_network.node)
@@ -1737,7 +1737,7 @@ class Rig_Component(Component_Base):
             rigging.skeleton.zero_skeleton_joints(joint_list)
 
         # If there's still rigging applied to the skeleton, swap control to the first one in the list
-        component_network_list = rigging.skeleton.get_all_rig_networks(joint_list[0])
+        component_network_list = rigging.skeleton.get_active_rig_network(joint_list[0])
         if component_network_list:
             if revert_animation:
                 rigging.skeleton.remove_animation(joint_list)
@@ -1820,7 +1820,7 @@ class Rig_Component(Component_Base):
         pm.autoKeyframe(state=False)
 
         component_jnt = self.network.get('skeleton').get_first_connection()
-        component_network_list = rigging.skeleton.get_all_rig_networks(component_jnt)
+        component_network_list = rigging.skeleton.get_active_rig_network(component_jnt)
 
         if len(component_network_list) == 1:
             self.bake_to_skeleton_and_remove(use_global_queue, local_queue)
@@ -2129,7 +2129,7 @@ class Rig_Component(Component_Base):
         pm.autoKeyframe(state=False)
 
         component_jnt = self.network.get('skeleton').get_first_connection()
-        component_list = rigging.skeleton.get_all_rig_networks(component_jnt)
+        component_list = rigging.skeleton.get_active_rig_network(component_jnt)
 
         weight_index = 0
         target_list = pm.orientConstraint(component_jnt, q=True, tl=True)
@@ -2422,7 +2422,7 @@ class Rig_Component(Component_Base):
             control (PyNode): The control that's been selected to create the context menu
         '''
         component_jnt = self.network.get('skeleton').get_first_connection()
-        component_network_list = rigging.skeleton.get_all_rig_networks(component_jnt)
+        component_network_list = rigging.skeleton.get_active_rig_network(component_jnt)
         if len(component_network_list) != 1:
             rigs_method, rigs_args, rigs_kwargs = v1_core.v1_logging.logging_wrapper(self.open_rig_switcher, "Context Menu (Rig_Component)")
             pm.menuItem(label="Open Rig Switcher", parent=parent_menu, command=lambda _: rigs_method(*rigs_args, **rigs_kwargs))
