@@ -104,7 +104,7 @@ class RigSwitcher(object):
         self.index_rig_dict = {}
 
         component_jnt = self.component.network.get('skeleton').get_first_connection()
-        component_network_list = rigging.skeleton.get_all_rig_networks(component_jnt)
+        component_network_list = rigging.skeleton.get_active_rig_networks(component_jnt)
 
         # Gather all rig components and update UI with them
         for space_network in component_network_list:
@@ -157,7 +157,7 @@ class RigSwitcher(object):
             event_args (SwitchSpaceEventArgs): EventArgs to store space to switch to, start and end frames
         '''
         component_jnt_list = self.component.network.get('skeleton').get_connections()
-        component_network = rigging.skeleton.get_all_rig_networks(component_jnt_list[0])[event_args.Space]
+        component_network = rigging.skeleton.get_active_rig_networks(component_jnt_list[0])[event_args.Space]
         pm.select(component_network.get_downstream(metadata.network_core.ControlJoints).get_connections())
 
     @undoable
@@ -185,7 +185,7 @@ class RigSwitcher(object):
 
 
         component_jnt = self.component.network.get('skeleton').get_first_connection()
-        component_network_list = rigging.skeleton.get_all_rig_networks(component_jnt)
+        component_network_list = rigging.skeleton.get_active_rig_networks(component_jnt)
 
         constraint_attr_list = []
         for jnt in self.component.network.get('skeleton').get_connections():
