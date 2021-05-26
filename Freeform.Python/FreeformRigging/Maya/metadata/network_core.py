@@ -265,7 +265,7 @@ class MetaNode(object):
                 self.set(attr_name, " ")
 
         return_value = getattr(self.node, attr_name).get()
-        return_value = "" if return_value == " " else return_value
+        return_value = "" if return_value == " " and type(return_value) == str else return_value
         return return_value
 
     def set(self, attr_name, value, value_type='string'):
