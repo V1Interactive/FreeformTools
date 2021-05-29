@@ -482,17 +482,24 @@ class HelixRigger:
         misc_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
-        new_button.CommandHandler += self.save_control_shapes
-        new_button.Name = "Save Control Shapes"
-        new_button.ImagePath = "../../Resources/save_control_shapes.png"
-        new_button.Tooltip = "Saves control shapes to character's Control_Shapes.fbx file"
-        misc_category.AddButton(new_button)
-
-        new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.re_parent_component
         new_button.Name = "Re-Parent Component"
         new_button.ImagePath = "pack://application:,,,/HelixResources;component/Resources/transfer.ico"
         new_button.Tooltip = "Re-parents the selected components to last item in your selection"
+        misc_category.AddButton(new_button)
+
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.mirror_control_shapes
+        new_button.Name = "Mirror Control Shapes"
+        new_button.ImagePath = "../../Resources/rig_mirror.ico"
+        new_button.Tooltip = "Mirror control shapes between left and right sides"
+        misc_category.AddButton(new_button)
+
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.save_control_shapes
+        new_button.Name = "Save Control Shapes"
+        new_button.ImagePath = "../../Resources/save_control_shapes.png"
+        new_button.Tooltip = "Saves control shapes to character's Control_Shapes.fbx file"
         misc_category.AddButton(new_button)
 
 
@@ -2500,6 +2507,19 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         rigging.rig_base.Component_Base.save_control_shapes()
+
+    @csharp_error_catcher
+    def mirror_control_shapes(self, c_rig_button, event_args):
+        '''
+        mirror_control_shapes(self, c_rig_button, event_args)
+        Mirror control shapes between left and right sides.
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        for obj in pm.ls(selection=True):
+            rigging.rig_base.Rig_Component.mirror_control_shape(obj)
 
     @csharp_error_catcher
     def re_parent_component(self, c_rig_button, event_args):
