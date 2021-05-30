@@ -2392,6 +2392,9 @@ class Rig_Component(Component_Base):
                                 driver_list.append( freeform_utils.character_utils.get_control_from_info(control_info_str, self.skeleton_dict) )
                             constraint_type = getattr(pm, attr_name)
                             constraint_obj = constraint_type(driver_list, control, mo=True)
+                            if constraint_type == pm.parentConstraint or constraint_type == pm.orientConstraint:
+                                constraint_obj.interpType.set(2)
+
                             rigging.constraints.set_constraint_weights(constraint_type, control, driver_list, weight_list)
                             for locked_attr in locked_attr_list:
                                 locked_attr.lock()
