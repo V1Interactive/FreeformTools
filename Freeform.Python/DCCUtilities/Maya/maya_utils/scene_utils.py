@@ -147,6 +147,9 @@ def clean_scene():
     # Delete empty namespaces
     delete_empty_namespaces()
 
+    # Delete empty Display Layers
+    delete_empty_display_layers()
+
     # Delete RenderLayers that aren't a default layer
     render_layers = [x for x in pm.ls(type='renderLayer') if x != pm.nt.RenderLayer('defaultRenderLayer')]
     if render_layers:
@@ -191,6 +194,13 @@ def delete_empty_namespaces():
         if not pm.namespaceInfo(ns, ls=True):
             pm.namespace(removeNamespace = ns, mergeNamespaceWithRoot = True)
 
+def delete_empty_display_layers():
+    empty_layer_list = []
+    for display_layer in pm.ls(type="displayLayer"):
+        if not display_layer.listMembers():
+            empty_layer_list.append(display_layer)
+
+    pm.delete(empty_layer_list)
 
 def delete_empty_objects():
     pm.delete([x for x in pm.ls(assemblies=True) if not x.getShape() and not x.getChildren()])
