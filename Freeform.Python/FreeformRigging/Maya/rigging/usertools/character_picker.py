@@ -430,7 +430,7 @@ class RigSwapper(CharacterPicker):
         for new_mesh_group in new_mesh_group_list:
             new_mesh_group.setParent(source_character_network.group)
 
-        rigging.rig_base.Component_Base.delete_character(new_character_network.node)
+        rigging.rig_base.Component_Base.delete_character(new_character_network.node, source_namespace)
 
         pm.namespace(rename=[source_namespace, new_namespace[:-1]])
 

@@ -23,6 +23,11 @@ import v1_core
 import v1_shared
 
 
+class InvalidPyMelError(Exception):
+    """Exception to call to inform user that non-integers were found in the bake range"""
+    def __init__(self):
+        message = "An Invalid Pymel object was selected.  Scene Manager will not update until only valid objects are selected."
+        super(InvalidPyMelError, self).__init__(message)
 
 class SceneManager(object):
     '''
@@ -113,9 +118,13 @@ class SceneManager(object):
         Run all methods stored in the selection_changed_list of SceneManager, passing the current selection
         '''
         if SceneManager.selection_changed_enabled:
-            selection_list = pm.ls(selection=True)
-            for method in SceneManager.selection_changed_list:
-                method(selection_list)
+            try:
+                selection_list = pm.ls(selection=True)
+            except Exception, e:
+                raise InvalidPyMelError
+            else:
+                for method in SceneManager.selection_changed_list:
+                    method(selection_list)
 
     def run_by_string(self, match_string, *args, **kwargs):
         '''

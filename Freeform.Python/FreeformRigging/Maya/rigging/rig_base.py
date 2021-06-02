@@ -227,7 +227,7 @@ class Component_Base(object):
         return control_shader
 
     @staticmethod
-    def delete_character(character_node):
+    def delete_character(character_node, move_namespace = None):
         '''
         Delete the given character from the Maya scene and clean up it's MetaNode graph
 
@@ -256,7 +256,15 @@ class Component_Base(object):
         namespace = character_group.namespace()
         pm.delete(character_group)
         if namespace:
-            pm.delete([x for x in pm.namespaceInfo(namespace, listNamespace=True) if pm.objExists(x)])
+            namespace_obj_list = [x for x in pm.namespaceInfo(namespace, listNamespace=True) if pm.objExists(x)]
+            if move_namespace:
+                # Move non transform objects into the new namespace
+                namespace_transform_list = pm.ls(namespace_obj_list, type='transform')
+                pm.delete(namespace_transform_list)
+                pm.namespace(moveNamespace=[namespace, move_namespace], force=True)
+            else:
+                pm.delete(namespace_obj_list)
+
             for child_ns in [x for x in pm.namespaceInfo(namespace, listOnlyNamespaces=True) if type(x) == unicode]:
                 pm.delete([x for x in pm.namespaceInfo(child_ns, listNamespace=True) if pm.objExists(x)])
                 pm.namespace( removeNamespace=child_ns )
@@ -400,6 +408,8 @@ class Component_Base(object):
                     pm.delete(pm.PyNode(control_info_string))
 
                 dupe_shape = get_first_or_default(pm.duplicate(control.getShape(), addShape=True))
+                for attr, connection in dupe_shape.listConnections(shapes=True, c=True):
+                    attr.disconnect()
                 dupe_shape.rename(control.shortName() + "Shape")
                 shape_holder = pm.group(empty=True, name=control_info_string)
                 shape_holder.setParent(control_holder_grp)
