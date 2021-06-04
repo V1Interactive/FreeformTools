@@ -196,8 +196,9 @@ def delete_empty_namespaces():
 
 def delete_empty_display_layers():
     empty_layer_list = []
+    default_display_layer = pm.PyNode('defaultLayer') if pm.objExists('defaultLayer') else None
     for display_layer in pm.ls(type="displayLayer"):
-        if not display_layer.listMembers():
+        if display_layer != default_display_layer and not display_layer.listMembers():
             empty_layer_list.append(display_layer)
 
     pm.delete(empty_layer_list)
