@@ -267,7 +267,7 @@ def bake_objects(obj_list, translate, rotate, scale, use_settings = True, custom
         if type(time_range[0]) != int or type(time_range[1]) != int:
             raise BakeRangeError
 
-        v1_core.v1_logging.get_logger().info("Baking {0} over range {1}\nBake Attrs: {2}\nBakeSettings: {3}".format(obj_list, time_range, attr_list, kwargs))
+        v1_core.v1_logging.get_logger().info("Baking {0} \n Use Settings: {1}, over range {2}\nBake Attrs: {3}\nBakeSettings: {4}".format(obj_list, use_settings, time_range, attr_list, kwargs))
 
         bake_start = time.clock()
         # Baking is stupidly slower if you pass in a value to smart bake(sr), even if it's False, so we split out the command
@@ -342,7 +342,7 @@ def get_bake_time_range(obj_list, settings):
     time_range = []
 
     if settings.time_range:
-        time_range = (pm.playbackOptions(q=True, ast=True), pm.playbackOptions(q=True, aet=True))
+        time_range = (pm.playbackOptions(q=True, min=True), pm.playbackOptions(q=True, max=True))
     elif settings.current_frame:
         # pm.bakeResults doesn't allow single frame entry to the time attribute, 
         # so make a 2 frame selection and sample by 2 to ignore the 2nd frame.
