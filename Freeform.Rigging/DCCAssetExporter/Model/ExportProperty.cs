@@ -148,7 +148,16 @@ namespace Freeform.Rigging.DCCAssetExporter
     {
         public ZeroCharacterProperty(string guid, string nodeName) : base(guid, nodeName)
         {
-            _propertyType = "Zero Character";
+            _propertyType = "Zero Translate";
+            Icon = "../../Resources/zero_rig.ico";
+        }
+    }
+
+    public class ZeroCharacterRotateProperty : ExportProperty
+    {
+        public ZeroCharacterRotateProperty(string guid, string nodeName) : base(guid, nodeName)
+        {
+            _propertyType = "Zero Rotate";
             Icon = "../../Resources/zero_rig.ico";
         }
     }
@@ -201,7 +210,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             get { return _fromZero; }
             set
             {
-                if(_fromZero != value)
+                if (_fromZero != value)
                 {
                     _fromZero = value;
                     RaisePropertyChanged("FromZero");
@@ -228,7 +237,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             get { return _targetName; }
             set
             {
-                if(_targetName != value)
+                if (_targetName != value)
                 {
                     _targetName = value;
                     RaisePropertyChanged("TargetName");
@@ -502,7 +511,7 @@ namespace Freeform.Rigging.DCCAssetExporter
                         };
                         AttributeChangedHandler?.Invoke(this, eventArgs);
                     }
-                    
+
                 }
             }
         }
@@ -589,7 +598,7 @@ namespace Freeform.Rigging.DCCAssetExporter
 
         void SetAxis(string value)
         {
-            if(value == "rx")
+            if (value == "rx")
             {
                 XAxis = true;
             }
