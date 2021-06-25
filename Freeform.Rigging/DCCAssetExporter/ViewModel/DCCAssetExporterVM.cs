@@ -51,6 +51,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public event EventHandler AnimationCurveHandler;
         public event EventHandler RemoveRootAnimationHandler;
         public event EventHandler ZeroCharacterHandler;
+        public event EventHandler ZeroCharacterRotateHandler;
         public event EventHandler RotationCurveHandler;
         public event EventHandler CreateNewAssetHandler;
         public event EventHandler RemoveDefinitionHandler;
@@ -70,6 +71,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public RelayCommand AnimationCurveCommand { get; set; }
         public RelayCommand RemoveRootAnimationCommand { get; set; }
         public RelayCommand ZeroCharacterCommand { get; set; }
+        public RelayCommand ZeroCharacterRotateCommand { get; set; }
         public RelayCommand RotationCurveCommand { get; set; }
         public RelayCommand RemovePropertyCommand { get; set; }
         public RelayCommand CreateNewAssetCommand { get; set; }
@@ -278,6 +280,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             AnimationCurveCommand = new RelayCommand(AnimationCurveCall);
             RemoveRootAnimationCommand = new RelayCommand(RemoveRootAnimationCall);
             ZeroCharacterCommand = new RelayCommand(ZeroCharacterCall);
+            ZeroCharacterRotateCommand = new RelayCommand(ZeroCharacterRotateCall);
             RotationCurveCommand = new RelayCommand(RotationCurveCall);
             RemovePropertyCommand = new RelayCommand(RemoveExportPropertyCall);
             CreateNewAssetCommand = new RelayCommand(CreateNewAssetCall);
@@ -361,7 +364,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             ExportWrapperStartHandler?.Invoke(this, null);
             foreach (ExportDefinition definition in ExportDefinitionList)
             {
-                if(definition.DoExport == true)
+                if (definition.DoExport == true)
                 {
                     DefinitionEventArgs eventArgs = new DefinitionEventArgs() { Object = definition };
                     SelectedDefinition = definition;
@@ -398,7 +401,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             };
             CreateNewAssetHandler?.Invoke(this, eventArgs);
 
-            if(eventArgs.Object != null)
+            if (eventArgs.Object != null)
             {
                 eventArgs.Object.Index = AssetList.Count;
                 AddExportAsset(eventArgs.Object);
@@ -458,6 +461,12 @@ namespace Freeform.Rigging.DCCAssetExporter
             CreateProperty(asset, ZeroCharacterHandler);
         }
 
+        public void ZeroCharacterRotateCall(object sender)
+        {
+            var asset = sender as ExportObject;
+            CreateProperty(asset, ZeroCharacterRotateHandler);
+        }
+
         public void RotationCurveCall(object sender)
         {
             var asset = sender as ExportAsset;
@@ -492,7 +501,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             {
                 SelectedDefinition.ExportProperties.Remove(property);
             }
-            else if(SelectedAsset.ExportProperties.Contains(property))
+            else if (SelectedAsset.ExportProperties.Contains(property))
             {
                 SelectedAsset.ExportProperties.Remove(property);
             }
@@ -588,7 +597,7 @@ namespace Freeform.Rigging.DCCAssetExporter
                 {
                     obj.Index -= 1;
                 }
-                selectedObject.Index = objectList.Count -1;
+                selectedObject.Index = objectList.Count - 1;
             }
             else
             {

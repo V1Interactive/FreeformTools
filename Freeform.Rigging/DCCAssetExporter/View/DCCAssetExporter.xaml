@@ -52,10 +52,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <Grid.Resources>
             <v1:BindingProxy x:Key="dataContextProxy" Data="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
-            
+
             <ControlTemplate x:Key="assetTemplate">
                 <Grid Style="{StaticResource SubGrid}">
                     <Grid.RowDefinitions>
@@ -154,7 +154,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         </Grid.ContextMenu>
                     </Grid>
                 </Grid>
-                
+
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
                         <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
@@ -348,7 +348,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                   Grid.Column="13" 
                                   ToolTip="Will use definition's time range if not enabled."/>
                     </Grid>
-                    
+
                 </Grid>
 
                 <DataTemplate.Triggers>
@@ -397,7 +397,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
-                            
+
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -424,7 +424,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                      Margin="4,2,0,4" 
                                      Grid.Column="3"/>
 
-                        
+
                         <TextBlock Text="Barrel Joint:" VerticalAlignment="Center" Margin="20,2,5,2" Grid.Column="4"/>
                         <TextBox Text="{Binding TargetName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,2,10,2" Grid.Column="5"/>
 
@@ -665,9 +665,13 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                         Command="{Binding Data.AnimationCurveCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
                                                         Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero All Characters" 
+                                            <MenuItem Header="Zero Translate All" 
                                                         Command="{Binding Data.ZeroCharacterCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
+                                            <MenuItem Header="Zero Rotate All"
+                                                        Command="{Binding Data.ZeroCharacterRotateCommand, Source={StaticResource dataContextProxy}}"
+                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"
                                                         Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
                                             <MenuItem Header="Remove All Root Animation" 
                                                         Command="{Binding Data.RemoveRootAnimationCommand, Source={StaticResource dataContextProxy}}" 
@@ -818,10 +822,14 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                         Command="{Binding Data.SwapAssetCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
                                                         Visibility="{Binding Data.MaxEnabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Character" 
+                                            <MenuItem Header="Zero Translate Character" 
                                                         Command="{Binding Data.ZeroCharacterCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
                                                         Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
+                                            <MenuItem Header="Zero Rotate Character"
+                                                      Command="{Binding Data.ZeroCharacterRotateCommand, Source={StaticResource dataContextProxy}}"
+                                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"
+                                                      Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
                                             <MenuItem Header="Remove Root Animation" 
                                                         Command="{Binding Data.RemoveRootAnimationCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
@@ -912,9 +920,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
+
                     <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Export Properties" Grid.Column="0"/>
-                    
+
                     <ItemsControl Style="{StaticResource SelectedItemsControl}" ItemsSource="{Binding SelectedDefinition.ExportProperties}" Grid.Column="1">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>

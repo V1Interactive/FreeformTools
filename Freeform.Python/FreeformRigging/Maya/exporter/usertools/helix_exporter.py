@@ -59,8 +59,8 @@ class HelixExporter(object):
         export_definition_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.ExportDefinition)
         for definition_node in export_definition_list:
             new_definition = HelixExporter.create_definition(definition_node,
-                                                             attribute_changed = metadata.meta_properties.attribute_changed, 
-                                                             get_scene_name = maya_utils.scene_utils.get_scene_name_csharp)
+                                                                attribute_changed = metadata.meta_properties.attribute_changed, 
+                                                                get_scene_name = maya_utils.scene_utils.get_scene_name_csharp)
 
             for asset_node in definition_node.message.listConnections(type='network'):
                 new_asset = HelixExporter.create_asset(asset_node)
@@ -99,8 +99,8 @@ class HelixExporter(object):
         '''
         definition_network = metadata.network_core.MetaNode.create_from_node(definition_node)
         new_definition = DCCAssetExporter.ExportDefinition(definition_network.get('guid'), definition_network.get('ui_index', 'short'), definition_network.node.longName(), 
-                                                           definition_network.get('definition_name'), definition_network.get('start_frame'), definition_network.get('end_frame'), 
-                                                           definition_network.get('frame_range', 'bool'), definition_network.get('use_scene_name', 'bool'))
+                                                            definition_network.get('definition_name'), definition_network.get('start_frame'), definition_network.get('end_frame'), 
+                                                            definition_network.get('frame_range', 'bool'), definition_network.get('use_scene_name', 'bool'))
         if attribute_changed:
             new_definition.AttributeChangedHandler += attribute_changed
         if set_frame:
@@ -200,6 +200,21 @@ class HelixExporter(object):
         return zero_character_property
 
     @staticmethod
+    def create_zero_character_rotate(zero_character_network):
+        '''
+        Creates a C# ZeroCharacterRotateProperty from a scene network node.
+
+        Args:
+            zero_character_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.ExporterProperty). The created ExporterProperty
+        '''
+        zero_character_property = DCCAssetExporter.ZeroCharacterRotateProperty(zero_character_network.get('guid'), zero_character_network.node.longName())
+
+        return zero_character_property
+
+    @staticmethod
     def create_asset(asset_node, attribute_changed = None, asset_export_toggle = None):
         '''
         Creates a C# ExportAsset from a scene asset network node.
@@ -212,8 +227,8 @@ class HelixExporter(object):
         '''
         asset_network = metadata.network_core.MetaNode.create_from_node(asset_node)
         new_asset = DCCAssetExporter.ExportAsset(asset_network.get('guid'), asset_network.get('ui_index', 'short'), asset_network.node.longName(), 
-                                                 asset_network.get('asset_name'),  asset_network.get('asset_type'), asset_network.get('export_path'), 
-                                                 asset_network.get('zero_export'), asset_network.get('use_export_path'))
+                                                    asset_network.get('asset_name'),  asset_network.get('asset_type'), asset_network.get('export_path'), 
+                                                    asset_network.get('zero_export'), asset_network.get('use_export_path'))
         new_asset.ExportEventHandler += asset_network.act
         new_asset.FileType = 'maya'
         if attribute_changed:
@@ -236,6 +251,7 @@ class HelixExporter(object):
         self.vm.AnimationCurveHandler += self.new_animation_curve
         self.vm.RemoveRootAnimationHandler += self.new_remove_root_animation
         self.vm.ZeroCharacterHandler += self.new_zero_character
+        self.vm.ZeroCharacterRotateHandler += self.new_zero_character_rotate
         self.vm.RotationCurveHandler += self.new_rotation_curve
         self.vm.RemovePropertyHandler += self.remove_property
         self.vm.AssetSelectedHandler += self.asset_selected
@@ -356,7 +372,7 @@ class HelixExporter(object):
                 remove_root_anim_network.connect_node(definition_node)
 
             definition = HelixExporter.create_definition(definition_node, metadata.meta_properties.attribute_changed, self.set_frame, self.get_frame, 
-                                                         self.get_frame_range, maya_utils.scene_utils.get_scene_name_csharp)
+                                                            self.get_frame_range, maya_utils.scene_utils.get_scene_name_csharp)
             self.vm.AddExportDefinition(definition)
             self.vm.SelectedDefinition = definition
 
@@ -506,7 +522,7 @@ class HelixExporter(object):
         definition_network = metadata.network_core.ExportDefinition()
         definition_node = definition_network.node
         definition = HelixExporter.create_definition(definition_node, metadata.meta_properties.attribute_changed, self.set_frame, self.get_frame, 
-                                                     self.get_frame_range, maya_utils.scene_utils.get_scene_name_csharp)
+                                                        self.get_frame_range, maya_utils.scene_utils.get_scene_name_csharp)
         event_args.Object = definition
 
         for c_asset in self.vm.AssetList:
@@ -600,6 +616,24 @@ class HelixExporter(object):
         zero_character_network.connect_node(asset_node)
 
         c_zero_character = HelixExporter.create_zero_character(zero_character_network)
+        event_args.Object = c_zero_character
+
+    @csharp_error_catcher
+    def new_zero_character_rotate(self, vm, event_args):
+        '''
+        new_zero_character_rotate(self, vm, event_args)
+        Event method that handles creating a new ZeroCharacterRotateProperty and connecting it to the given AssetDefinition
+
+        Args:
+            vm (DCCExporterVM): The C# DCCExporterVM calling the event
+            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
+        '''
+        zero_character_network = metadata.meta_properties.ZeroCharacterRotateProperty()
+        
+        asset_node = pm.PyNode(event_args.NodeName)
+        zero_character_network.connect_node(asset_node)
+
+        c_zero_character = HelixExporter.create_zero_character_rotate(zero_character_network)
         event_args.Object = c_zero_character
 
     @csharp_error_catcher
