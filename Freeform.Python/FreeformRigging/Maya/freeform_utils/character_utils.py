@@ -175,9 +175,9 @@ def remove_existing_rigging(component_type, joint_chain, force_remove = False):
         for region_joint in joint_chain[1:-1]:
             rigging.rig_base.Component_Base.remove_rigging(region_joint, local_queue=local_bake_queue)
         if component_type._hasattachment != 'root':
-            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[0], exclude = 'end', local_queue=local_bake_queue)
+            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[-1], exclude = 'end', local_queue=local_bake_queue)
         if component_type._hasattachment != 'end':
-            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[-1], exclude = 'root', local_queue=local_bake_queue)
+            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[0], exclude = 'root', local_queue=local_bake_queue)
 
         local_bake_queue.run_queue()
 

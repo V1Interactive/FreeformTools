@@ -994,7 +994,7 @@ class Addon_Component(Component_Base):
             if target_type and target_data:
                 if target_type == 'ctrl':  # rig control object
                     target_data = rigging.rig_base.ControlInfo.parse_string(target_data)
-                    target_component = created_rigging[target_data.side][target_data.region]
+                    target_component, did_exist = created_rigging[target_data.side][target_data.region]
                 
                     target_control_list = target_component.get_control_dict()[target_data.control_type]
                     target_ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(target_control_list)
@@ -1400,7 +1400,7 @@ class Rig_Component(Component_Base):
     @property
     def character_root(self):
         root_joint = self.network['character'].get_downstream(metadata.network_core.JointsCore).get('root_joint')
-        if root_joint == self.skel_root:
+        if not root_joint or root_joint == self.skel_root:
             root_joint = self.character_world
         return root_joint
 
@@ -1423,6 +1423,7 @@ class Rig_Component(Component_Base):
         rig_component_start = time.clock()
 
         return_component = None
+        exists = False
         root_joint = target_skeleton_dict[side][region]['root']
         end_joint = target_skeleton_dict[side][region]['end']
         region_chain = rigging.skeleton.get_joint_chain(root_joint, end_joint)
@@ -1453,10 +1454,11 @@ class Rig_Component(Component_Base):
             # If the rigging trying to be applied is already there, return the existing component, and upadte if necessary
             return_component = Component_Base.create_from_network_node(root_component_network.node)
             return_component.update(component_dict)
+            exists = True
 
         v1_core.v1_logging.get_logger().debug("Rigging from json for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
 
-        return return_component
+        return (return_component, exists)
 
 
     @property

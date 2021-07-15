@@ -176,6 +176,20 @@ def force_align(driver, object):
     pm.delete( pm.parentConstraint(driver, object, mo=False) )
     pm.delete( pm.parentConstraint(driver, object, mo=False) )
 
+def copy_shape_node(source_transform, dest_transform):
+    '''
+    Move the shape node of one object to replace another
+    '''
+    source = pm.duplicate(source_transform)[0]
+    source_shape = source.getShape()
+    if source_shape:
+        dest_shape = dest_transform.getShape()
+        shape_name = dest_shape.shortName() if dest_shape else dest_transform.shortName() + "Shape"
+        pm.delete(dest_shape)
+        source_shape.rename(shape_name)
+        pm.parent(source_shape, dest_transform, shape=True, relative=True)
+    pm.delete(source)
+
 
 def flip_attribute_keys(obj, attr_list):
     '''

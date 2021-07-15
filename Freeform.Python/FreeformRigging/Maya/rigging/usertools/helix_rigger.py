@@ -496,6 +496,13 @@ class HelixRigger:
         misc_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.apply_control_shapes
+        new_button.Name = "Apply Shape to Controls"
+        new_button.ImagePath = "../../Resources/rig_switcher.ico"
+        new_button.Tooltip = "Apply the shape of a selected object to rig control objects"
+        misc_category.AddButton(new_button)
+
+        new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.save_control_shapes
         new_button.Name = "Save Control Shapes"
         new_button.ImagePath = "../../Resources/save_control_shapes.png"
@@ -2126,10 +2133,19 @@ class HelixRigger:
         '''
         sel_list = pm.ls(selection=True)
         control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+        warning_message = ""
         for control in control_list:
             component_network = rigging.skeleton.get_rig_network(control)
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
-            rig_component.switch_space( control, rigging.overdriver.Overdriver, None )
+
+            if type(rig_component) in rigging.rig_base.Component_Base.get_rig_subclasses():
+                rig_component.switch_space( control, rigging.overdriver.Overdriver, None )
+            else:
+                warning_message += "{0}\n".format(control)
+
+        if warning_message != "":
+            warning_message += "\nOverdrivers cannot be applied to another Overdriver. \nPlease remove the existing Overdriver first."
+            v1_shared.usertools.message_dialogue.open_dialogue(warning_message, title="Unable To Rig")
 
     @csharp_error_catcher
     @undoable
@@ -2144,12 +2160,20 @@ class HelixRigger:
         '''
         sel_list = pm.ls(selection=True)
         if len(sel_list) > 1:
+            warning_message = ""
             space = get_first_or_default(sel_list)
             control_list = [x for x in sel_list[1:] if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
             for control in control_list:
                 component_network = rigging.skeleton.get_rig_network(control)
                 rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
-                rig_component.switch_space( control, rigging.overdriver.Overdriver, [space] )
+                if type(rig_component) in rigging.rig_base.Component_Base.get_rig_subclasses():
+                    rig_component.switch_space( control, rigging.overdriver.Overdriver, [space] )
+                else:
+                    warning_message += "{0}\n".format(control)
+            
+            if warning_message != "":
+                warning_message += "\nOverdrivers cannot be applied to another Overdriver. \nPlease remove the existing Overdriver first."
+                v1_shared.usertools.message_dialogue.open_dialogue(warning_message, title="Unable To Rig")
 
     @csharp_error_catcher
     @undoable
@@ -2175,10 +2199,13 @@ class HelixRigger:
                 component_network = rigging.skeleton.get_rig_network(control)
                 rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 
-                overdriver_component = rig_component.switch_space( control, space_type, space_list )
-
-                if len(space_list) > 1:
-                    overdriver_component.open_space_switcher()
+                if type(rig_component) in rigging.rig_base.Component_Base.get_rig_subclasses():
+                    overdriver_component = rig_component.switch_space( control, space_type, space_list )
+                    if len(space_list) > 1:
+                        overdriver_component.open_space_switcher()
+                else:
+                    warning_message = "{0} \n\nOverdrivers cannot be applied to another Overdriver. \nPlease remove the existing Overdriver first.".format(control)
+                    v1_shared.usertools.message_dialogue.open_dialogue(warning_message, title="Unable To Rig")
 
     @csharp_error_catcher
     def open_aim_constraint_ui(self, c_rig_button, event_args):
@@ -2520,6 +2547,21 @@ class HelixRigger:
         '''
         for obj in pm.ls(selection=True):
             rigging.rig_base.Rig_Component.mirror_control_shape(obj)
+
+    @csharp_error_catcher
+    @undoable
+    def apply_control_shapes(self, c_rig_button, event_args):
+        '''
+        apply_control_shapes(self, c_rig_button, event_args)
+        Replace the shape of selected objects with the shape of the first selected object
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        selection = pm.ls(sl=True)
+        for obj in selection[1:]:
+            maya_utils.node_utils.copy_shape_node(selection[0], obj)
 
     @csharp_error_catcher
     def re_parent_component(self, c_rig_button, event_args):
