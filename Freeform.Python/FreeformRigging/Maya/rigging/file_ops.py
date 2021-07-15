@@ -414,9 +414,9 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
             side_data = target_skeleton_dict.get(side)
             region_data = side_data.get(region) if side_data else None
             if region_data:
-                component = component_type.rig_from_json(side, region, target_skeleton_dict, component_dict, control_holder_list)
+                component, did_exist = component_type.rig_from_json(side, region, target_skeleton_dict, component_dict, control_holder_list)
                 set_control_var_dict[component.set_control_vars] = component_dict.get('control_vars')
-                created_rigging[side][region] = component
+                created_rigging[side][region] = (component, did_exist)
     v1_core.v1_logging.get_logger().info("Rigging Created in {0} Seconds".format(time.clock() - create_time))
 
     queue_time = time.clock()
@@ -438,7 +438,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
         for region, component_type_dict in region_addon_iteritems:
             for addon, addon_component_dict in component_type_dict.iteritems():
                 created_side = created_rigging.get(side)
-                component = created_side.get(region) if created_side else None
+                component, did_exist = created_side.get(region) if created_side else (None, False)
                 target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                 # Continue if the overdriver is attached to a skeleton joint or scene object
                 # Otherwise make sure that the rig controls were created before trying to attach to them
@@ -447,8 +447,8 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
                 else:
                     target_side = created_rigging.get(target_data.side)
                     target_region = target_side.get(target_data.region) if target_side else None
-                    
-                if component and target_region:
+
+                if component and not did_exist and target_region:
                     addon_component_type = getattr(sys.modules[addon_component_dict['module']], addon_component_dict['type'])
                     addon_component = addon_component_type.rig_from_json(component, addon_component_dict, created_rigging)
     v1_core.v1_logging.get_logger().info("Addons Created in {0} Seconds".format(time.clock() - addon_time))
