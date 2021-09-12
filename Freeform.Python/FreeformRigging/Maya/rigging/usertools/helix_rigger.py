@@ -101,6 +101,7 @@ class HelixRigger:
         self.vm.RemoveExisting = character_category.remove_existing
         self.vm.WorldOrientIK = character_category.world_orient_ik
         self.vm.NoBakeOverdrivers = character_category.no_bake_overdrivers
+        self.vm.BakeDrivers = character_category.bake_drivers
 
         optimization_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.OptimizationSettings)
         self.vm.UiManualUpdate = optimization_category.ui_manual_update
