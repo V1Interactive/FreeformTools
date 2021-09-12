@@ -958,6 +958,7 @@ class Addon_Component(Component_Base):
     __metaclass__ = ABCMeta
     _promoteselection = True
     _requires_space = True
+    _uses_overrides = False
     _simulated = False
     _icon = "../../Resources/fk_icon_od.ico"
 

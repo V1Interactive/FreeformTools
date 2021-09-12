@@ -100,6 +100,7 @@ class HelixRigger:
         self.vm.ForceRemove = character_category.force_remove
         self.vm.RemoveExisting = character_category.remove_existing
         self.vm.WorldOrientIK = character_category.world_orient_ik
+        self.vm.NoBakeOverdrivers = character_category.no_bake_overdrivers
 
         optimization_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.OptimizationSettings)
         self.vm.UiManualUpdate = optimization_category.ui_manual_update
@@ -2080,10 +2081,13 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
-        user_bake_settings = bake_settings.force_bake_key_range()
-
         sel_list = pm.ls(selection=True)
         component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+        all_overdrivers = all([isinstance(x, metadata.network_core.AddonCore) for x in component_network_list])
+
+        # If we're removing any components down to joints make sure we bake the full keyframe range
+        if not all_overdrivers:
+            user_bake_settings = bake_settings.force_bake_key_range()
 
         for component_network in component_network_list:
             if pm.objExists(component_network.node):
@@ -2093,7 +2097,8 @@ class HelixRigger:
         maya_utils.baking.Global_Bake_Queue().run_queue()
         maya_utils.scene_utils.set_current_frame()
 
-        bake_settings.restore_bake_settings(user_bake_settings)
+        if not all_overdrivers:
+            bake_settings.restore_bake_settings(user_bake_settings)
         self.vm.UpdateRiggerInPlace()
 
     def force_remove_component(self, c_object, event_args):
