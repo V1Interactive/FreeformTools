@@ -355,6 +355,7 @@ class CharacterSettings(SettingsCategory):
         CharacterSettings.property_list.append(SettingsProperty("overdriver_remove_parent_space", False))
         CharacterSettings.property_list.append(SettingsProperty("bake_component", False))
         CharacterSettings.property_list.append(SettingsProperty("no_bake_overdrivers", False))
+        CharacterSettings.property_list.append(SettingsProperty("bake_drivers", False))
         CharacterSettings.property_list.append(SettingsProperty("revert_animation", False))
         CharacterSettings.property_list.append(SettingsProperty("force_remove", False))
         CharacterSettings.property_list.append(SettingsProperty("remove_existing", True))

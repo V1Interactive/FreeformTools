@@ -72,8 +72,8 @@ class Overdriver(rigging.rig_base.Addon_Component):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
+        character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         if bake_controls:
-            character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
             bake_controls = not character_settings.no_bake_overdrivers
 
         if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_global_queue = use_global_queue, **kwargs):
@@ -81,8 +81,17 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
         driver_control = self.rig_setup(control, object_space_list, bake_controls, default_space)
 
-        if bake_controls:
-            self.run_bake(use_global_queue)
+        if character_settings.bake_drivers:
+            temp_constraint_list = []
+            for object_space in object_space_list:
+                temp_constraint_list.append(pm.parentConstraint(control, object_space, mo=True))
+
+            maya_utils.baking.bake_objects(object_space_list, True, True, False, use_settings = True, simulation = False)
+
+            pm.delete(temp_constraint_list)
+        else:
+            if bake_controls:
+                self.run_bake(use_global_queue)
 
         if use_global_queue:
             maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})

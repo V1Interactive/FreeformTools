@@ -364,6 +364,21 @@ namespace Freeform.Rigging
             }
         }
 
+        bool _bakeDrivers;
+        public bool BakeDrivers
+        {
+            get { return _bakeDrivers; }
+            set
+            {
+                if (_bakeDrivers != value)
+                {
+                    _bakeDrivers = value;
+                    RaisePropertyChanged("BakeDrivers");
+                    SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "bake_drivers", value = _bakeDrivers, category = "CharacterSettings" });
+                }
+            }
+        }
+
         bool _uiManualUpdate;
         public bool UiManualUpdate
         {
