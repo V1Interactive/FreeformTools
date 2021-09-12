@@ -904,7 +904,7 @@ class ComponentCore(RigComponent):
 
     def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):
         super(ComponentCore, self).__init__(parent, node_name, node, namespace, component_type = ("", 'string'), side = ("", 'string'), region = ("", 'string'), 
-                                            group_name = ("", 'string'), selection_lock = ("", 'string'))
+                                            group_name = ("", 'string'), selection_lock = ("", 'string'), overdrive_space = ("", 'message'), hold_space = ("", 'message'))
         if not node:
             pass
 

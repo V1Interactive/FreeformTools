@@ -43,7 +43,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 class Overdriver(rigging.rig_base.Addon_Component):
-    
+
     @staticmethod
     def get_inherited_classes():
         '''
@@ -71,6 +71,10 @@ class Overdriver(rigging.rig_base.Addon_Component):
     def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_global_queue = False, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
+
+        if bake_controls:
+            character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
+            bake_controls = not character_settings.no_bake_overdrivers
 
         if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_global_queue = use_global_queue, **kwargs):
             return False
@@ -108,7 +112,11 @@ class Overdriver(rigging.rig_base.Addon_Component):
         pm.delete(temp_constraint)
 
         if self.hold_constraint:
-            self.hold_constraint(control, self.network['addon'].group, mo=False)
+            hold_space = self.network['component'].get('hold_space')
+            hold_obj = addon_network.group
+            if self._uses_overrides and hold_space:
+                hold_obj = driver_control
+            self.hold_constraint(control, hold_obj, mo=False)
 
         # Set weight value for each object space if values are stored.  This means that the user has a pre-defined set of 
         # constraint values they want and this overdriver isn't meant to be switched between the multiple spaces
@@ -359,6 +367,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
 
 class Position_Overdriver(Overdriver):
+    _uses_overrides = True
     
     def __init__(self, translate = True, rotate = False):
         super(Position_Overdriver, self).__init__(translate, rotate)
@@ -368,6 +377,7 @@ class Position_Overdriver(Overdriver):
 
 
 class Rotation_Overdriver(Overdriver):
+    _uses_overrides = True
 
     def __init__(self, translate = False, rotate = True):
         super(Rotation_Overdriver, self).__init__(translate, rotate)
@@ -455,7 +465,7 @@ class Aim(Dynamic_Driver):
         maya_utils.node_utils.force_align(dynamic_control, roll_group)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
-        if bake_dynamics and character_category.bake_component:
+        if bake_dynamics and not character_category.no_bake_overdrivers:
             self.network['addon'].set("no_bake", False)
             bake_constraint_list = []
             bake_constraint_list.append(pm.parentConstraint(control, object_space, mo=True))

@@ -349,6 +349,21 @@ namespace Freeform.Rigging
             }
         }
 
+        bool _noBakeOverdrivers;
+        public bool NoBakeOverdrivers
+        {
+            get { return _noBakeOverdrivers; }
+            set
+            {
+                if (_noBakeOverdrivers != value)
+                {
+                    _noBakeOverdrivers = value;
+                    RaisePropertyChanged("NoBakeOverdrivers");
+                    SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "no_bake_overdrivers", value = _noBakeOverdrivers, category = "CharacterSettings" });
+                }
+            }
+        }
+
         bool _uiManualUpdate;
         public bool UiManualUpdate
         {

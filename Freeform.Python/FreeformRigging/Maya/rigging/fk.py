@@ -284,6 +284,8 @@ class Point_FK(FK):
         Args:
             world_space (boolean): Whether the rig should build in world or parent space
         '''
+        component_network = self.network['component']
+
         constraint_list = []
         rig_control = self.network['controls'].get_first_connection()
         
@@ -292,12 +294,13 @@ class Point_FK(FK):
         rig_control.tz.unlock()
 
         constraint_list.append( pm.pointConstraint(self.skel_root, rig_control, mo=maintain_offset) )
+        component_network.connect_node(rig_control, connect_attribute=component_network.node.hold_space)
         rig_control.tx.lock()
         rig_control.ty.lock()
         rig_control.tz.lock()
 
         if self.parent_space != None and self.parent_space != self.default_space:
-            constraint_list.append( pm.parentConstraint(self.parent_space, self.network['component'].group, mo=maintain_offset) )
+            constraint_list.append( pm.parentConstraint(self.parent_space, component_network.group, mo=maintain_offset) )
 
         return constraint_list
 
