@@ -290,7 +290,7 @@ def mirror_rig_animation(joint, mirror_key_dict = {'left' : 'right'}, axis = 'x'
     mirrored_key_list = mirror_key_dict.keys() + mirror_key_dict.values()
     world_key_list = [x for x in skele_dict.keys() if x not in mirrored_key_list]
 
-    for side_key, mirror_key in mirror_key_dict.iteritems():
+    for side_key, mirror_key in mirror_key_dict.items():
         mirror_match_key_list = []
         side_dict = skele_dict.get(side_key)
         mirror_dict = skele_dict.get(mirror_key)
@@ -640,7 +640,7 @@ def get_matching_component(component_network, mirror_dict):
 def get_mirror_from_dict(mirror_dict, side_name):
     mirror_name = mirror_dict.get(side_name)
     if not mirror_name:
-        for side, mirror in mirror_dict.iteritems():
+        for side, mirror in mirror_dict.items():
             if side_name == mirror:
                 mirror_name = side
                 break

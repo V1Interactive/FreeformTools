@@ -39,4 +39,4 @@ def export_max_file(load_path):
     try:
         subprocess.call(r"C:\Program Files\Autodesk\3ds Max 2016\3dsmax.exe -q -silent -mip -U PythonHost {0}".format(py_file_path))
     except subprocess.CalledProcessError as e:
-        print "command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output)
+        print("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))

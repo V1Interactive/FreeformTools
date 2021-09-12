@@ -26,11 +26,11 @@ import metadata
 import maya_utils
 import scene_tools
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.rig_tools
-import rigging.overdriver
-import rigging.constraints
+from rigging import skeleton
+from rigging import rig_base
+#from rigging import rig_tools
+#from rigging import overdriver
+from rigging import constraints
 
 import v1_core
 import v1_shared
@@ -41,7 +41,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class IK(rigging.rig_base.Rig_Component):
+class IK(rig_base.Rig_Component):
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
@@ -75,19 +75,19 @@ class IK(rigging.rig_base.Rig_Component):
         world_group = self.create_world_grp(side, region)
 
         rigging_chain = self.network['rigging'].get_connections()
-        rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
+        rigging_chain = skeleton.sort_chain_by_hierarchy(rigging_chain)
 
-        ik_solved_chain = rigging.skeleton.duplicate_chain(rigging_chain, self.namespace, 'ik_solved', self.prefix)
-        ik_solved_chain_root = rigging.skeleton.get_chain_root(ik_solved_chain)
+        ik_solved_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'ik_solved', self.prefix)
+        ik_solved_chain_root = skeleton.get_chain_root(ik_solved_chain)
         ik_solved_chain_root.setParent( self.network['component'].group )
 
         ik_solver = 'ikRPsolver' if len(rigging_chain) > 2 else 'ikSCsolver'
         ik_handle, end_effector = pm.ikHandle(sj = ik_solved_chain[-1], ee = get_first_or_default(ik_solved_chain), sol = ik_solver, name = "{0}{1}_{2}_ikHandle".format(self.namespace, side, region))
         ik_handle.setParent(world_group)
-        rigging.skeleton.force_set_attr(ik_handle.visibility, False)
+        skeleton.force_set_attr(ik_handle.visibility, False)
 
-        control_chain = rigging.skeleton.duplicate_chain([get_first_or_default(rigging_chain)], self.namespace, 'control', self.prefix)
-        control_root = rigging.skeleton.get_chain_root(control_chain)
+        control_chain = skeleton.duplicate_chain([get_first_or_default(rigging_chain)], self.namespace, 'control', self.prefix)
+        control_root = skeleton.get_chain_root(control_chain)
 
         check_world_orient_ik = kwargs.get('world_orient_ik') if kwargs.get('world_orient_ik') != None else character_category.world_orient_ik
         if check_world_orient_ik:
@@ -105,9 +105,9 @@ class IK(rigging.rig_base.Rig_Component):
         
         skel_root = skeleton_dict[side][region]['root']
         skel_end = skeleton_dict[side][region]['end']
-        skeleton_chain = rigging.skeleton.get_joint_chain(skel_root, skel_end)
+        skeleton_chain = skeleton.get_joint_chain(skel_root, skel_end)
         if len(rigging_chain) > 2:
-            pv_position = rigging.skeleton.calculate_pole_vector_position(rigging_chain, pm.currentTime())
+            pv_position = skeleton.calculate_pole_vector_position(rigging_chain, pm.currentTime())
             pm.select(None) # select None to make sure joint doesn't parent to anything
             pv_control = pm.joint(name = "{0}control_{1}_{2}_ik_pv".format(self.namespace, side, region), position=pv_position)
             pv_control.setParent(world_group)
@@ -124,7 +124,7 @@ class IK(rigging.rig_base.Rig_Component):
 
         self.attach_component(True)
 
-        if rigging.skeleton.is_animated(skeleton_chain):
+        if skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_global_queue)
         
         if use_global_queue:
@@ -141,27 +141,27 @@ class IK(rigging.rig_base.Rig_Component):
         return True
 
     def bind_chain_process(self, rigging_chain, ik_solved_chain, skeleton_chain, control_chain, additive):
-        rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
-        rigging.skeleton.force_set_attr(ik_solved_chain[-1].visibility, False)
+        skeleton.force_set_attr(rigging_chain[-1].visibility, False)
+        skeleton.force_set_attr(ik_solved_chain[-1].visibility, False)
 
         # re-zero for binding so we can do mo=True without capturing a random rotation from the animation
-        rigging.skeleton.zero_character(self.skel_root, ignore_rigged = False)
-        rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
-        rigging.skeleton.zero_skeleton_joints(skeleton_chain)
+        skeleton.zero_character(self.skel_root, ignore_rigged = False)
+        rig_base.Component_Base.zero_all_rigging(self.network['character'])
+        skeleton.zero_skeleton_joints(skeleton_chain)
 
         # Bind rigging and skeleton together
-        ik_solved_chain = rigging.skeleton.sort_chain_by_hierarchy(ik_solved_chain)
-        skeleton_chain = rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain)
+        ik_solved_chain = skeleton.sort_chain_by_hierarchy(ik_solved_chain)
+        skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
 
         character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         if character_settings.lightweight_rigging:
-            rigging.constraints.bind_chains(ik_solved_chain[1:], skeleton_chain[1:], self.exclude, translate=False, additive = additive)
-            rigging.constraints.bind_chains(ik_solved_chain[:1], skeleton_chain[:1], self.exclude, rotate=False, additive = additive)
+            constraints.bind_chains(ik_solved_chain[1:], skeleton_chain[1:], self.exclude, translate=False, additive = additive)
+            constraints.bind_chains(ik_solved_chain[:1], skeleton_chain[:1], self.exclude, rotate=False, additive = additive)
             pm.orientConstraint(get_first_or_default(control_chain), get_first_or_default(skeleton_chain), mo=True)
         else:
-            rigging.constraints.bind_chains(rigging_chain, skeleton_chain, self.exclude, additive = additive)
-            rigging.constraints.bind_chains(ik_solved_chain[1:], rigging_chain[1:], self.exclude, translate=False)
-            rigging.constraints.bind_chains(ik_solved_chain[:1], rigging_chain[:1], self.exclude, rotate=False)
+            constraints.bind_chains(rigging_chain, skeleton_chain, self.exclude, additive = additive)
+            constraints.bind_chains(ik_solved_chain[1:], rigging_chain[1:], self.exclude, translate=False)
+            constraints.bind_chains(ik_solved_chain[:1], rigging_chain[:1], self.exclude, rotate=False)
             pm.orientConstraint(get_first_or_default(control_chain), get_first_or_default(rigging_chain), mo=True)
 
     def create_json_dictionary(self):
@@ -183,11 +183,11 @@ class IK(rigging.rig_base.Rig_Component):
         target_root = target_skeleton_dict[side][region]['root']
         target_exclude = target_skeleton_dict[side][region].get('exclude')
         target_end = target_skeleton_dict[side][region]['end']
-        target_chain = rigging.skeleton.get_joint_chain(target_root, target_end)
+        target_chain = skeleton.get_joint_chain(target_root, target_end)
         if target_exclude:
             target_chain.remove(target_exclude)
 
-        target_chain = rigging.skeleton.sort_chain_by_hierarchy(target_chain)
+        target_chain = skeleton.sort_chain_by_hierarchy(target_chain)
 
         pm.delete( pm.listConnections(self.network['component'].group, type = 'parentConstraint') )
 
@@ -202,16 +202,16 @@ class IK(rigging.rig_base.Rig_Component):
             pv_bake_time = time.clock()
             self.set_pv_frame(pv_control, target_chain, pm.currentTime())
 
-            thigh_joint = get_last_or_default(rigging.skeleton.sort_chain_by_hierarchy(target_chain))
+            thigh_joint = get_last_or_default(skeleton.sort_chain_by_hierarchy(target_chain))
             temp_constraint = pm.parentConstraint(thigh_joint, pv_control, mo=True)
             maya_utils.baking.bake_objects([pv_control], True, False, False, False, None, frame_range)
             pm.delete(temp_constraint)
 
         # re-zero for binding so we can do mo=True without capturing a random rotation from the animation
         skeleton_chain = self.network['skeleton'].get_connections()
-        rigging.skeleton.zero_character(self.skel_root, ignore_rigged = False)
-        rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
-        rigging.skeleton.zero_skeleton_joints(skeleton_chain)
+        skeleton.zero_character(self.skel_root, ignore_rigged = False)
+        rig_base.Component_Base.zero_all_rigging(self.network['character'])
+        skeleton.zero_skeleton_joints(skeleton_chain)
 
         constraint_list = []
         constraint_list.append(pm.pointConstraint(target_end, ik_control, mo=False))
@@ -233,7 +233,7 @@ class IK(rigging.rig_base.Rig_Component):
             time_range = [pm.currentTime, pm.currentTime+1]
 
         skeleton_jnt_list = self.network.get('skeleton').get_connections()
-        skeleton_jnt_list = rigging.skeleton.sort_chain_by_hierarchy(skeleton_jnt_list)
+        skeleton_jnt_list = skeleton.sort_chain_by_hierarchy(skeleton_jnt_list)
         
         ik_control = self.get_control('ik_handle')
         # if the control is driven by an overdriver, apply the match to the overdriver control
@@ -253,9 +253,9 @@ class IK(rigging.rig_base.Rig_Component):
         loc.translate.set([0,0,0])
         loc.rotate.set([0,0,0])
 
-        rigging.rig_base.Component_Base.zero_all_overdrivers(self.network['character'])
-        rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
-        rigging.skeleton.zero_character(self.skel_root, ignore_rigged = False)
+        rig_base.Component_Base.zero_all_overdrivers(self.network['character'])
+        rig_base.Component_Base.zero_all_rigging(self.network['character'])
+        skeleton.zero_character(self.skel_root, ignore_rigged = False)
 
         temp_constraint = pm.parentConstraint(hand_jnt, loc, mo=True)
         maya_utils.baking.bake_objects([loc], True, True, False, False, None, time_range)
@@ -272,14 +272,14 @@ class IK(rigging.rig_base.Rig_Component):
 
         pm.delete(loc)
 
-        pv_position = rigging.skeleton.calculate_pole_vector_position(skeleton_jnt_list, pm.currentTime())
+        pv_position = skeleton.calculate_pole_vector_position(skeleton_jnt_list, pm.currentTime())
         pm.xform(pv_control, ws=True, translation=pv_position)
 
         pm.cycleCheck(e=cycle_check)
 
 
     def set_pv_frame(self, pv_target, target_chain, frame):
-        pv_position = rigging.skeleton.calculate_pole_vector_position(target_chain, frame)
+        pv_position = skeleton.calculate_pole_vector_position(target_chain, frame)
         pm.xform(pv_target, ws=True, translation=pv_position)
 
     def get_control_joint(self, control):

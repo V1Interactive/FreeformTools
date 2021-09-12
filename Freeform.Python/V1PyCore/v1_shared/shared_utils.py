@@ -19,10 +19,11 @@ If not, see <https://www.gnu.org/licenses/>.
 
 import os
 
-from v1_math.vector import Vector
+from v1_math import vector
 
 import v1_core
-from v1_shared.globals import WorkingFolderList
+
+from v1_shared import globals
 
 
 
@@ -56,7 +57,7 @@ def bake_vertex_color_data(source_vector_list, dest_vector_list, to_color = True
     Returns:
         (list<vector3>, float). Tuple of all resulting vectors and the longest length
     '''
-    longest_vector = Vector()
+    longest_vector = vector.Vector()
     offset_vector_list = []
 
     for source_ws_vector, dest_ws_vector in zip(source_vector_list, dest_vector_list):
@@ -74,7 +75,7 @@ def bake_vertex_color_data(source_vector_list, dest_vector_list, to_color = True
         vector.normalize()
         if to_color:
             vector = vector * ratio * 0.5 # * 0.5 to ensure all values are < 0.5 after normalizing to the ratio
-            vector = vector + Vector(0.5,0.5,0.5) # 0.5, 0.5, 0.5 is our 0 delta value, -delta will be < 0.5, +delta will be > 0.5
+            vector = vector + vector.Vector(0.5,0.5,0.5) # 0.5, 0.5, 0.5 is our 0 delta value, -delta will be < 0.5, +delta will be > 0.5
         rgb_vector_list.append(vector)
 
     return rgb_vector_list, longest_length
@@ -151,7 +152,7 @@ def get_max_file_from_fbx_path(fbx_content_path):
     dir, file = fbx_content_path.rsplit(os.sep, 1)
     file_name = get_first_or_default(file.split('.'))
 
-    for folder in WorkingFolderList:
+    for folder in globals.WorkingFolderList:
         check_path = os.path.join(dir, folder, file_name+'.max')
         if os.path.exists(check_path):
             max_content_path = check_path

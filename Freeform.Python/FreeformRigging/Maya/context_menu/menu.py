@@ -29,6 +29,11 @@ import freeform_utils
 import metadata
 
 
+def refresh_menu():
+    if V1_Context_Menu().menu == None:
+        V1_Context_Menu().create_menu()
+        V1_Context_Menu().reset_menu()
+
 class V1_Context_Menu(object):
     '''
     Creates a context sensitive marking menu by gathering the name of the object under the cursor and building a menu based
@@ -45,6 +50,11 @@ class V1_Context_Menu(object):
 
 
     def __init__(self):
+        self.node = None
+        self.model_panel = None
+        self.menu = None
+        self.menu_dict = {}
+
         self.create_menu()
         self.reset_menu()
         
@@ -54,8 +64,10 @@ class V1_Context_Menu(object):
         '''
         model_panel_list = pm.getPanel(type='modelPanel')
         visible_panel_list = pm.getPanel(vis=True)
-        self.model_panel = [x for x in model_panel_list if x in visible_panel_list][0]
-        self.menu = pm.popupMenu(p=self.model_panel, button=1, alt=True, ctl=True, mm=True, pmc=self.build_menu)
+        is_visible_list = [x for x in model_panel_list if x in visible_panel_list]
+        if is_visible_list:
+            self.model_panel = is_visible_list[0]
+            self.menu = pm.popupMenu(p=self.model_panel, button=1, alt=True, ctl=True, mm=True, pmc=self.build_menu)
 
     def delete_menu(self):
         '''
@@ -69,7 +81,8 @@ class V1_Context_Menu(object):
         '''
         self.node = None
         self.menu_dict = {}
-        pm.popupMenu(self.menu, e=True, deleteAllItems=True)
+        if self.menu:
+            pm.popupMenu(self.menu, e=True, deleteAllItems=True)
 
     def build_menu(self, menu, panel):
         '''

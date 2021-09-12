@@ -30,7 +30,7 @@ import v1_core
 import v1_shared
 from v1_math.vector import Vector
 
-import maya_utils.anim_attr_utils
+from maya_utils import anim_attr_utils
 from maya_utils.decorators import undoable
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -167,7 +167,7 @@ class BakeQueue(object):
                 priority_dict.setdefault(pre_process[2], [])
                 priority_dict[pre_process[2]].append( pre_process[:2] )
 
-            key_priority = priority_dict.keys()
+            key_priority = list(priority_dict.keys())
             key_priority.sort()
 
             for key in key_priority:
@@ -196,7 +196,7 @@ class BakeQueue(object):
                 kwargs = post_process[1]
                 method(**kwargs)
                 v1_core.v1_logging.get_logger().debug("POST-PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.clock() - method_time))
-        except Exception, e:
+        except Exception as e:
             exception_text = v1_core.exceptions.get_exception_message()
 
             v1_core.v1_logging.get_logger().error(exception_text)
@@ -281,9 +281,9 @@ def bake_objects(obj_list, translate, rotate, scale, use_settings = True, custom
         pm.filterCurve(obj_list)
         pm.cutKey(obj_list, t=-1010)
 
-        for layer, value in layer_dict.iteritems():
+        for layer, value in layer_dict.items():
             layer.visibility.set(value)
-    except Exception, e:
+    except Exception as e:
         exception_info = sys.exc_info()
         v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
     finally:
@@ -322,7 +322,7 @@ def space_switch_bake(obj_list, start_time, end_time, matrix_dict):
                     pm.xform(obj, ws=True, matrix = matrix_dict[obj][i])
                     pm.setKeyframe(obj.t, t=frame)
                     pm.setKeyframe(obj.r, t=frame)
-    except Exception, e:
+    except Exception as e:
         raise e
     finally:
         pm.refresh(su=False)
@@ -357,7 +357,7 @@ def get_bake_time_range(obj_list, settings):
 
         constraint_obj_list = []
         for obj in check_list:
-            start_frame, end_frame = maya_utils.anim_attr_utils.get_key_range(obj, start_frame, end_frame)
+            start_frame, end_frame = anim_attr_utils.get_key_range(obj, start_frame, end_frame)
             start_frame, end_frame = check_constraints_for_key_range(obj, start_frame, end_frame)
 
         scene_range = (pm.playbackOptions(q=True, ast=True), pm.playbackOptions(q=True, aet=True))
@@ -383,7 +383,7 @@ def check_constraints_for_key_range(obj, start_frame, end_frame, checked_list = 
         constraint_list = list(set(pm.listConnections(obj, type='constraint', s=True, d=False)))
         for constraint in constraint_list:
             for constraint_obj in list(set(pm.listConnections(constraint.target, type='joint', s=True, d=False))):
-                first_frame, last_frame = maya_utils.anim_attr_utils.get_key_range(constraint_obj, start_frame, end_frame)
+                first_frame, last_frame = anim_attr_utils.get_key_range(constraint_obj, start_frame, end_frame)
                 # Only check hierarchy if we haven't found any keys
                 if first_frame == None and last_frame == None:
                     first_frame, last_frame = check_hierarchy_for_key_range(constraint_obj, first_frame, last_frame)
@@ -398,7 +398,7 @@ def check_constraints_for_key_range(obj, start_frame, end_frame, checked_list = 
 def check_hierarchy_for_key_range(obj, start_frame, end_frame):
     first_frame, last_frame = start_frame, end_frame
     if obj:
-        first_frame, last_frame = maya_utils.anim_attr_utils.get_key_range(obj, start_frame, end_frame)
+        first_frame, last_frame = anim_attr_utils.get_key_range(obj, start_frame, end_frame)
         # Only search the hierarchy until we find a new key range
         if first_frame == start_frame and last_frame == end_frame:
             first_frame, last_frame = check_hierarchy_for_key_range(obj.getParent(), first_frame, last_frame)
@@ -466,7 +466,7 @@ def bake_shape_to_vertex_normals(source_obj, dest_obj):
         pm.polyColorPerVertex(vtx, rgb=[r, 0, 0])
         pm.polyNormalPerVertex(vtx, xyz=list(rgb_vector_list[i]))
 
-    print (longest_length / 10)
+    print(longest_length / 10)
 
     pm.polyOptions(dest_obj, cs=True)
 

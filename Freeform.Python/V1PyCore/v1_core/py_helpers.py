@@ -17,21 +17,19 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+from enum import Enum
 
+class Freeform_Enum(Enum):
+    def __contains__(cls, item):
+        try:
+            cls(item)
+        except ValueError:
+            return False
+        return True
 
-
-class Enum(object):
-    '''
-    Helper Enum class object with added dictionary.get() functionality
-    '''
-    class __metaclass__(type):
-        def __iter__(self):
-            for item in self.__dict__:
-                if not item.startswith("__"):
-                    value = self.__dict__[item]
-                    yield value
-        def __getitem__(self, key):
-            return self.__dict__.get(key)
+    @classmethod
+    def get(cls, key):
+        return cls.__dict__.get(key)
 
 
 class Singleton(type):

@@ -144,7 +144,7 @@ class ControlColorSet(object):
 
     def get_colors_from_settings(self):
         material_category = v1_core.global_settings.GlobalSettings().get_sub_category(freeform_utils.materials.MaterialSettings.material_category)
-        for set_name, set_data in material_category.iteritems():
+        for set_name, set_data in material_category.items():
             if type(set_data) == dict:
                 if set_name != self.vm.DefaultColorSet.Name:
                     c_color_set = Freeform.Rigging.ControlColorSet.ColorSet(set_name)
@@ -152,7 +152,7 @@ class ControlColorSet(object):
                 else:
                     c_color_set = self.vm.DefaultColorSet
 
-                for side, material_data in set_data.iteritems():
+                for side, material_data in set_data.items():
                     c_color = self.create_c_color(side, material_data)
                     c_color_set.AddColor(c_color)
 

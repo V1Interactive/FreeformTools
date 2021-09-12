@@ -222,7 +222,7 @@ class RigSwitcher(object):
             else:
                 self.component.switch_current_component()
 
-        except Exception, e:
+        except Exception as e:
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
         finally:

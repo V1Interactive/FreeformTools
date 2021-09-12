@@ -20,21 +20,20 @@ If not, see <https://www.gnu.org/licenses/>.
 import os
 import sys
 
-import v1_core.global_settings
-import v1_core.py_helpers
-
-from v1_core.global_settings import ConfigKey, EnvironmentKey
+from v1_core import global_settings
+from v1_core import py_helpers
+from v1_core import v1_logging
 
 
 
 def get_tools_root():
-    return os.environ.get(EnvironmentKey.TOOLSROOT)
+    return os.environ.get(global_settings.EnvironmentKey.TOOLSROOT.value)
 
 
 def get_csharp_tools_root():
-    config_manager = v1_core.global_settings.ConfigManager()
-    develop_config = config_manager.get(ConfigKey.DEVELOPER)
-    tools_config = config_manager.get(ConfigKey.CSHARP)
+    config_manager = global_settings.ConfigManager()
+    develop_config = config_manager.get(global_settings.ConfigKey.DEVELOPER.value)
+    tools_config = config_manager.get(global_settings.ConfigKey.CSHARP.value)
 
     # If we're in developer mode use the C# tools build path
     if develop_config.get("DeveloperMode"):
@@ -47,8 +46,8 @@ def get_csharp_tools_root():
 
 
 def get_project_root():
-    config_manager = v1_core.global_settings.ConfigManager()
-    project_config = config_manager.get(ConfigKey.PROJECT)
+    config_manager = global_settings.ConfigManager()
+    project_config = config_manager.get(global_settings.ConfigKey.PROJECT.value)
 
     project_path = os.path.join(project_config.get("ProjectDrive"), project_config.get("ProjectRootPath"))
 
@@ -57,21 +56,21 @@ def get_project_root():
 
 
 def get_content_root():
-    config_manager = v1_core.global_settings.ConfigManager()
-    project_config = config_manager.get(ConfigKey.PROJECT)
+    config_manager = global_settings.ConfigManager()
+    project_config = config_manager.get(global_settings.ConfigKey.PROJECT.value)
 
     content_path = os.path.join(get_project_root(), project_config.get("ContentRootPath"))
 
     # Use the Environment Variable if it exists
-    content_path = os.environ.get(EnvironmentKey.CONTENT) if os.environ.get(EnvironmentKey.CONTENT) else content_path
+    content_path = os.environ.get(global_settings.EnvironmentKey.CONTENT.value) if os.environ.get(global_settings.EnvironmentKey.CONTENT.value) else content_path
 
     content_path = content_path.replace("/", "\\")
     return content_path
 
 
 def get_engine_content_root():
-    config_manager = v1_core.global_settings.ConfigManager()
-    project_config = config_manager.get(ConfigKey.PROJECT)
+    config_manager = global_settings.ConfigManager()
+    project_config = config_manager.get(global_settings.ConfigKey.PROJECT.value)
 
     content_path = os.path.join(get_project_root(), project_config.get("EngineContentPath"))
 
@@ -116,7 +115,7 @@ def scrub_module_dictionary(dict, path_key):
     Returns:
         list. List of all deleted keys from the dict arg
     '''
-    _modules = [x for x in dict.iteritems() if x[1]]
+    _modules = [x for x in dict.items() if x[1]]
     _v1_modules_keys = [x[0] for x in _modules if hasattr(x[1], '__file__') and path_key in x[1].__file__]
         
     for key in _v1_modules_keys:
@@ -158,9 +157,9 @@ def delete_all_pyc():
     Delete all .pyc (compiled python) files in all directories under the V1TOOLSROOT environment variable
     Excluding any .pyc files in the folder and any subfolder that a __nodelete__.py file exists
     '''
-    config_manager = v1_core.global_settings.ConfigManager()
-    if config_manager.get(ConfigKey.PYTHON).get("RemovePycFiles"):
-        v1_core.v1_logging.get_logger().info("====================REMOVING .PYC FILES FROM V1TOOLSROOT====================")
+    config_manager = global_settings.ConfigManager()
+    if config_manager.get(global_settings.ConfigKey.PYTHON.value).get("RemovePycFiles"):
+        v1_logging.get_logger().info("====================REMOVING .PYC FILES FROM V1TOOLSROOT====================")
         tools_root = get_tools_root()
 
         no_delete_list = []

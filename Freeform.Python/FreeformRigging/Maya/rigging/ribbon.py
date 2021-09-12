@@ -25,11 +25,11 @@ import metadata
 import maya_utils
 import scene_tools
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.rig_tools
-import rigging.overdriver
-import rigging.constraints
+from rigging import skeleton
+from rigging import rig_base
+#from rigging import rig_tools
+#from rigging import overdriver
+from rigging import constraints
 
 import v1_core
 import v1_shared
@@ -40,7 +40,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class Ribbon(rigging.rig_base.Rig_Component):
+class Ribbon(rig_base.Rig_Component):
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
@@ -73,9 +73,9 @@ class Ribbon(rigging.rig_base.Rig_Component):
         world_goup = self.create_world_grp(side, region)
 
         rigging_chain = self.network['rigging'].get_connections()
-        rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
+        rigging_chain = skeleton.sort_chain_by_hierarchy(rigging_chain)
         skeleton_chain = self.network['skeleton'].get_connections()
-        skeleton_chain = rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain)
+        skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
 
         # Measure all joints to create ribbon at the right length
         ribbon_length = 0
@@ -87,7 +87,7 @@ class Ribbon(rigging.rig_base.Rig_Component):
 
         ribbon, follicle_list = self.create_ribbon(ribbon_length, number_of_follicles)
         ribbon.setParent(world_goup)
-        rigging.skeleton.force_set_attr(ribbon.visibility, False)
+        skeleton.force_set_attr(ribbon.visibility, False)
         for follicle in follicle_list:
             follicle.getParent().setParent(world_goup)
         
@@ -100,7 +100,7 @@ class Ribbon(rigging.rig_base.Rig_Component):
         pm.parentConstraint( self.character_root, world_goup, mo=True )
 
         self.attach_component(True)
-        if rigging.skeleton.is_animated(skeleton_chain):
+        if skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_global_queue)
 
         if use_global_queue:
@@ -119,15 +119,15 @@ class Ribbon(rigging.rig_base.Rig_Component):
 
     def bind_chain_process(self, skeleton_chain, follicle_list, additive):
         rigging_chain = self.network['rigging'].get_connections()
-        rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
-        rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
+        rigging_chain = skeleton.sort_chain_by_hierarchy(rigging_chain)
+        skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
         # re-zero for binding so we can do mo=True without capturing a random rotation from the animation
-        rigging.skeleton.zero_character(self.skel_root, ignore_rigged = False)
-        rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
-        rigging.skeleton.zero_skeleton_joints(skeleton_chain)
+        skeleton.zero_character(self.skel_root, ignore_rigged = False)
+        rig_base.Component_Base.zero_all_rigging(self.network['character'])
+        skeleton.zero_skeleton_joints(skeleton_chain)
 
-        rigging.constraints.bind_chains(rigging.skeleton.sort_chain_by_hierarchy(rigging_chain), rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain), self.exclude, additive = additive)
+        constraints.bind_chains(skeleton.sort_chain_by_hierarchy(rigging_chain), skeleton.sort_chain_by_hierarchy(skeleton_chain), self.exclude, additive = additive)
         for follicle, rig_joint in zip(follicle_list, rigging_chain):
             pm.pointConstraint(follicle.getParent(), rig_joint, mo=True)
             pm.orientConstraint(follicle.getParent(), rig_joint, mo=True)
@@ -176,7 +176,7 @@ class Ribbon(rigging.rig_base.Rig_Component):
         pm.skinCluster(control_chain, ribbon)
 
         pm.delete(pm.pointConstraint(rigging_chain[0], control_chain[0], mo=False))
-        middle_constraint = rigging.skeleton.get_chain_middle(rigging_chain)
+        middle_constraint = skeleton.get_chain_middle(rigging_chain)
         pm.delete(pm.pointConstraint(middle_constraint, control_chain[1], mo=False))   
         pm.delete(pm.pointConstraint(rigging_chain[-1], control_chain[-1], mo=False))
 
@@ -196,21 +196,21 @@ class Ribbon(rigging.rig_base.Rig_Component):
         target_root = target_skeleton_dict[side][region]['root']
         target_exclude = target_skeleton_dict[side][region].get('exclude')
         target_end = target_skeleton_dict[side][region]['end']
-        target_chain = rigging.skeleton.get_joint_chain(target_root, target_end)
+        target_chain = skeleton.get_joint_chain(target_root, target_end)
         if target_exclude:
             target_chain.remove(target_exclude)
 
-        target_skeleton_chain = rigging.skeleton.sort_chain_by_hierarchy(target_chain)
+        target_skeleton_chain = skeleton.sort_chain_by_hierarchy(target_chain)
         control_chain = self.get_ordered_controls()
         
-        middle_target = rigging.skeleton.get_chain_middle(target_chain)
+        middle_target = skeleton.get_chain_middle(target_chain)
         target_chain = [target_skeleton_chain[0], middle_target, target_skeleton_chain[-1]]
 
         # re-zero for binding so we can do mo=True without capturing a random rotation from the animation
         skeleton_chain = self.network['skeleton'].get_connections()
-        rigging.skeleton.zero_character(self.skel_root, ignore_rigged = False)
-        rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
-        rigging.skeleton.zero_skeleton_joints(skeleton_chain)
+        skeleton.zero_character(self.skel_root, ignore_rigged = False)
+        rig_base.Component_Base.zero_all_rigging(self.network['character'])
+        skeleton.zero_skeleton_joints(skeleton_chain)
 
         constraint_list = []
         for control, target_jnt in zip(control_chain, target_chain):
@@ -227,7 +227,7 @@ class Ribbon(rigging.rig_base.Rig_Component):
         '''
         Controls don't drive specific joints, so always return the first joint in the skeleton chain.  
         '''
-        return get_last_or_default(rigging.skeleton.sort_chain_by_hierarchy(self.network['skeleton'].get_connections()))
+        return get_last_or_default(skeleton.sort_chain_by_hierarchy(self.network['skeleton'].get_connections()))
 
     def initialize_from_network_node(self, network_node):
         '''

@@ -23,7 +23,6 @@ import maya.mel as mel
 
 import os
 import sys
-import Queue
 
 
 # In V1 studio tools the Freeform Rigging tools project is nested in a 'FreeformTools' folder since this file evaluates first
@@ -44,7 +43,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 import maya.utils
-import maya_exceptions.maya_handler
+from maya_exceptions import maya_handler
 
 
 #region Maya Setup
@@ -59,7 +58,7 @@ def _init_except_hook():
         # Skip reporting if the exception originated from the console
         if trace and trace.tb_frame.f_code.co_filename == '<maya console>':
             return maya.utils._formatGuiException(type_, value, trace, detail)
-        maya_exceptions.maya_handler.except_hook(type_, value, trace)
+        maya_handler.except_hook(type_, value, trace)
         return repr(value)
 
     maya.utils.formatGuiException = _except_hook
@@ -80,17 +79,19 @@ def setup():
     v1_core.v1_logging.setup_logging('maya')
     v1_core.dotnet_setup.init_dotnet(["HelixResources", "Freeform.Core", "Freeform.Rigging"])
 
+
     import System.Diagnostics
     process = System.Diagnostics.Process.GetCurrentProcess()
 
-    # Don't run UI methods if we're running in maya standalone
-    if "mayapy" not in process.ToString():
-        import context_menu
-        globals()['v1_context_menu'] = context_menu.menu.V1_Context_Menu()
 
     import scene_tools
     import versioning
     import maya_utils
     scene_tools.scene_manager.SceneManager().update_method_list.append(versioning.meta_network_version.update_network)
-    #scene_tools.scene_manager.SceneManager().update_method_list.append(maya_utils.scene_utils.clean_reference_cameras)
     #scene_tools.scene_manager.SceneManager().update_method_list.append(maya_utils.scene_utils.fix_full_paths)
+
+    # Don't run UI methods if we're running in maya standalone
+    if "mayapy" not in process.ToString():
+        import context_menu
+        context_menu.menu.V1_Context_Menu()
+        scene_tools.scene_manager.SceneManager().update_method_list.append(context_menu.menu.refresh_menu)

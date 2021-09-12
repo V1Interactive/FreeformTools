@@ -25,11 +25,11 @@ import metadata
 import maya_utils
 import scene_tools
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.rig_tools
-import rigging.overdriver
-import rigging.constraints
+from rigging import skeleton
+from rigging import rig_base
+#from rigging import rig_tools
+from rigging import overdriver
+from rigging import constraints
 
 import v1_core
 import v1_shared
@@ -40,7 +40,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class FK(rigging.rig_base.Rig_Component):
+class FK(rig_base.Rig_Component):
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
@@ -70,8 +70,8 @@ class FK(rigging.rig_base.Rig_Component):
             pm.controller([child_control, control_chain[i+1]], p=True)
 
         skeleton_chain = self.network['skeleton'].get_connections()
-        skeleton_chain = rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain)
-        if rigging.skeleton.is_animated(skeleton_chain):
+        skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
+        if skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_global_queue)
 
         if use_global_queue:
@@ -89,11 +89,11 @@ class FK(rigging.rig_base.Rig_Component):
 
     def bind_chain_process(self, skeleton_chain, control_chain, additive):
         rigging_chain = self.network['rigging'].get_connections()
-        sorted_rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
-        rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
+        sorted_rigging_chain = skeleton.sort_chain_by_hierarchy(rigging_chain)
+        skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
-        rigging.constraints.bind_chains(sorted_rigging_chain, skeleton_chain, self.exclude, scale=True, additive = additive)
-        rigging.constraints.bind_chains(control_chain, sorted_rigging_chain, self.exclude, scale=True)
+        constraints.bind_chains(sorted_rigging_chain, skeleton_chain, self.exclude, scale=True, additive = additive)
+        constraints.bind_chains(control_chain, sorted_rigging_chain, self.exclude, scale=True)
         
 
     def rig_setup(self, side, region, reverse, control_holder_list):
@@ -101,14 +101,14 @@ class FK(rigging.rig_base.Rig_Component):
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
 
         rigging_chain = self.network['rigging'].get_connections()
-        control_chain = rigging.skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
-        control_chain = rigging.skeleton.sort_chain_by_hierarchy(control_chain)
+        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
+        control_chain = skeleton.sort_chain_by_hierarchy(control_chain)
 
         if self.reverse:
-            rigging.skeleton.reverse_joint_chain(control_chain)
+            skeleton.reverse_joint_chain(control_chain)
 
         self.network['controls'].connect_nodes(control_chain)
-        control_root = rigging.skeleton.get_chain_root(control_chain)
+        control_root = skeleton.get_chain_root(control_chain)
         control_root.setParent(control_grp)
 
         self.create_controls(control_chain, side, region, self.prefix, control_holder_list)
@@ -131,14 +131,14 @@ class FK(rigging.rig_base.Rig_Component):
             target_root = target_skeleton_dict[side][region]['root']
             target_exclude = target_skeleton_dict[side][region].get('exclude')
             target_end = target_skeleton_dict[side][region]['end']
-            target_chain = rigging.skeleton.get_joint_chain(target_root, target_end)
+            target_chain = skeleton.get_joint_chain(target_root, target_end)
             if target_exclude:
                 target_chain.remove(target_exclude)
 
             if self.parent_space != None:
                 pm.delete( pm.listConnections(self.network['component'].group, type = 'parentConstraint') )
 
-            target_chain = rigging.skeleton.sort_chain_by_hierarchy(target_chain)
+            target_chain = skeleton.sort_chain_by_hierarchy(target_chain)
             control_chain = self.get_ordered_controls()
 
             if matching_dict:
@@ -159,9 +159,9 @@ class FK(rigging.rig_base.Rig_Component):
             time_range = [pm.currentTime, pm.currentTime+1]
 
         skeleton_jnt_list = self.network.get('skeleton').get_connections()
-        skeleton_jnt_list = rigging.skeleton.sort_chain_by_hierarchy(skeleton_jnt_list)
+        skeleton_jnt_list = skeleton.sort_chain_by_hierarchy(skeleton_jnt_list)
         control_jnt_list = self.network.get('controls').get_connections()
-        control_jnt_list = rigging.skeleton.sort_chain_by_hierarchy(control_jnt_list)
+        control_jnt_list = skeleton.sort_chain_by_hierarchy(control_jnt_list)
 
         control_jnt_list.reverse()
         skeleton_jnt_list.reverse()
@@ -192,7 +192,7 @@ class FK(rigging.rig_base.Rig_Component):
                 attr.lock()
 
     def constrain_to_skeleton_mismatch(self, target_skeleton_dict, rotate_only, maintain_offset, control_chain, target_chain, constraint_list, matching_dict):
-        for control_index, target_index in matching_dict.iteritems():
+        for control_index, target_index in matching_dict.items():
             locked_attrs = maya_utils.node_utils.unlock_transforms(control)
 
             constraint_list.append( pm.orientConstraint(target_chain[target_index], control_chain[control_index], mo=maintain_offset) )
@@ -241,11 +241,11 @@ class Point_FK(FK):
         if not component_constraint:
             space_obj = self.default_space
         else:
-            space_obj = get_first_or_default( rigging.constraints.get_constraint_driver_list(component_constraint) )
+            space_obj = get_first_or_default( constraints.get_constraint_driver_list(component_constraint) )
             if space_obj == self.character_world:
                 return None
 
-        space_info = rigging.skeleton.get_joint_markup_details(space_obj)
+        space_info = skeleton.get_joint_markup_details(space_obj)
         if space_info == None:
             self.default_space
 
@@ -266,15 +266,15 @@ class Point_FK(FK):
         if self.verify_component(skeleton_dict, side, region):
             super(Point_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, use_global_queue, additive, reverse, **kwargs)
         else:
-            print "Can't Apply Point FK to more than 1 joint"
+            print("Can't Apply Point FK to more than 1 joint")
 
     def bind_chain_process(self, skeleton_chain, control_chain, additive):
         rigging_chain = self.network['rigging'].get_connections()
-        sorted_rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
-        rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
+        sorted_rigging_chain = skeleton.sort_chain_by_hierarchy(rigging_chain)
+        skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
-        rigging.constraints.bind_chains(sorted_rigging_chain, skeleton_chain, self.exclude, translate=False, scale=False, additive = additive)
-        rigging.constraints.bind_chains(control_chain, sorted_rigging_chain, self.exclude, scale=True)
+        constraints.bind_chains(sorted_rigging_chain, skeleton_chain, self.exclude, translate=False, scale=False, additive = additive)
+        constraints.bind_chains(control_chain, sorted_rigging_chain, self.exclude, scale=True)
 
     def attach_component(self, maintain_offset = False):
         '''
@@ -308,7 +308,7 @@ class Point_FK(FK):
         self.skel_root = skeleton_dict[side][region]['root']
         self.skel_end = skeleton_dict[side][region]['end']
 
-        skeleton_chain = rigging.skeleton.get_joint_chain(self.skel_root, self.skel_end)
+        skeleton_chain = skeleton.get_joint_chain(self.skel_root, self.skel_end)
         
         return len(skeleton_chain) == 1
 
@@ -324,12 +324,12 @@ class Point_FK(FK):
             group_constraint = get_first_or_default(component_group.listConnections(type='constraint'))
             anim_locator_list = []
             if preserve_animation:
-                anim_locator_list = self.bake_to_world_locators(rigging.skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
+                anim_locator_list = self.bake_to_world_locators(skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
 
             pm.delete(group_constraint)
 
             if preserve_animation:
-                self.restore_from_world_locators(anim_locator_list, rigging.skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
+                self.restore_from_world_locators(anim_locator_list, skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
 
 
 class Aim_FK(FK):
@@ -345,11 +345,11 @@ class Aim_FK(FK):
 
     def bind_chain_process(self, skeleton_chain, control_chain, additive):
         rigging_chain = self.network['rigging'].get_connections()
-        sorted_rigging_chain = rigging.skeleton.sort_chain_by_index(rigging_chain)
-        rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
+        sorted_rigging_chain = skeleton.sort_chain_by_index(rigging_chain)
+        skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
-        rigging.constraints.bind_chains(sorted_rigging_chain, skeleton_chain, self.exclude, scale=True, additive = additive)
-        rigging.constraints.bind_chains(control_chain, sorted_rigging_chain, self.exclude, rotate=False, scale=True)
+        constraints.bind_chains(sorted_rigging_chain, skeleton_chain, self.exclude, scale=True, additive = additive)
+        constraints.bind_chains(control_chain, sorted_rigging_chain, self.exclude, rotate=False, scale=True)
 
         end_locator = get_first_or_default(self.get_control_dict().get('locator'))
         pm.delete( list(set(end_locator.getParent().listConnections(type='constraint'))) )
@@ -359,9 +359,9 @@ class Aim_FK(FK):
         component_group = self.network['component'].group
         maya_utils.node_utils.force_align(self.skel_root, control_group)
 
-        rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(self.network['rigging'].get_connections())
-        control_chain = rigging.skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
-        control_chain = rigging.skeleton.sort_chain_by_hierarchy(control_chain)
+        rigging_chain = skeleton.sort_chain_by_hierarchy(self.network['rigging'].get_connections())
+        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
+        control_chain = skeleton.sort_chain_by_hierarchy(control_chain)
         self.network['controls'].connect_nodes(control_chain)
 
         zero_group_list = self.create_controls(control_chain, side, region, self.prefix, control_holder_list)
@@ -381,7 +381,7 @@ class Aim_FK(FK):
             if i + 1 == len(rigging_chain):
                 aim_target = pm.spaceLocator(name = fk_joint.name() + "_end_target")
                 aim_target.localScale.set(10,10,10)
-                aim_zero_group = rigging.skeleton.create_zero_group(aim_target)
+                aim_zero_group = skeleton.create_zero_group(aim_target)
                 aim_zero_group.setParent(fk_joint)
                 aim_zero_group.rotate.set(0,0,0)
                 aim_axis = pm.dt.Vector(self.data.get('end_offset')) if self.data.get('end_offset') else aim_axis
@@ -397,7 +397,7 @@ class Aim_FK(FK):
             else:
                 aim_target = rigging_chain[i + 1]
                 distance = maya_utils.node_utils.get_distance(fk_joint, rigging_chain[i + 1])
-                aim_axis = rigging.constraints.get_offset_vector(fk_joint, rigging_chain[i + 1])
+                aim_axis = constraints.get_offset_vector(fk_joint, rigging_chain[i + 1])
 
             aim_axis.normalize()
             up_axis = [0,1,0] if list(abs(aim_axis)) != [0,1,0] else [0,0,1]
@@ -429,7 +429,7 @@ class Aim_FK(FK):
             elif control_property.get('control_type') == "fk" and control_property.get('ordered_index') == 0:
                 end_control = control
 
-        offset = rigging.constraints.get_offset_vector(end_control, locator)
+        offset = constraints.get_offset_vector(end_control, locator)
         class_info_dict['end_offset'] = list(offset)
         return class_info_dict
 
@@ -505,7 +505,7 @@ class Eye_FK(FK):
         maya_utils.baking.bake_objects([aim_target], True, True, False)
         pm.delete(aim_constraint)
 
-        self.switch_space(fk_control, rigging.overdriver.Aim, [aim_target])
+        self.switch_space(fk_control, overdriver.Aim, [aim_target])
 
         pm.autoKeyframe(state=autokey_state)
 

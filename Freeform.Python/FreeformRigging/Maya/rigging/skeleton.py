@@ -30,8 +30,8 @@ import v1_shared.usertools
 import maya_utils
 import metadata
 
-import rigging.rig_tools
-import rigging.constraints
+# from rigging import rig_tools
+from rigging import constraints
 
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -161,8 +161,8 @@ def clean_skeleton_dict(skeleton_dict):
         skeleton_dict (Dictionary<string, string>): A skeleton dictionary created by get_skeleton_dict()
     '''
     remove_item = {}
-    for side, side_dict in skeleton_dict.iteritems():
-        for region, region_dict in side_dict.iteritems():
+    for side, side_dict in skeleton_dict.items():
+        for region, region_dict in side_dict.items():
             root_jnt = region_dict.get('root')
             end_jnt = region_dict.get('end')
             if not (root_jnt and end_jnt):
@@ -175,7 +175,7 @@ def clean_skeleton_dict(skeleton_dict):
                     if rig_markup.get('side') == side and rig_markup.get('region') == region:
                         pm.delete(rig_markup.node)
            
-    for side, region in remove_item.iteritems():         
+    for side, region in remove_item.items():         
         del skeleton_dict.get(side)[region]
 
 def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict, namespace, side_list = [], region_list = []):
@@ -193,13 +193,13 @@ def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict,
     skeleton_dict = rigging.file_ops.get_skeleton_dict_from_settings(template_settings_file)
 
     markup_jnt = None
-    for side, region_dict in skeleton_dict.iteritems():
+    for side, region_dict in skeleton_dict.items():
         if side_list and side not in side_list:
             continue
-        for region, data_dict in region_dict.iteritems():
+        for region, data_dict in region_dict.items():
             if region_list and region not in region_list and (orig_skeleton_dict.get(side) and region in orig_skeleton_dict[side].keys()):
                 continue
-            for data_name, jnt_name in data_dict.iteritems():
+            for data_name, jnt_name in data_dict.items():
                 if pm.objExists(namespace+jnt_name):
                     markup_jnt = pm.PyNode(namespace+jnt_name)
                     new_rig_markup = metadata.meta_properties.RigMarkupProperty()
@@ -233,8 +233,8 @@ def remove_invalid_rig_markup(jnt):
     Checks over a skeleton for any stranded rig markup and ensures all properties attached to joints are valid.
     '''
     skeleton_dict = get_skeleton_dict(jnt)
-    for side, region_dict in skeleton_dict.iteritems():
-        for region, tag_dict in region_dict.iteritems():
+    for side, region_dict in skeleton_dict.items():
+        for region, tag_dict in region_dict.items():
             if len(tag_dict) == 1:
                 for tag_jnt in tag_dict.values():
                     rig_markup_list = metadata.meta_properties.get_property_list(tag_jnt, metadata.meta_properties.RigMarkupProperty)
@@ -260,14 +260,14 @@ def create_center_of_mass(obj):
         head_obj_list = [x[0] for x in com_weight_dict['head']]
         head_weight_list = [x[1] for x in com_weight_dict['head']]
         pm.pointConstraint(head_obj_list, com_head_obj, mo=False)
-        rigging.constraints.set_constraint_weights(pm.pointConstraint, com_head_obj, head_obj_list, head_weight_list)
+        constraints.set_constraint_weights(pm.pointConstraint, com_head_obj, head_obj_list, head_weight_list)
 
     if com_weight_dict.get('body'):
         # Constrain "CenterOfMass". The -weight field below alters the relative weight of the body part
         com_obj_list = [com_head_obj] + [x[0] for x in com_weight_dict['body'] if x]
         com_weight_list = [0.9] + [x[1] for x in com_weight_dict['body'] if x]
         delete_constraint = pm.pointConstraint(com_obj_list, com_obj, mo=False)
-        rigging.constraints.set_constraint_weights(pm.pointConstraint, com_obj, com_obj_list, com_weight_list)
+        constraints.set_constraint_weights(pm.pointConstraint, com_obj, com_obj_list, com_weight_list)
         maya_utils.baking.bake_objects([com_obj], True, False, False)
         pm.delete(delete_constraint)
 
@@ -494,7 +494,7 @@ def create_zero_group(jnt):
     if type(jnt) == pm.nt.Joint:
         try:
             freeze_transform(jnt)
-        except Exception, e:
+        except Exception as e:
             exception_text = v1_core.exceptions.get_exception_message()
             v1_core.v1_logging.get_logger().error(exception_text)
 
@@ -805,7 +805,7 @@ def sort_chain_by_hierarchy(joint_list):
         order_dict.setdefault(relative_count, [])
         order_dict[	relative_count ].append(obj)
     
-    ordered_keys = order_dict.keys()
+    ordered_keys = list(order_dict.keys())
     ordered_keys.sort()
 
     sorted_list = []
@@ -825,7 +825,7 @@ def sort_chain_by_index(joint_list):
         order_dict.setdefault(index, [])
         order_dict[	index ].append(obj)
 
-    ordered_keys = order_dict.keys()
+    ordered_keys = list(order_dict.keys())
     ordered_keys.sort()
 
     sorted_list = []
@@ -1063,14 +1063,14 @@ def compare_skeleton_to_settings(character_network, settings_path):
     load_data = v1_core.json_utils.read_json(settings_path).get('skeleton')
     children_dict = {}
     parent_dict = {}
-    for jnt_name, data in load_data.iteritems():
+    for jnt_name, data in load_data.items():
         children_dict.setdefault(data['parent'], [])
         children_dict[data['parent']].append(jnt_name)
         parent_dict[jnt_name] = data['parent']
 
     jnt_list = pm.listRelatives(root_jnt, ad=True, type='joint')
     jnt_name_list = [str(root_jnt.stripNamespace())] + [str(x.stripNamespace()) for x in jnt_list]
-    data_name_list = parent_dict.keys()
+    data_name_list = list(parent_dict.keys())
     jnt_name_list.sort()
     data_name_list.sort()
     
@@ -1201,7 +1201,7 @@ def sort_joints_by_name(joint_list):
     for jnt in joint_list:
         sort_dict[jnt.stripNamespace().rsplit("|")[-1]] = jnt
 
-    key_list = sort_dict.keys()
+    key_list = list(sort_dict.keys())
     key_list.sort()
     
     sorted_list = []

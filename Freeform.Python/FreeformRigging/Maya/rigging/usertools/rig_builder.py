@@ -125,7 +125,7 @@ class RigBuilder(object):
         success = True
         config_manager = v1_core.global_settings.ConfigManager()
         character_folder = config_manager.get_character_directory()
-        rigging_folder = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING).get("RigFolder")
+        rigging_folder = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("RigFolder")
         rigging_template_folder = os.path.join(character_folder, rigging_folder, "Templates") + os.sep
         
         if os.path.exists(rigging_template_folder):
@@ -144,7 +144,7 @@ class RigBuilder(object):
                     file_data = v1_core.json_utils.read_json(file_path)
                     if not file_data.get('filetype'):
                         rig_item = new_template_group.AddItem(file_name.split('.')[0], file_path)
-                        for side, side_data in file_data["rigging"].iteritems():
+                        for side, side_data in file_data["rigging"].items():
                             rig_item.AddSide(side)
                             for region in side_data.keys():
                                 rig_item.AddRegion(region)

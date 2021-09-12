@@ -202,7 +202,7 @@ class MetaNode(object):
         return data_dict
     @data.setter
     def data(self, kwargs):
-        for attr_name, value in kwargs.iteritems():
+        for attr_name, value in kwargs.items():
             self.set(attr_name, value)
 
 
@@ -211,15 +211,13 @@ class MetaNode(object):
         if node:
             self.node = node
             
-            for attr_name, (value, value_type) in kwargs.iteritems():
+            for attr_name, (value, value_type) in kwargs.items():
                 # Remove old attributes that may not match the new attribute type
                 if self.node.hasAttr(attr_name):
                     attr_type = type(self.node.getAttr(attr_name))
                     # Value types from getAttr don't necessarily match up to default value type, even though
                     # they are compatiable assignment types in Python.  So we convert types
-                    if attr_type == unicode: # Convert unicode to string
-                        attr_type = str
-                    elif attr_type == pm.dt.Vector: # Convert Vector to list
+                    if attr_type == pm.dt.Vector: # Convert Vector to list
                         attr_type = list
 
                     if attr_type != type(value):
@@ -235,7 +233,7 @@ class MetaNode(object):
             self.set('guid', System.Guid.NewGuid().ToString())
 
             data_dict = {}
-            for attr_name, (value, value_type) in kwargs.iteritems():
+            for attr_name, (value, value_type) in kwargs.items():
                 data_dict[attr_name] = value
                 self.add_attr(attr_name, value_type)
             self.data = data_dict
@@ -383,7 +381,7 @@ class MetaNode(object):
 
     def data_equals(self, property_data):
         is_equal = True
-        for data_name, value in property_data.iteritems():
+        for data_name, value in property_data.items():
             data_value = self.data.get(data_name)
             if data_value != value:
                 is_equal = False

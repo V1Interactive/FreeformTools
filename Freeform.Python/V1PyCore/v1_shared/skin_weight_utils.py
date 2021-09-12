@@ -46,7 +46,7 @@ def create_voxel_weight_data(weight_data, voxel_size):
     combined_joint_list = list(set(combined_joint_list))
     voxel_data['joint_list'] = combined_joint_list
 
-    for vert_ws_string, weight_point in weight_cloud.iteritems():
+    for vert_ws_string, weight_point in weight_cloud.items():
         vert_ws_vector = v1_math.vector.Vector(vert_ws_string)
         skin_values = weight_point[0]
         joint_list = weight_data['joint_lists'][weight_point[1]]
@@ -112,9 +112,9 @@ def find_matching_point_from_voxels(vert_ws_pos, voxel_list, voxel_data, max_ite
 
         iteration += 1
 
-    print "Skinning not found for vert {0}".format(index)
-    print voxel_list
-    print closest_distance
+    print("Skinning not found for vert {0}".format(index))
+    print(voxel_list)
+    print(closest_distance)
     return None
 
 

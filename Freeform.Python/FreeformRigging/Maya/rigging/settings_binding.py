@@ -270,7 +270,7 @@ class Properties_Binding(Binding):
             args (args): Optional args
         '''
         data.setdefault(self.category, {})
-        for prop_type, prop_list in metadata.meta_properties.get_properties_dict(obj).iteritems():
+        for prop_type, prop_list in metadata.meta_properties.get_properties_dict(obj).items():
             prop_type_data = v1_shared.shared_utils.get_class_info(str(prop_type))
             for prop in prop_list:
                 # Only add properties that don't already exist
@@ -319,7 +319,7 @@ class Properties_Binding(Binding):
                 new_property.data = data
 
 
-class Binding_Sets(v1_core.py_helpers.Enum):
+class Binding_Sets(v1_core.py_helpers.Freeform_Enum):
     '''
     Enum to store sets of Bindings for quick save/load options
     '''

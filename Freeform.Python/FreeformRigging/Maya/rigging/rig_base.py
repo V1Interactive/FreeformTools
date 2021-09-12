@@ -27,8 +27,8 @@ import inspect
 
 import metadata
 
-import rigging.skeleton
-import rigging.constraints
+from rigging import skeleton
+from rigging import constraints
 
 import v1_core
 import v1_shared
@@ -209,9 +209,11 @@ class Component_Base(object):
             values = color_set_category.get(side)
             material_setting = freeform_utils.materials.MaterialSettings(values['name'], values['color'], values['transparency'], values['translucence'])
         else:
-            material_setting = freeform_utils.materials.RigControlShaderEnum[side]
-            if not material_setting: 
-                material_setting = freeform_utils.materials.RigControlShaderEnum["DEFAULT"]
+            material_enum = freeform_utils.materials.RigControlShaderEnum.get(side)
+            if not material_enum: 
+                material_enum = freeform_utils.materials.RigControlShaderEnum["DEFAULT"]
+
+            material_setting = material_enum.value
 
         control_shader = None
         if material_setting.name:
@@ -265,7 +267,7 @@ class Component_Base(object):
             else:
                 pm.delete(namespace_obj_list)
 
-            for child_ns in [x for x in pm.namespaceInfo(namespace, listOnlyNamespaces=True) if type(x) == unicode]:
+            for child_ns in [x for x in pm.namespaceInfo(namespace, listOnlyNamespaces=True) if type(x) == str]:
                 pm.delete([x for x in pm.namespaceInfo(child_ns, listNamespace=True) if pm.objExists(x)])
                 pm.namespace( removeNamespace=child_ns )
             pm.namespace( removeNamespace=namespace )
@@ -313,7 +315,7 @@ class Component_Base(object):
         Returns:
             str: The long scene name for the rig component network node, or None
         '''
-        component_network_list = rigging.skeleton.get_active_rig_network(jnt)
+        component_network_list = skeleton.get_active_rig_network(jnt)
         remove_node_list = []
         for component_network in component_network_list:
             remove_node_list.append(component_network.node)
@@ -509,7 +511,7 @@ class Component_Base(object):
         vis_list = Component_Base.get_controls(component_network)
 
         for control in vis_list:
-            rigging.skeleton.force_set_attr(control.visibility, is_visible)
+            skeleton.force_set_attr(control.visibility, is_visible)
     
     @staticmethod
     def get_all_controls(character_network):
@@ -545,7 +547,7 @@ class Component_Base(object):
         control_list = component_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
 
         joint_list = component_network.get_downstream(metadata.network_core.SkeletonJoints).get_connections()
-        joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
+        joint_list = skeleton.sort_chain_by_hierarchy(joint_list)
         attachment_joint_list = component_network.get_downstream(metadata.network_core.AttachmentJoints).get_connections()
 
         if attachment_joint_list:
@@ -590,9 +592,9 @@ class Component_Base(object):
         component = Rig_Component.create_from_network_node(component_network.node)
         control_info = component.get_control_info(control)
 
-        skele_dict = rigging.skeleton.get_skeleton_dict(get_first_or_default(component.network['skeleton'].get_connections()))
+        skele_dict = skeleton.get_skeleton_dict(get_first_or_default(component.network['skeleton'].get_connections()))
 
-        mirrored_side = rigging.skeleton.opposite_side(control_info.side)
+        mirrored_side = skeleton.opposite_side(control_info.side)
         side_dict = skele_dict.get(mirrored_side)
         region_dict = side_dict.get(control_info.region) if side_dict else None
         if side_dict and region_dict:
@@ -602,15 +604,15 @@ class Component_Base(object):
             mirror_grp.scale.set([-1,-1,-1])
             pm.makeIdentity(mirror_grp, apply=True)
 
-            root_rigging = rigging.skeleton.get_rig_network(region_dict['root'])
-            end_rigging = rigging.skeleton.get_rig_network(region_dict['end'])
+            root_rigging = skeleton.get_rig_network(region_dict['root'])
+            end_rigging = skeleton.get_rig_network(region_dict['end'])
     
             root_joints = root_rigging.get_downstream(metadata.network_core.SkeletonJoints).get_connections()
             end_joints = end_rigging.get_downstream(metadata.network_core.SkeletonJoints).get_connections()
             if set(root_joints) == set(end_joints):
                 component = Rig_Component.create_from_network_node(root_rigging.node)
                 control_dict = component.get_control_dict()
-                ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(control_dict[control_info.control_type])
+                ordered_control_list = skeleton.sort_chain_by_hierarchy(control_dict[control_info.control_type])
         
                 mirrored_control = ordered_control_list[control_info.ordered_index]
                 pm.delete(mirrored_control.getShapes())
@@ -639,12 +641,12 @@ class Component_Base(object):
         joint_list = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
         jnt = get_first_or_default(joint_list)
 
-        skeleton_dict = rigging.skeleton.create_single_joint_skeleton_dict(jnt, temporary)
+        skeleton_dict = skeleton.create_single_joint_skeleton_dict(jnt, temporary)
 
-        control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)
+        control_holder_list, imported_nodes = Component_Base.import_control_shapes(character_network.group)
 
-        for side, region_dict in skeleton_dict.iteritems():
-            for region, jnt_dict in region_dict.iteritems():
+        for side, region_dict in skeleton_dict.items():
+            for region, jnt_dict in region_dict.items():
                 component = rigging.fk.FK()
                 rig_success = component.rig(skeleton_dict, side, region, False, control_holder_list)
 
@@ -654,14 +656,14 @@ class Component_Base(object):
     def build_pickwalk_network(character_network):
         all_rigging = character_network.get_all_downstream(metadata.network_core.ComponentCore)
         for component_network in all_rigging:
-            component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+            component = Component_Base.create_from_network_node(component_network.node)
             first_control = component.get_ordered_controls()[-1]
 
-            ordered_skeleton_list = rigging.skeleton.sort_chain_by_hierarchy( component.network['skeleton'].get_connections() )
+            ordered_skeleton_list = skeleton.sort_chain_by_hierarchy( component.network['skeleton'].get_connections() )
             parent_joint = ordered_skeleton_list[-1].getParent()
-            parent_component_network = rigging.skeleton.get_rig_network(parent_joint)
+            parent_component_network = skeleton.get_rig_network(parent_joint)
             if parent_component_network:
-                parent_component = rigging.rig_base.Component_Base.create_from_network_node(parent_component_network.node)
+                parent_component = Component_Base.create_from_network_node(parent_component_network.node)
                 end_control = parent_component.get_ordered_controls()[0]
                 pm.controller([first_control, end_control], p=True)
     #endregion
@@ -703,7 +705,7 @@ class Component_Base(object):
         Zero the controls for the rig component and remove all animation from the control objects
         '''
         self.zero_rigging()
-        rigging.skeleton.remove_animation(self.network['controls'].get_connections())
+        skeleton.remove_animation(self.network['controls'].get_connections())
 
     def zero_rigging(self):
         '''
@@ -781,13 +783,13 @@ class Component_Base(object):
         Returns:
             list<PyNode>. List of all zero group objects created for the controls
         '''
-        ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
+        ordered_control_list = skeleton.sort_chain_by_hierarchy(control_list)
         zero_group_list = []
 
         # If controls aren't already imported bring in a fresh import
         import_controls = True if not control_holder_list else False
         if import_controls:
-            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.character_world)
+            control_holder_list, imported_nodes = Component_Base.import_control_shapes(self.character_world)
 
         locked_control_list = []
         for control in control_list:
@@ -804,10 +806,10 @@ class Component_Base(object):
             
             control_property = metadata.meta_properties.add_property(control, metadata.meta_properties.ControlProperty)
             self.network["component"].connect_node(control_property.node)
-            zero_group_list.append( rigging.skeleton.create_zero_group(control) )
+            zero_group_list.append( skeleton.create_zero_group(control) )
 
             joint_list = self.network['skeleton'].get_connections()
-            joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
+            joint_list = skeleton.sort_chain_by_hierarchy(joint_list)
             root_markup_property_list = metadata.meta_properties.get_property_list(joint_list[-1], metadata.meta_properties.RigMarkupProperty)
             root_markup_property = None
             for root_markup in root_markup_property_list:
@@ -834,7 +836,7 @@ class Component_Base(object):
             if set_control in locked_control_list:
                 pm.sets(locked_shader, edit=True, forceElement=[set_control])
             else:
-                print set_control, control_shader
+                print(set_control, control_shader)
                 pm.sets(control_shader, edit=True, forceElement=[set_control])
 
         if import_controls:
@@ -861,7 +863,7 @@ class Component_Base(object):
             pm.parent(dupe_shape, jnt, s=True, r=True)
         else:
             cube_size = maya_utils.node_utils.convert_scene_units(8)
-            control_object = get_first_or_default(pm.polyCube(h=cube_size, d=cube_size, w=cube_size, name=rigging.skeleton.joint_short_name(jnt)))
+            control_object = get_first_or_default(pm.polyCube(h=cube_size, d=cube_size, w=cube_size, name=skeleton.joint_short_name(jnt)))
             pm.delete( pm.parentConstraint(jnt, control_object, mo=False) )
             pm.parent(control_object.getShape(), jnt, s=True, r=True)
             pm.delete(control_object)
@@ -872,7 +874,7 @@ class Component_Base(object):
         ControlProperty network node
         '''
         control_list = self.network['controls'].get_connections()
-        control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
+        control_list = skeleton.sort_chain_by_hierarchy(control_list)
         for i, control in enumerate(control_list):
             control_property = get_first_or_default(metadata.meta_properties.get_properties_dict(control).get(metadata.meta_properties.ControlProperty))
             control_property.data = {'ordered_index': i}
@@ -934,7 +936,7 @@ class Component_Base(object):
         if control in control_list:
             control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
             control_index = control_property.get('ordered_index')
-            joint_list = rigging.skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
+            joint_list = skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
             return joint_list[control_index] if type(control_index) == int else None
 
         return None
@@ -978,7 +980,7 @@ class Addon_Component(Component_Base):
                 that lists all Rig Components that have been made
         '''
         control_list = component.get_control_dict()[addon_component_dict['ctrl_key']]
-        ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
+        ordered_control_list = skeleton.sort_chain_by_hierarchy(control_list)
         control = ordered_control_list[int(addon_component_dict['ordered_index'])]
 
         v1_core.v1_logging.get_logger().debug("Addon_Component rig_from_json - {0} - {1} - {2}".format(cls, control, component))
@@ -994,11 +996,11 @@ class Addon_Component(Component_Base):
         for target_type, target_data in zip(addon_component_dict['target_type'].split(','), addon_component_dict['target_data'].split(',')):
             if target_type and target_data:
                 if target_type == 'ctrl':  # rig control object
-                    target_data = rigging.rig_base.ControlInfo.parse_string(target_data)
+                    target_data = ControlInfo.parse_string(target_data)
                     target_component, did_exist = created_rigging[target_data.side][target_data.region]
                 
                     target_control_list = target_component.get_control_dict()[target_data.control_type]
-                    target_ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(target_control_list)
+                    target_ordered_control_list = skeleton.sort_chain_by_hierarchy(target_control_list)
                     object_space_list.append(target_ordered_control_list[target_data.ordered_index])
                 elif target_type == 'joint':  # skeleton joint
                     split_data = target_data.split(';')
@@ -1007,9 +1009,9 @@ class Addon_Component(Component_Base):
                     index = int(get_index_or_default(split_data, 2))
 
                     jnt = component.network['skeleton'].get_first_connection()
-                    skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
-                    joint_chain = rigging.skeleton.get_joint_chain(skeleton_dict[side][region]['root'], skeleton_dict[side][region]['end'])
-                    joint_chain = rigging.skeleton.sort_chain_by_hierarchy(joint_chain)
+                    skeleton_dict = skeleton.get_skeleton_dict(jnt)
+                    joint_chain = skeleton.get_joint_chain(skeleton_dict[side][region]['root'], skeleton_dict[side][region]['end'])
+                    joint_chain = skeleton.sort_chain_by_hierarchy(joint_chain)
 
                     object_space_list.append(joint_chain[index])
                 elif target_type == 'node':  # scene object
@@ -1106,7 +1108,7 @@ class Addon_Component(Component_Base):
         remove_space_list = []
         for object_space in object_space_list:
             proptery_dict = metadata.meta_properties.get_properties_dict(object_space)
-            markup_details = rigging.skeleton.get_joint_markup_details(object_space)
+            markup_details = skeleton.get_joint_markup_details(object_space)
 
             if proptery_dict.get(metadata.meta_properties.ControlProperty):
                 check_character_network = metadata.network_core.MetaNode.get_first_network_entry(object_space, metadata.network_core.CharacterCore)
@@ -1170,8 +1172,8 @@ class Addon_Component(Component_Base):
 
         overdriven_control_list = self.network['overdriven_control'].get_connections()
         for control in overdriven_control_list:
-            rigging.skeleton.force_set_attr(control.visibility, True)
-            rigging.skeleton.force_set_attr(control.getShape().visibility, True)
+            skeleton.force_set_attr(control.visibility, True)
+            skeleton.force_set_attr(control.getShape().visibility, True)
 
         character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         revert_animation = character_settings.revert_animation
@@ -1192,7 +1194,7 @@ class Addon_Component(Component_Base):
     def zero_character(self, character_network, use_global_queue):
         # Zero character before applying rigging, only zero joints that aren't rigged
         joints_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
-        rigging.skeleton.zero_character(get_first_or_default(joints_core_network.get_connections()))
+        skeleton.zero_character(get_first_or_default(joints_core_network.get_connections()))
 
         if not use_global_queue:
             # If using the queue Zeroing the character should be done once before rigging is run from the queue
@@ -1290,7 +1292,7 @@ class Addon_Component(Component_Base):
         controller_node = pm.createNode('controller', name = "{0}{1}_tag".format(self.namespace, jnt.stripNamespace().split("|")[-1]))
         jnt.message >> controller_node.controllerObject
 
-        zero_group_list = [rigging.skeleton.create_zero_group(jnt)]
+        zero_group_list = [skeleton.create_zero_group(jnt)]
 
         if copy_control.getShape():
             dupe_shape = get_first_or_default(pm.duplicate(copy_control.getShape(), addShape=True))
@@ -1427,17 +1429,17 @@ class Rig_Component(Component_Base):
         exists = False
         root_joint = target_skeleton_dict[side][region]['root']
         end_joint = target_skeleton_dict[side][region]['end']
-        region_chain = rigging.skeleton.get_joint_chain(root_joint, end_joint)
-        root_component_network = rigging.skeleton.get_rig_network(root_joint)
-        end_component_network = rigging.skeleton.get_rig_network(end_joint)
+        region_chain = skeleton.get_joint_chain(root_joint, end_joint)
+        root_component_network = skeleton.get_rig_network(root_joint)
+        end_component_network = skeleton.get_rig_network(end_joint)
                 
         root_class_info = v1_shared.shared_utils.get_class_info(root_component_network.node.component_type.get()) if root_component_network else None
-        root_info = rigging.rig_base.ControlInfo(side, region, get_first_or_default(root_class_info), get_index_or_default(root_class_info,1)) if root_class_info else None
+        root_info = ControlInfo(side, region, get_first_or_default(root_class_info), get_index_or_default(root_class_info,1)) if root_class_info else None
 
         end_class_info = v1_shared.shared_utils.get_class_info(end_component_network.node.component_type.get()) if end_component_network else None
-        end_info = rigging.rig_base.ControlInfo(side, region, get_first_or_default(end_class_info), get_index_or_default(end_class_info, 1)) if end_class_info else None
+        end_info = ControlInfo(side, region, get_first_or_default(end_class_info), get_index_or_default(end_class_info, 1)) if end_class_info else None
 
-        compare_info = rigging.rig_base.ControlInfo(side, region, component_dict['module'], component_dict['type'])
+        compare_info = ControlInfo(side, region, component_dict['module'], component_dict['type'])
 
         # Check that either there is no component on the root and end, or that neither the component on the root or end are the same as this one
         if (not root_component_network or not end_component_network) or (str(compare_info) != str(root_info) and str(compare_info) != str(end_info)):
@@ -1474,11 +1476,11 @@ class Rig_Component(Component_Base):
         if not component_constraint:
             return None
 
-        space_obj = get_first_or_default( rigging.constraints.get_constraint_driver_list(component_constraint) )
+        space_obj = get_first_or_default( constraints.get_constraint_driver_list(component_constraint) )
         if space_obj == self.character_root:
             return None
 
-        space_info = rigging.skeleton.get_joint_markup_details(space_obj)
+        space_info = skeleton.get_joint_markup_details(space_obj)
         if space_info == None:
             self.default_space
 
@@ -1522,22 +1524,22 @@ class Rig_Component(Component_Base):
 
         self.get_parent_space(world_space)
 
-        skeleton_chain = rigging.skeleton.get_joint_chain(self.skel_root, self.skel_end)
+        skeleton_chain = skeleton.get_joint_chain(self.skel_root, self.skel_end)
         self.network['skeleton'].connect_nodes(skeleton_chain)
 
         if zero_character:
             # Zero character before applying rigging, only zero joints that aren't rigged
-            rigging.skeleton.zero_character(self.skel_root)
+            skeleton.zero_character(self.skel_root)
             Component_Base.zero_all_overdrivers(self.network['character'])
             Component_Base.zero_all_rigging(self.network['character'])
             # skeleton_chain doesn't get included in zero_character since the joints are considered rigged
-            rigging.skeleton.zero_skeleton_joints(skeleton_chain)
+            skeleton.zero_skeleton_joints(skeleton_chain)
 
         component_grp = self.create_component_group(side, region)
         self.network['component'].connect_node(component_grp)
         self.align_component_group()
 
-        rigging_chain = rigging.skeleton.duplicate_chain(skeleton_chain, self.namespace, self.prefix)
+        rigging_chain = skeleton.duplicate_chain(skeleton_chain, self.namespace, self.prefix)
 
         if self.exclude:
             exclude_index = skeleton_chain.index(self.exclude)
@@ -1549,7 +1551,7 @@ class Rig_Component(Component_Base):
             pm.delete(exclude_jnt)
 
         self.network['rigging'].connect_nodes(rigging_chain)
-        rigging_root = rigging.skeleton.get_chain_root(rigging_chain)
+        rigging_root = skeleton.get_chain_root(rigging_chain)
         rigging_root.setParent(component_grp)
 
         v1_core.v1_logging.get_logger().debug("Rigging for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
@@ -1585,8 +1587,8 @@ class Rig_Component(Component_Base):
                 side, region, index = space_info
                 index = eval(index)
                 region_dict = self.skeleton_dict[side][region]
-                joint_chain = rigging.skeleton.get_joint_chain(region_dict['root'], region_dict['end'])
-                sorted_chain = rigging.skeleton.sort_chain_by_hierarchy(joint_chain)
+                joint_chain = skeleton.get_joint_chain(region_dict['root'], region_dict['end'])
+                sorted_chain = skeleton.sort_chain_by_hierarchy(joint_chain)
                 parent_obj = sorted_chain[index]
             # rig control information is in 4 parts
             elif len(space_info) == 4:
@@ -1622,7 +1624,7 @@ class Rig_Component(Component_Base):
         '''
         skel_root = skeleton_dict[side][region]['root']
         skel_end = skeleton_dict[side][region]['end']
-        skeleton_chain = rigging.skeleton.get_joint_chain(skel_root, skel_end)
+        skeleton_chain = skeleton.get_joint_chain(skel_root, skel_end)
 
         skel_exclude = skeleton_dict[side][region].get('exclude')
         if skel_exclude:
@@ -1638,16 +1640,16 @@ class Rig_Component(Component_Base):
         self.zero_rigging()
         addon = self.has_addon()
         if addon:
-            addon_comp = rigging.rig_base.Component_Base.create_from_network_node(addon.node)
+            addon_comp = Component_Base.create_from_network_node(addon.node)
             addon_comp.remove_animation()
-        rigging.skeleton.remove_animation(self.network['controls'].get_connections())
+        skeleton.remove_animation(self.network['controls'].get_connections())
 
     def save_animation(self):
         '''
         Save animation curve outputs onto the ComponentCore network node
         '''
         joint_list = self.network['skeleton'].get_connections()
-        sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
+        sorted_joint_list = skeleton.sort_chain_by_hierarchy(joint_list)
         self.network['component'].save_animation(sorted_joint_list, self._save_channel_list)
 
     def load_animation(self):
@@ -1655,7 +1657,7 @@ class Rig_Component(Component_Base):
         Load animation that was previously saved on the ComponentCore back onto the skeleton
         '''
         joint_list = self.network['skeleton'].get_connections()
-        sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
+        sorted_joint_list = skeleton.sort_chain_by_hierarchy(joint_list)
         self.network['component'].load_animation(sorted_joint_list, self._save_channel_list)
 
     @undoable
@@ -1665,16 +1667,16 @@ class Rig_Component(Component_Base):
         '''
         control_property = metadata.meta_properties.get_property(new_parent, metadata.meta_properties.ControlProperty)
         if control_property:
-            new_parent = rigging.skeleton.get_control_joint(new_parent)
+            new_parent = skeleton.get_control_joint(new_parent)
 
         anim_locator_list = []
         if preserve_animation:
-            anim_locator_list = self.bake_to_world_locators(rigging.skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
+            anim_locator_list = self.bake_to_world_locators(skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
 
         character_network = self.network['character']
-        rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
-        rigging.rig_base.Component_Base.zero_all_rigging(character_network)
-        rigging.skeleton.zero_character(self.network['skeleton'].get_first_connection())
+        Component_Base.zero_all_overdrivers(character_network)
+        Component_Base.zero_all_rigging(character_network)
+        skeleton.zero_character(self.network['skeleton'].get_first_connection())
 
         component_group = self.network['component'].group
         group_constraint = get_first_or_default(component_group.listConnections(type='constraint'))
@@ -1685,7 +1687,7 @@ class Rig_Component(Component_Base):
             bake_constraint(new_parent, component_group, mo=True)
 
         if preserve_animation:
-            self.restore_from_world_locators(anim_locator_list, rigging.skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
+            self.restore_from_world_locators(anim_locator_list, skeleton.sort_chain_by_hierarchy, bake_constraint_list = bake_constraint_list)
 
     def bake_to_world_locators(self, sort_method, bake_constraint_list = [pm.parentConstraint]):
         '''
@@ -1735,7 +1737,7 @@ class Rig_Component(Component_Base):
             for addon in addon_list:
                 addon.remove()
 
-        rigging.constraints.bake_constrained_rig_controls(self.network['controls'].get_connections())
+        constraints.bake_constrained_rig_controls(self.network['controls'].get_connections())
 
         character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         revert_animation = character_settings.revert_animation if use_settings else False
@@ -1747,13 +1749,13 @@ class Rig_Component(Component_Base):
         self.network['component'].delete_all()
 
         if not revert_animation:
-            rigging.skeleton.zero_skeleton_joints(joint_list)
+            skeleton.zero_skeleton_joints(joint_list)
 
         # If there's still rigging applied to the skeleton, swap control to the first one in the list
-        component_network_list = rigging.skeleton.get_active_rig_network(joint_list[0])
+        component_network_list = skeleton.get_active_rig_network(joint_list[0])
         if component_network_list:
             if revert_animation:
-                rigging.skeleton.remove_animation(joint_list)
+                skeleton.remove_animation(joint_list)
             switch_component = Component_Base.create_from_network_node(component_network_list[0].node)
             switch_component.switch_current_component()
 
@@ -1833,7 +1835,7 @@ class Rig_Component(Component_Base):
         pm.autoKeyframe(state=False)
 
         component_jnt = self.network.get('skeleton').get_first_connection()
-        component_network_list = rigging.skeleton.get_active_rig_network(component_jnt)
+        component_network_list = skeleton.get_active_rig_network(component_jnt)
 
         if len(component_network_list) == 1:
             self.bake_to_skeleton_and_remove(use_global_queue, local_queue)
@@ -1890,7 +1892,7 @@ class Rig_Component(Component_Base):
             for component in bake_component_list:
                 component.match_to_skeleton(time_range, True)
 
-        except Exception, e:
+        except Exception as e:
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
         finally:
@@ -2089,7 +2091,7 @@ class Rig_Component(Component_Base):
             network_node (PyNode): The Maya scene rig component network node for the Rig Component
         '''
         self.network = self.get_meta_network(network_node)
-        self.skeleton_dict = rigging.skeleton.get_skeleton_dict(self.network['skeleton'].get_first_connection())
+        self.skeleton_dict = skeleton.get_skeleton_dict(self.network['skeleton'].get_first_connection())
 
         side = self.network['component'].node.side.get()
         region = self.network['component'].node.region.get()
@@ -2142,7 +2144,7 @@ class Rig_Component(Component_Base):
         pm.autoKeyframe(state=False)
 
         component_jnt = self.network.get('skeleton').get_first_connection()
-        component_list = rigging.skeleton.get_active_rig_network(component_jnt)
+        component_list = skeleton.get_active_rig_network(component_jnt)
 
         weight_index = 0
         target_list = pm.orientConstraint(component_jnt, q=True, tl=True)
@@ -2176,7 +2178,7 @@ class Rig_Component(Component_Base):
 
             self.bake_and_remove(use_global_queue=False)
         
-            control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.character_world)
+            control_holder_list, imported_nodes = Component_Base.import_control_shapes(self.character_world)
             component_type().rig(skele_dict, side, region, control_holder_list = control_holder_list)
             pm.delete([x for x in imported_nodes if x.exists()])
 
@@ -2234,20 +2236,20 @@ class Rig_Component(Component_Base):
         Args:
             control (PyNode): The Maya scene control to pin the children of
         '''
-        control_list = rigging.skeleton.sort_chain_by_hierarchy( self.network['controls'].get_connections() )
+        control_list = skeleton.sort_chain_by_hierarchy( self.network['controls'].get_connections() )
         control_index = control_list.index(control)
 
-        joint_list = rigging.skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
+        joint_list = skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
         jnt = joint_list[control_index]
 
         for child_jnt in jnt.getChildren(type='joint'):
             if child_jnt in joint_list:
                 self.switch_space( control_list[control_index-1], rigging.overdriver.Overdriver, None )
             else:
-                comp_network = rigging.skeleton.get_rig_network(child_jnt)
+                comp_network = skeleton.get_rig_network(child_jnt)
                 if comp_network and not comp_network.get_downstream(metadata.network_core.AddonCore):
-                    pin_component = rigging.rig_base.Rig_Component.create_from_network_node(comp_network.node)
-                    pin_control = rigging.skeleton.sort_chain_by_hierarchy( pin_component.network['controls'].get_connections() )[-1]
+                    pin_component = Rig_Component.create_from_network_node(comp_network.node)
+                    pin_control = skeleton.sort_chain_by_hierarchy( pin_component.network['controls'].get_connections() )[-1]
                     pin_component.switch_space( pin_control, rigging.overdriver.Overdriver, None )
 
         pm.select(control)
@@ -2262,26 +2264,26 @@ class Rig_Component(Component_Base):
         Args:
             control (PyNode): The Maya scene control to unpin the children of
         '''
-        control_list = rigging.skeleton.sort_chain_by_hierarchy( self.network['controls'].get_connections() )
+        control_list = skeleton.sort_chain_by_hierarchy( self.network['controls'].get_connections() )
         control_index = control_list.index(control)
 
-        joint_list = rigging.skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
+        joint_list = skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
         jnt = joint_list[control_index]
 
         for child_jnt in jnt.getChildren(type='joint'):
             if child_jnt in joint_list:
                 control_addon = self.get_control_addon_network(control_list[control_index-1])
                 if control_addon:
-                    rig_component = rigging.rig_base.Component_Base.create_from_network_node(control_addon.node)
+                    rig_component = Component_Base.create_from_network_node(control_addon.node)
                     rig_component.remove()       
             else:
-                comp_network = rigging.skeleton.get_rig_network(child_jnt)
+                comp_network = skeleton.get_rig_network(child_jnt)
                 if comp_network:
-                    pin_component = rigging.rig_base.Rig_Component.create_from_network_node(comp_network.node)
-                    pin_control = rigging.skeleton.sort_chain_by_hierarchy( pin_component.network['controls'].get_connections() )[-1]
+                    pin_component = Rig_Component.create_from_network_node(comp_network.node)
+                    pin_control = skeleton.sort_chain_by_hierarchy( pin_component.network['controls'].get_connections() )[-1]
                     control_addon = pin_component.get_control_addon_network(pin_control)
                     if control_addon:
-                        rig_component = rigging.rig_base.Component_Base.create_from_network_node(control_addon.node)
+                        rig_component = Component_Base.create_from_network_node(control_addon.node)
                         rig_component.remove()
 
     def get_control_addon_network(self, control):
@@ -2313,7 +2315,7 @@ class Rig_Component(Component_Base):
         overdriver_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.OverDrivenControl)
         addon_control = None
         if overdriver_network:
-            addon_component = rigging.rig_base.Component_Base.create_from_network_node(overdriver_network.node)
+            addon_component = Component_Base.create_from_network_node(overdriver_network.node)
             addon_control = addon_component.network['controls'].get_first_connection()
 
         return addon_control
@@ -2357,7 +2359,7 @@ class Rig_Component(Component_Base):
         component_network = self.network['component']
         control_vars_string = ""
         for control in self.network['controls'].get_connections():
-            control_network = rigging.skeleton.get_rig_network(control)
+            control_network = skeleton.get_rig_network(control)
             control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
             control_type = control_property.get('control_type')
             control_index = control_property.get('ordered_index')
@@ -2369,7 +2371,7 @@ class Rig_Component(Component_Base):
                 control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
                 control_vars_string += "{0};{1}|".format(control_type, control_index)
 
-                for attr_name, value in save_attrs.iteritems():
+                for attr_name, value in save_attrs.items():
                     control_vars_string += "{0};{1}|".format(attr_name, value)
 
                 control_vars_string += ":"
@@ -2389,7 +2391,7 @@ class Rig_Component(Component_Base):
                 control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
                 control_dict = control_var_dict.get((control_property.get('control_type'), control_property.get('ordered_index')))
                 control_dict = control_dict if control_dict else {}
-                for attr_name, value in control_dict.iteritems():
+                for attr_name, value in control_dict.items():
                     split_name = attr_name.split(".", 1)
                     if len(split_name) == 1:
                         getattr(control, attr_name).set(value)
@@ -2408,11 +2410,11 @@ class Rig_Component(Component_Base):
                             if constraint_type == pm.parentConstraint or constraint_type == pm.orientConstraint:
                                 constraint_obj.interpType.set(2)
 
-                            rigging.constraints.set_constraint_weights(constraint_type, control, driver_list, weight_list)
+                            constraints.set_constraint_weights(constraint_type, control, driver_list, weight_list)
                             for locked_attr in locked_attr_list:
                                 locked_attr.lock()
                 # Locking needs to happen after constraints
-                for attr_name, value in control_dict.iteritems():
+                for attr_name, value in control_dict.items():
                     split_name = attr_name.split(".", 1)
                     if len(split_name) != 1:
                         attr_name, operation_name = split_name
@@ -2438,7 +2440,7 @@ class Rig_Component(Component_Base):
             control (PyNode): The control that's been selected to create the context menu
         '''
         component_jnt = self.network.get('skeleton').get_first_connection()
-        component_network_list = rigging.skeleton.get_active_rig_network(component_jnt)
+        component_network_list = skeleton.get_active_rig_network(component_jnt)
         if len(component_network_list) != 1:
             rigs_method, rigs_args, rigs_kwargs = v1_core.v1_logging.logging_wrapper(self.open_rig_switcher, "Context Menu (Rig_Component)")
             pm.menuItem(label="Open Rig Switcher", parent=parent_menu, command=lambda _: rigs_method(*rigs_args, **rigs_kwargs))
