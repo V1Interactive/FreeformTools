@@ -29,7 +29,7 @@ def main():
             err = ""
             try:
                 added_list = Freeform.Core.Helpers.Perforce.AddFiles(exportList)
-            except Exception, e:
+            except Exception as e:
                 err = e
             
             success = "Failed to Add" if not added_list else "Added to Default Changelist"

@@ -24,15 +24,15 @@ from copy import deepcopy
 
 import operator
 
-import v1_core.py_helpers
-import v1_core.json_utils
+from v1_core import py_helpers
+from v1_core import json_utils
 
 
-class EnvironmentKey(v1_core.py_helpers.Enum):
+class EnvironmentKey(py_helpers.Freeform_Enum):
     TOOLSROOT = "V1TOOLSROOT"
     CONTENT = "CONTENT_ROOT"
 
-class ConfigKey(v1_core.py_helpers.Enum):
+class ConfigKey(py_helpers.Freeform_Enum):
     DEVELOPER = "Developer"
     PROJECT = "Project"
     EXPORTER = "Exporter"
@@ -66,7 +66,7 @@ class GlobalSettings(object):
         Returns:
             dictionary. Json produced dictionary
         '''
-        self.settings = v1_core.json_utils.read_json(self.settings_file)
+        self.settings = json_utils.read_json(self.settings_file)
         return self.settings
 
     def save_settings(self, settings_dict = None):
@@ -77,7 +77,7 @@ class GlobalSettings(object):
             data (dictionary): json dictionary to save to the settings_file
         '''
         save_dict = settings_dict if settings_dict else self.settings
-        v1_core.json_utils.save_json(self.settings_file, save_dict)
+        json_utils.save_json(self.settings_file, save_dict)
 
     def get_category(self, type, default = False):
         '''
@@ -216,7 +216,7 @@ class SettingsCategory(object):
     def __init__(self, settings_data = None):
         if settings_data and settings_data.get(self.name):
             category_data = settings_data[self.name]
-            for name, value in category_data.iteritems():
+            for name, value in category_data.items():
                 if hasattr(self, name):
                     setattr(self, name, value)
 
@@ -415,7 +415,7 @@ class ConfigManager(object):
         return self.settings.get(key)
 
     def get_content_path(self):
-        project_settings = self.settings.get(ConfigKey.PROJECT)
+        project_settings = self.settings.get(ConfigKey.PROJECT.value)
 
         project_drive = project_settings.get("ProjectDrive").replace("/", "\\")
         project_root = project_settings.get("ProjectRootPath").replace("/", "\\")
@@ -424,7 +424,7 @@ class ConfigManager(object):
         return os.path.join(project_drive, os.sep, project_root, content_root)
 
     def get_engine_content_path(self):
-        project_settings = self.settings.get(ConfigKey.PROJECT)
+        project_settings = self.settings.get(ConfigKey.PROJECT.value)
 
         project_drive = project_settings.get("ProjectDrive").replace("/", "\\")
         project_root = project_settings.get("ProjectRootPath").replace("/", "\\")
@@ -433,13 +433,13 @@ class ConfigManager(object):
         return os.path.join(project_drive, os.sep, project_root, engine_content_root)
 
     def get_character_directory(self):
-        project_settings = self.settings.get(ConfigKey.PROJECT)
+        project_settings = self.settings.get(ConfigKey.PROJECT.value)
         character_folder = project_settings.get("CharacterFolder").replace("/", "\\")
         
         return os.path.join(self.get_content_path(), character_folder)
 
     def check_project(self):
-        use_project = self.settings.get(ConfigKey.PROJECT).get("UseProject")
+        use_project = self.settings.get(ConfigKey.PROJECT.value).get("UseProject")
         content_path = self.get_content_path()
 
         if use_project == True and os.path.exists(content_path):

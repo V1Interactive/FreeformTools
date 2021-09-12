@@ -22,7 +22,7 @@ import os
 import traceback
 import fnmatch
 
-import v1_core.v1_logging
+from v1_core import v1_logging
 
 
 def except_hook(type_, exception, trace):
@@ -38,11 +38,11 @@ def except_hook(type_, exception, trace):
     exception_title = "Exception: {}, {}".format(type_.__name__, exception)
     exception_text = "{}\n{}".format(exception_title, formatted_trace)
 
-    v1_core.v1_logging.get_logger().error("################### V1 STACK ###################")
+    v1_logging.get_logger().error("################### V1 STACK ###################")
     if run_exception_fixes(exception_text):
-        v1_core.v1_logging.get_logger().error("################# FIX APPLIED ##################")
-    v1_core.v1_logging.get_logger().error(exception_text)
-    v1_core.v1_logging.get_logger().error("################# END V1 STACK #################")
+        v1_logging.get_logger().error("################# FIX APPLIED ##################")
+    v1_logging.get_logger().error(exception_text)
+    v1_logging.get_logger().error("################# END V1 STACK #################")
 
 
 def get_exception_message():

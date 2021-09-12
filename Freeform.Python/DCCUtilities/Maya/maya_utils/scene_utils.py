@@ -30,7 +30,8 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 import metadata
 
-import maya_utils.node_utils
+from maya_utils import node_utils
+from maya_utils import fbx_wrapper
 
 
 def get_scene_name():
@@ -104,7 +105,7 @@ def get_scene_fps():
     elif(time == 'ntscf'):
         return 60.0
     else:
-        print time
+        print(time)
 
 def remove_empty_namespaces():
     '''
@@ -136,7 +137,7 @@ def clean_scene():
         pm.sets(temp_standard_shader, edit=True, forceElement=temp_cube)
 
         pm.mel.eval('hyperShadePanelMenuCommand("hyperShadePanel1", "deleteUnusedNodes");')
-    except Exception, e:
+    except Exception as e:
         v1_core.v1_logging.get_logger().info("Failed To Delete Unused Nodes:")
         v1_core.v1_logging.get_logger().info("{0}".format(e))
         pass
@@ -220,7 +221,7 @@ def setup_exporter():
     for character_node in character_list:
         character_network = metadata.network_core.MetaNode.create_from_node(character_node)
         joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
-        root_joint = maya_utils.node_utils.get_root_node(joints_network.get_first_connection(), 'joint')
+        root_joint = node_utils.get_root_node(joints_network.get_first_connection(), 'joint')
         character_name = root_joint.namespace().strip(":").upper()
     
         existing_export_property = metadata.meta_properties.get_property(root_joint, metadata.meta_properties.CharacterAnimationAsset)
@@ -318,7 +319,7 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
 
     import_return = None
     pre_import_list = pm.ls(assemblies = True)
-    current_import_mode = maya_utils.fbx_wrapper.FBXImportMode(q=True)
+    current_import_mode = fbx_wrapper.FBXImportMode(q=True)
     try:
         filename, extension = os.path.splitext(file_path)
         if extension.lower() == '.ma':
@@ -326,8 +327,8 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
         elif extension.lower() == '.fbx':
             fbx_file_path = file_path.replace('\\', '\\\\')
 
-            maya_utils.fbx_wrapper.FBXImportMode(v = fbx_mode)
-            maya_utils.fbx_wrapper.FBXImport(f = fbx_file_path)
+            fbx_wrapper.FBXImportMode(v = fbx_mode)
+            fbx_wrapper.FBXImport(f = fbx_file_path)
     except:
         if ".ai_translator" in v1_core.exceptions.get_exception_message():
             v1_core.v1_logging.get_logger().info("Ignoring Maya to Arnold File Import Errors")
@@ -335,7 +336,7 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2]) 
     finally:
-        maya_utils.fbx_wrapper.FBXImportMode(v = current_import_mode)
+        fbx_wrapper.FBXImportMode(v = current_import_mode)
         set_scene_times(scene_time_tuple)
 
     if not import_return and kwargs['returnNewNodes'] == True:
@@ -354,6 +355,6 @@ def export_selected_safe(file_path, **kwargs):
         pm.exportSelected(file_path, force = True)
     elif extension.lower() == '.fbx':
         fbx_file_path = file_path.replace("\\", "\\\\")
-        maya_utils.fbx_wrapper.FBXExport(f = fbx_file_path, **kwargs)
+        fbx_wrapper.FBXExport(f = fbx_file_path, **kwargs)
 
     v1_core.v1_logging.get_logger().info("export_selected_safe - {0}".format(file_path))

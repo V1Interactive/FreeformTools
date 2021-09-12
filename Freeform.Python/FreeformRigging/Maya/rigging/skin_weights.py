@@ -36,8 +36,8 @@ Look into DeformerWeights
 http://help.autodesk.com/cloudhelp/2016/JPN/Maya-Tech-Docs/PyMel/generated/functions/pymel.core.animation/pymel.core.animation.deformerWeights.html
 skin_cluster = rigging.skin_weights.find_skin_cluster(sl1())
 attributes = ['envelope', 'skinningMethod', 'normalizeWeights', 'deformUserNormals', 'useComponents']
-cmds.deformerWeights('test_skin', path=r'C:\Users\micahz\Documents\maya', ex=1, vc=1, attribute=attributes, deformer=skin_cluster.name())
-cmds.deformerWeights('test_skin', path=r'C:\Users\micahz\Documents\maya', deformer=skin_cluster.name(), im=1, method='nearest')
+cmds.deformerWeights('test_skin', path=r'C:\\Users\\micahz\\Documents\\maya', ex=1, vc=1, attribute=attributes, deformer=skin_cluster.name())
+cmds.deformerWeights('test_skin', path=r'C:\\Users\\micahz\\Documents\\maya', deformer=skin_cluster.name(), im=1, method='nearest')
 
 
 Maya Python API for get/load weights
@@ -127,7 +127,7 @@ def apply_index_weighting(obj, weight_data):
 
     pm.progressBar(main_progress_bar, edit=True, endProgress=True)
 
-    print time.clock() - start_time
+    print(time.clock() - start_time)
 
 
 def load_voxel_skin_weights(obj, file_path, voxel_size, max_iterations = 40, min_distance = 0.25):
@@ -172,7 +172,7 @@ def apply_voxel_weighting(obj, voxel_data, max_iterations, min_distance):
 
     pm.progressBar(main_progress_bar, edit=True, endProgress=True)
 
-    print time.clock() - start_time
+    print(time.clock() - start_time)
 
 
 def voxel_cube(voxel_vector, voxel_size):

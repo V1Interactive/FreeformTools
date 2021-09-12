@@ -63,8 +63,8 @@ class RegionEditor(object):
         jnt = character_network.get_downstream(metadata.network_core.JointsCore).get_first_connection('joint')
         skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-        for side, region_dict in skeleton_dict.iteritems():
-            for region, joint_dict in region_dict.iteritems():
+        for side, region_dict in skeleton_dict.items():
+            for region, joint_dict in region_dict.items():
                 markup_properties = metadata.meta_properties.get_properties([pm.PyNode(joint_dict['root'].name())], metadata.meta_properties.RigMarkupProperty)
                 markup = get_first_or_default([x for x in markup_properties if x.data['side'] == side and x.data['region'] == region])
                 self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name(), markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
@@ -157,7 +157,7 @@ class RegionEditor(object):
             replace_str (string): The string to replace side_str with
         '''
         config_manager = v1_core.global_settings.ConfigManager()
-        joint_name_pattern = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING).get("JointNamePattern")
+        joint_name_pattern = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("JointNamePattern")
 
         ending_side = True 
         if joint_name_pattern != None:

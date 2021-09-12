@@ -111,7 +111,7 @@ def setup_logging(log_name):
         shutil.copyfile(output_path, output_path.replace(log_name, log_name+"_bck"))
         try:
             os.remove(output_path)
-        except Exception, e:
+        except Exception as e:
             pass
 
     logging.config.dictConfig(log_config(output_path))

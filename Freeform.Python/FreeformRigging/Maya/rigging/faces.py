@@ -23,10 +23,6 @@ import sys
 
 import metadata
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.overdriver
-
 import v1_shared
 import maya_utils
 

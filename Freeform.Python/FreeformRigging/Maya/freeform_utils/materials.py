@@ -55,7 +55,7 @@ class MaterialSettings:
         material.translucence.set(self.translucence)
 
 
-class RigControlShaderEnum(v1_core.py_helpers.Enum):
+class RigControlShaderEnum(v1_core.py_helpers.Freeform_Enum):
     '''
     Enum for default rig shaders indexed by the name of the side for the rig component
     '''
@@ -138,14 +138,14 @@ def apply_color_set():
     '''
     material_category = v1_core.global_settings.GlobalSettings().get_sub_category(MaterialSettings.material_category, create_category = True)
 
-    for set_name, set_category in material_category.iteritems():
+    for set_name, set_category in material_category.items():
         if not type(set_category) == dict:
             continue
 
         setting_dict = {}
         # gather all color set colors if user is set to use color sets
         if material_category.get("use_color_set"):
-            for side, material_data in set_category.iteritems():
+            for side, material_data in set_category.items():
                 override_setting = MaterialSettings(material_data['name'], material_data['color'], material_data['transparency'], material_data['translucence']) 
                 setting_dict[side.lower()] = override_setting
 

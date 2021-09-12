@@ -36,7 +36,7 @@ import v1_shared
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
 
-import metadata.network_core
+from metadata import network_core
 
 
 
@@ -46,7 +46,7 @@ class NamespaceError(Exception):
         message = "There is no namespace on the rig and no namespace defined for the export.  One of these needs a namespace"
         super(NamespaceError, self).__init__(message)
 
-class ExportStageEnum(v1_core.py_helpers.Enum):
+class ExportStageEnum(v1_core.py_helpers.Freeform_Enum):
     '''
     Enum for when to run export properties
     '''
@@ -68,7 +68,7 @@ def attribute_changed(c_object, event_args):
     '''
     #v1_core.v1_logging.get_logger().info("Node Attribute Changed: {0}.{1} = {2}".format(event_args.NodeName, event_args.Attribute, event_args.Value))
     node = pm.PyNode(event_args.NodeName)
-    property = metadata.network_core.MetaNode.create_from_node(node)
+    property = network_core.MetaNode.create_from_node(node)
     property.set(event_args.Attribute, event_args.Value, event_args.Type)
 
 def get_properties_dict(pynode):
@@ -82,8 +82,8 @@ def get_properties_dict(pynode):
         (dictionary<type,PropertyNode>). Dictionary of all properties found, keyed by the type of the property
     '''
     property_dict = {}
-    if metadata.network_core.MetaNode.is_in_network(pynode):
-        network = [metadata.network_core.MetaNode.create_from_node(x) for x in pm.listConnections(pynode.affectedBy, type='network')]
+    if network_core.MetaNode.is_in_network(pynode):
+        network = [network_core.MetaNode.create_from_node(x) for x in pm.listConnections(pynode.affectedBy, type='network')]
         property_list = [x for x in network if PropertyNode in type(x).mro()]
         for property in property_list:
             property_dict.setdefault(type(property), [])
@@ -156,7 +156,7 @@ def get_property_list(pynode, property_type):
     if not hasattr(pynode, 'affectedBy'):
         return []
 
-    network = [metadata.network_core.MetaNode.create_from_node(x) for x in pm.listConnections(pynode.affectedBy, type='network')]
+    network = [network_core.MetaNode.create_from_node(x) for x in pm.listConnections(pynode.affectedBy, type='network')]
     properties = [x for x in network if property_type in type(x).mro()]
 
     return properties
@@ -197,7 +197,7 @@ def add_property_by_name(pynode, module_type_name):
         node_class(namespace = py_namespace).connect_node(pynode)
 
 #region Property Nodes
-class PropertyNode(metadata.network_core.MetaNode):
+class PropertyNode(network_core.MetaNode):
     '''
     Base class. Network nodes that store data, always a leaf node attached to a scene object.  Create a new
     property if a network node is not provided, otherwise instantiate off of the given scene network node
@@ -345,8 +345,8 @@ class RigMarkupProperty(JointProperty):
         return does_compare
 
     def on_add(self, obj):
-        character_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.CharacterCore)
-        regions_network = character_network.get_downstream(metadata.network_core.RegionsCore)
+        character_network = network_core.MetaNode.get_first_network_entry(obj, network_core.CharacterCore)
+        regions_network = character_network.get_downstream(network_core.RegionsCore)
         if regions_network:
             regions_network.connect_node(self.node)
 
@@ -599,7 +599,7 @@ class ControlProperty(RigProperty):
                                               zero_translate = ([0,0,0], 'double3'), zero_rotate = ([0,0,0], 'double3'), locked = (False, 'bool'))
 
     def get_control_info(self):
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(self.get_connections()[0], metadata.network_core.ComponentCore)
+        component_network = network_core.MetaNode.get_first_network_entry(self.get_connections()[0], network_core.ComponentCore)
         return rigging.rig_base.ControlInfo(side=component_network.get("side"), region=component_network.get("region"), control_type=self.get("control_type"), ordered_index=self.get("ordered_index"));
 
 #endregion
@@ -676,10 +676,10 @@ class ExportAssetProperty(PropertyNode):
         try:
             asset_node = pm.PyNode(event_args.Asset.NodeName)
             definition_node = pm.PyNode(event_args.Definition.NodeName)
-            self.run_properties(c_asset, event_args, ExportStageEnum.Pre, [asset_node, definition_node])
+            self.run_properties(c_asset, event_args, ExportStageEnum.Pre.value, [asset_node, definition_node])
 
             self.export(c_asset, event_args)
-        except Exception, e:
+        except Exception as e:
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
         finally:
@@ -768,7 +768,7 @@ class StaticAsset(ExportAssetProperty):
         maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
 
         if c_asset.ZeroExport:
-            for asset, value_list in reset_dict.iteritems():
+            for asset, value_list in reset_dict.items():
                 asset.translate.set(get_first_or_default(value_list))
                 asset.rotate.set(get_index_or_default(value_list, 1))
 
@@ -935,7 +935,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
         definition_node = pm.PyNode(event_args.Definition.NodeName)
         bake_start_time, bake_end_time = self.set_bake_frame_range(definition_node)
 
-        export_namespace = config_manager.get(v1_core.global_settings.ConfigKey.EXPORTER).get("ExportNamespace")
+        export_namespace = config_manager.get(v1_core.global_settings.ConfigKey.EXPORTER.value).get("ExportNamespace")
         if export_namespace and not pm.namespace(exists = export_namespace):
             pm.namespace(add = export_namespace)
 
@@ -954,15 +954,15 @@ class CharacterAnimationAsset(ExportAssetProperty):
                 export_start_time, export_end_time = self.set_export_frame_range(definition_node)
                 self.pre_export(asset_namespace, export_skele, export_start_time, export_namespace)
 
-                self.run_properties(c_asset, event_args, ExportStageEnum.During, [asset_node, definition_node], export_asset_list = [export_root])
+                self.run_properties(c_asset, event_args, ExportStageEnum.During.value, [asset_node, definition_node], export_asset_list = [export_root])
 
                 export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), True)
                 self.fbx_export(export_path, export_root)
                 v1_core.v1_logging.get_logger().info("Exporter - File Exported to {0}".format(export_path))
 
-                self.run_post_properties(c_asset, event_args, ExportStageEnum.During, [asset_node, definition_node], export_asset_list = [export_root])
+                self.run_post_properties(c_asset, event_args, ExportStageEnum.During.value, [asset_node, definition_node], export_asset_list = [export_root])
 
-        except Exception, e:
+        except Exception as e:
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
         finally:
@@ -981,7 +981,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
         '''
 
         '''
-        definition_network = metadata.network_core.MetaNode.create_from_node(definition_node)
+        definition_network = network_core.MetaNode.create_from_node(definition_node)
         bake_start_time, bake_end_time = definition_network.set_time_range()
 
         return bake_start_time, bake_end_time
@@ -1078,7 +1078,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
         '''
 
         '''
-        definition_network = metadata.network_core.MetaNode.create_from_node(definition_node)
+        definition_network = network_core.MetaNode.create_from_node(definition_node)
         export_start_time, export_end_time = definition_network.set_time_range()
 
         return export_start_time, export_end_time
@@ -1128,7 +1128,7 @@ class DynamicAnimationAsset(CharacterAnimationAsset):
             self.set('asset_type', DynamicAnimationAsset.asset_type)
 
     def set_bake_frame_range(self, definition_node):
-        definition_network = metadata.network_core.MetaNode.create_from_node(definition_node)
+        definition_network = network_core.MetaNode.create_from_node(definition_node)
         bake_start_time, bake_end_time = definition_network.set_time_range()
         bake_start_time -= self.bake_offset
 
@@ -1153,7 +1153,7 @@ class ExporterProperty(PropertyNode):
     '''
     
     '''
-    export_stage = ExportStageEnum.Pre
+    export_stage = ExportStageEnum.Pre.value
 
     def __init__(self, node_name = 'property_node_temp', node = None, namespace = "", **kwargs):
         super(ExporterProperty, self).__init__(node_name, node, namespace, **kwargs)
@@ -1177,7 +1177,7 @@ class AnimCurveProperties(ExporterProperty):
         curve_type (string): whether to create a 'distance' or 'speed' curve
         from_zero (bool): does the distance count start or end at zero
     '''
-    export_stage = ExportStageEnum.Pre
+    export_stage = ExportStageEnum.Pre.value
 
     def __init__(self, node_name = 'anim_curve_property', node = None, namespace = "", **kwargs):
         super(AnimCurveProperties, self).__init__(node_name, node, namespace, use_speed_curve = (False, 'bool'), joint_data = ("", 'string'), target_name = ("", 'string'), 
@@ -1203,7 +1203,7 @@ class AnimCurveProperties(ExporterProperty):
         '''
         Gathers the root control and root joint objects from a single rig in the scene
         '''
-        core_joints = metadata.network_core.MetaNode.get_all_network_nodes( metadata.network_core.JointsCore );
+        core_joints = network_core.MetaNode.get_all_network_nodes( network_core.JointsCore );
         
         if(core_joints):
             joint_list = pm.listConnections(get_first_or_default(core_joints))
@@ -1240,7 +1240,7 @@ class AnimCurveProperties(ExporterProperty):
         self.refresh_names()
         v1_core.v1_logging.get_logger().info("AnimCurveProperties acting on {0}".format(event_args.Definition.NodeName))
         definition_node = pm.PyNode(event_args.Definition.NodeName)
-        definition_network = metadata.network_core.MetaNode.create_from_node(definition_node)
+        definition_network = network_core.MetaNode.create_from_node(definition_node)
 
         # remove old curves
         self.anim_curves.delete_curves()
@@ -1280,7 +1280,7 @@ class RotationCurveProperties(ExporterProperty):
         axis (string): 'x', 'y', or 'z' axis to pull animation from
         rotate_value (float): Euler rotation value that equals one rotation of the barrel
     '''
-    export_stage = ExportStageEnum.During
+    export_stage = ExportStageEnum.During.value
 
     def __init__(self, node_name = 'barrel_rotate_curve_property', node = None, namespace = "", **kwargs):
         super(RotationCurveProperties, self).__init__(node_name, node, namespace, attribute_name = ("BarrelRotationPercent", 'string'), 
@@ -1355,7 +1355,7 @@ class RemoveRootAnimationProperty(ExporterProperty):
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
         export_stage (ExportStageEnum): When this property should be run in the export process
     '''
-    export_stage = ExportStageEnum.During
+    export_stage = ExportStageEnum.During.value
 
     def __init__(self, node_name = 'remove_root_anim_property', node = None, namespace = "", **kwargs):
         super(RemoveRootAnimationProperty, self).__init__(node_name, node, namespace, **kwargs)
@@ -1386,7 +1386,7 @@ class ZeroCharacterProperty(ExporterProperty):
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
         export_stage (ExportStageEnum): When this property should be run in the export process
     '''
-    export_stage = ExportStageEnum.During
+    export_stage = ExportStageEnum.During.value
 
     def __init__(self, node_name = 'zero_character_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
@@ -1428,7 +1428,7 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
         export_stage (ExportStageEnum): When this property should be run in the export process
     '''
-    export_stage = ExportStageEnum.During
+    export_stage = ExportStageEnum.During.value
 
     def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterRotateProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)

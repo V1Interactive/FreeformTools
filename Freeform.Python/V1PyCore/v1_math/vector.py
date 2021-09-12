@@ -47,7 +47,7 @@ class Vector(object):
         """ Create a vector, example: v = Vector(1,2) """
         if len(args)==0: self.values = [0,0,0]
         elif len(args)==1 and type(args[0]) == list: self.values = args[0]
-        elif len(args)==1 and (type(args[0]) == str or type(args[0]) == unicode): self.values = [float(x) for x in args[0].replace(" ", "")[1:-1].split(',')]
+        elif len(args)==1 and (type(args[0]) == str or type(args[0]) == str): self.values = [float(x) for x in args[0].replace(" ", "")[1:-1].split(',')]
         elif len(args)==1: self.values = [args[0],0,0]
         elif len(args)==2: self.values = [args[0],args[1],0]
         else: self.values = list(args)

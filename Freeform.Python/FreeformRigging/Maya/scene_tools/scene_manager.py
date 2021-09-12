@@ -120,7 +120,7 @@ class SceneManager(object):
         if SceneManager.selection_changed_enabled:
             try:
                 selection_list = pm.ls(selection=True)
-            except Exception, e:
+            except Exception as e:
                 raise InvalidPyMelError
             else:
                 for method in SceneManager.selection_changed_list:

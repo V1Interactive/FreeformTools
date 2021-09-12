@@ -26,10 +26,10 @@ import math
 
 import metadata
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.usertools
-import rigging.constraints
+from rigging import skeleton
+from rigging import rig_base
+from rigging import usertools
+from rigging import constraints
 
 import v1_core
 import v1_shared
@@ -42,7 +42,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class Overdriver(rigging.rig_base.Addon_Component):
+class Overdriver(rig_base.Addon_Component):
 
     @staticmethod
     def get_inherited_classes():
@@ -131,7 +131,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
         # constraint values they want and this overdriver isn't meant to be switched between the multiple spaces
         target_weight_list = eval("[{0}]".format(addon_network.get('target_weight')))
         if target_weight_list:
-            rigging.constraints.set_constraint_weights(self.space_constraint, addon_network.group, object_space_list, target_weight_list)
+            constraints.set_constraint_weights(self.space_constraint, addon_network.group, object_space_list, target_weight_list)
         else:
             if len(object_space_list) > 1:
                 # Bake in the first object space for the overdriver, key it at frame -10000 as
@@ -178,7 +178,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
         driver_control = self.network['controls'].get_first_connection()
         control = self.network['overdriven_control'].get_first_connection()
 
-        rigging.skeleton.remove_animation([control], self.translate, self.rotate, self.scale)
+        skeleton.remove_animation([control], self.translate, self.rotate, self.scale)
 
         if self.translate:
             pm.pointConstraint(driver_control, control, mo=False)
@@ -187,8 +187,8 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
         # Only set transform visibility off if it has no children.
         if not [x for x in control.getChildren() if type(x) == pm.nt.Transform]:
-            rigging.skeleton.force_set_attr(control.visibility, False)
-        rigging.skeleton.force_set_attr(control.getShape().visibility, False)
+            skeleton.force_set_attr(control.visibility, False)
+        skeleton.force_set_attr(control.getShape().visibility, False)
 
         pm.select(driver_control, replace = True)
 
@@ -217,7 +217,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
 
     def get_space_object(self, index):
         component_constraint = self.get_space_constraint()
-        return rigging.constraints.get_constraint_driver(component_constraint, index)
+        return constraints.get_constraint_driver(component_constraint, index)
 
     def space_switcher(self, index, start_frame, end_frame, key_switch):
         # Temporary disable cycle checks during swapping
@@ -242,7 +242,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
                 maya_utils.baking.space_switch_bake([control], start_frame, end_frame, matrix_list)
 
             pm.currentTime(start_frame)
-        except Exception, e:
+        except Exception as e:
             exception_info = sys.exc_info()
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
         finally:
@@ -302,7 +302,7 @@ class Overdriver(rigging.rig_base.Addon_Component):
                 pm.setKeyframe(attr, t = current_frame, v = attr.get(t=current_frame))
 
     def open_space_switcher(self):
-        rigging.usertools.space_switcher.SpaceSwitcher(self).show()
+        usertools.space_switcher.SpaceSwitcher(self).show()
 
     @csharp_error_catcher
     def select_constraint(self, c_rig_button, event_args):
@@ -453,7 +453,7 @@ class Aim(Dynamic_Driver):
         maya_utils.scene_utils.set_current_frame()
         control = self.network['overdriven_control'].get_first_connection()
         maya_utils.node_utils.force_align(control, dynamic_control)
-        target_data = rigging.rig_base.ControlInfo.parse_string(self.network['addon'].node.target_data.get())
+        target_data = rig_base.ControlInfo.parse_string(self.network['addon'].node.target_data.get())
 
         roll_group_name = "{0}{1}_{2}_roll_group".format(self.namespace, target_data.region, target_data.side, self.prefix)
         roll_group = pm.group(empty=True, name=roll_group_name)
@@ -463,7 +463,7 @@ class Aim(Dynamic_Driver):
         aim_up_group = pm.group(empty=True, name=aim_up_group_name)
         aim_up_group.setParent(roll_group)
 
-        aim_vector = rigging.constraints.get_offset_vector(dynamic_control, object_space)
+        aim_vector = constraints.get_offset_vector(dynamic_control, object_space)
         distance = maya_utils.node_utils.get_distance(object_space, dynamic_control)
 
         object_space_parent = object_space.getParent()
@@ -484,7 +484,7 @@ class Aim(Dynamic_Driver):
 
         pm.pointConstraint(control, roll_group, mo=False)
 
-        aim_constraint = rigging.constraints.aim_constraint(object_space, dynamic_control, aim_up_group, roll_object = roll_group, mo = self.maintain_offset)
+        aim_constraint = constraints.aim_constraint(object_space, dynamic_control, aim_up_group, roll_object = roll_group, mo = self.maintain_offset)
         pm.orientConstraint(aim_up_group, dynamic_control.getParent(), mo=self.maintain_offset)
 
 class Pendulum(Aim):
@@ -561,7 +561,7 @@ class Pendulum(Aim):
         
 
 
-class Channel_Overdriver(rigging.rig_base.Addon_Component):
+class Channel_Overdriver(rig_base.Addon_Component):
     '''
 
     '''
@@ -573,7 +573,7 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
 
         '''
         control_list = component.get_control_dict()[addon_component_dict['ctrl_key']]
-        ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
+        ordered_control_list = skeleton.sort_chain_by_hierarchy(control_list)
         control = ordered_control_list[int(addon_component_dict['ordered_index'])]
 
         v1_core.v1_logging.get_logger().debug("Addon_Component rig_from_json - {0} - {1} - {2}".format(cls, control, component))
@@ -584,7 +584,7 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
         type_list = []
         if network_entries:
             component_network = network_entries[0].get_upstream(metadata.network_core.RigComponent)
-            component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+            component = rig_base.Component_Base.create_from_network_node(component_network.node)
             addon_list = component.is_in_addon()
             if addon_list:
                 type_list = [type(x) for x in addon_list]
@@ -593,11 +593,11 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
         if cls not in type_list:
             if control and target_type:
                 if target_type == 'ctrl':  # rig control object
-                    target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
+                    target_data = rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                     target_component = created_rigging[target_data.side][target_data.region]
                 
                     target_control_list = target_component.get_control_dict()[target_data.control_type]
-                    target_ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(target_control_list)
+                    target_ordered_control_list = skeleton.sort_chain_by_hierarchy(target_control_list)
                     target_control = target_ordered_control_list[target_data.ordered_index]
                 elif target_type == 'node':  # scene object
                     target_control_name = component.namespace + addon_component_dict['target_data']
@@ -703,7 +703,7 @@ class Channel_Overdriver(rigging.rig_base.Addon_Component):
 
 
 
-class Attribute_Translator(rigging.rig_base.Addon_Component):
+class Attribute_Translator(rig_base.Addon_Component):
 
     _promoteselection = False
 
@@ -714,7 +714,7 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
         '''
         if addon_component_dict.get('ctrl_key'):
             control_list = component.get_control_dict()[addon_component_dict['ctrl_key']]
-            ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
+            ordered_control_list = skeleton.sort_chain_by_hierarchy(control_list)
             control = ordered_control_list[int(addon_component_dict['ordered_index'])]
         else:
             control_name = addon_component_dict['driven_name']
@@ -727,11 +727,11 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
 
         if control and target_type:
             if target_type == 'ctrl':  # rig control object
-                target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
+                target_data = rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                 target_component = created_rigging[target_data.side][target_data.region]
                 
                 target_control_list = target_component.get_control_dict()[target_data.control_type]
-                target_ordered_control_list = rigging.skeleton.sort_chain_by_hierarchy(target_control_list)
+                target_ordered_control_list = skeleton.sort_chain_by_hierarchy(target_control_list)
                 target_control = target_ordered_control_list[target_data.ordered_index]
             elif target_type == 'node':  # scene object
                 target_control_name = component.namespace + addon_component_dict['target_data']
@@ -779,7 +779,7 @@ class Attribute_Translator(rigging.rig_base.Addon_Component):
         pm.delete(addon_control.message.listConnections())
 
 
-        for channel_name, channel_data in attribute_channel_dict.iteritems():
+        for channel_name, channel_data in attribute_channel_dict.items():
             # Handle re-mapping attributes to translate channels and baking
             translate_attr = getattr(object_space, channel_name)
             multiplier = channel_data['multiplier']

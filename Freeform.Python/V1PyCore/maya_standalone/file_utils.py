@@ -25,7 +25,7 @@ def export_maya_file():
     import sys
 
     environ_str = ""
-    for key, value in os.environ.iteritems():
+    for key, value in os.environ.items():
         environ_str = environ_str + key + " : " + value + "; \n"
     path_str = ""
     for path in sys.path:

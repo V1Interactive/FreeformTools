@@ -118,7 +118,7 @@ class MayaPyManager(object):
         flagstring = self._flag_string()
 
         cmdstring = '''"%s" %s "%s" %s''' % (self.interpreter, flagstring, pyFile, arg_string)
-        print cmdstring
+        print(cmdstring)
         runner = subprocess.Popen(cmdstring, env = rt_env,
                                         stdout = subprocess.PIPE,
                                         stderr = subprocess.PIPE)

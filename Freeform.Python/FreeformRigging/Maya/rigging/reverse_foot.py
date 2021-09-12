@@ -21,10 +21,10 @@ import pymel.core as pm
 
 import sys
 
-import rigging.skeleton
-import rigging.rig_base
-import rigging.overdriver
-import rigging.constraints
+from rigging import skeleton
+from rigging import rig_base
+from rigging import overdriver
+from rigging import constraints
 
 import v1_core
 import v1_shared
@@ -39,7 +39,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class ReverseFoot(rigging.rig_base.Rig_Component):
+class ReverseFoot(rig_base.Rig_Component):
     _inherittype = "component"
     _spacetype = "world"
     _hasattachment = "root"
@@ -117,18 +117,18 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
 
         skeleton_chain = self.network['skeleton'].get_connections()
-        skeleton_chain = rigging.skeleton.sort_chain_by_hierarchy(skeleton_chain)
+        skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
 
         rigging_chain = self.network['rigging'].get_connections()
-        control_chain = rigging.skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
-        rigging.skeleton.reverse_joint_chain(control_chain)
+        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
+        skeleton.reverse_joint_chain(control_chain)
 
         self.network['controls'].connect_nodes(control_chain)
-        control_root = rigging.skeleton.get_chain_root(control_chain)
+        control_root = skeleton.get_chain_root(control_chain)
         control_root.setParent(control_grp)
 
-        rigging_chain = rigging.skeleton.sort_chain_by_hierarchy(rigging_chain)
-        control_chain = rigging.skeleton.sort_chain_by_hierarchy(control_chain)
+        rigging_chain = skeleton.sort_chain_by_hierarchy(rigging_chain)
+        control_chain = skeleton.sort_chain_by_hierarchy(control_chain)
         control_chain.reverse()
 
         toe_joint = skeleton_chain[-3]
@@ -163,8 +163,8 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         index_offset = -1
         if toe_ik_joint:
             index_offset = 0
-            rigging.skeleton.force_set_attr(toe_ik_joint.visibility, False)
-            rigging.skeleton.force_set_attr(toe_ik_control.visibility, True)
+            skeleton.force_set_attr(toe_ik_joint.visibility, False)
+            skeleton.force_set_attr(toe_ik_control.visibility, True)
             self.create_controls([toe_ik_control], side, region, 'toe_ik', control_holder_list)
         self.create_controls(control_chain, side, region, 'reverse_fk', control_holder_list, index_offset)
 
@@ -176,32 +176,32 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         ball_ik_handle, end_effector = pm.ikHandle(sj = rigging_chain[2], ee = rigging_chain[1], sol = 'ikSCsolver', name = "{0}{1}_{2}_rv_ball_ikHandle".format(self.namespace, side, region))
         ball_ik_handle.setParent(control_chain[-2])
-        rigging.skeleton.force_set_attr(ball_ik_handle.visibility, False)
+        skeleton.force_set_attr(ball_ik_handle.visibility, False)
 
         toe_ik_handle, end_effector = pm.ikHandle(sj = rigging_chain[1], ee = rigging_chain[0], sol = 'ikSCsolver', name = "{0}{1}_{2}_rv_toe_ikHandle".format(self.namespace, side, region))
         ik_parent = toe_ik_control if toe_ik_joint else control_chain[-3]
         toe_ik_handle.setParent(ik_parent)
-        rigging.skeleton.force_set_attr(toe_ik_handle.visibility, False)
+        skeleton.force_set_attr(toe_ik_handle.visibility, False)
 
         control_chain_end.rename(control_chain_end+"_attach")
         self.network['attachment'].connect_node(skeleton_chain[-1])
 
         for control in control_chain[:-1]:
-            rigging.skeleton.force_set_attr(control.visibility, True)
+            skeleton.force_set_attr(control.visibility, True)
 
-        rigging.skeleton.force_set_attr(control_chain_end.visibility, False)
-        rigging.skeleton.force_set_attr(skeleton_chain[-3].visibility, False)
+        skeleton.force_set_attr(control_chain_end.visibility, False)
+        skeleton.force_set_attr(skeleton_chain[-3].visibility, False)
 
-        rigging.skeleton.force_set_attr(rigging_chain[-1].visibility, False)
+        skeleton.force_set_attr(rigging_chain[-1].visibility, False)
 
-        rigging.constraints.bind_chains([control_chain_end], [rigging_chain[2]], self.exclude)
+        constraints.bind_chains([control_chain_end], [rigging_chain[2]], self.exclude)
 
         self.attach_component(True)
 
-        if rigging.skeleton.is_animated(skeleton_chain):
+        if skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, use_global_queue)
             if not use_global_queue:
-                rigging.skeleton.remove_animation(skeleton_chain)
+                skeleton.remove_animation(skeleton_chain)
 
         if use_global_queue:
             if not additive:
@@ -222,7 +222,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         pm.delete( list(set(pm.listConnections(skeleton_chain[-1], type='orientConstraint', s=True, d=False))) )
         pm.orientConstraint( rigging_chain[-1], skeleton_chain[-1], mo=False )
 
-        rigging.constraints.bind_chains(rigging_chain[:2], skeleton_chain[-3:-1], self.exclude)
+        constraints.bind_chains(rigging_chain[:2], skeleton_chain[-3:-1], self.exclude)
 
     @undoable
     def attach_to_skeleton(self, target_skeleton_dict):
@@ -231,18 +231,18 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         target_root = target_skeleton_dict[side][region]['root']
         target_end = target_skeleton_dict[side][region]['end']
-        target_chain = rigging.skeleton.get_joint_chain(target_root, target_end)
-        target_chain = rigging.skeleton.sort_chain_by_hierarchy(target_chain)
+        target_chain = skeleton.get_joint_chain(target_root, target_end)
+        target_chain = skeleton.sort_chain_by_hierarchy(target_chain)
 
         control_chain = self.get_control_dict()['reverse_fk']
-        control_chain = rigging.skeleton.sort_chain_by_hierarchy(control_chain)
+        control_chain = skeleton.sort_chain_by_hierarchy(control_chain)
         control_chain.reverse()
 
         # re-zero for binding so we can do mo=True without capturing a random rotation from the animation
         skeleton_chain = self.network['skeleton'].get_connections()
-        rigging.skeleton.zero_character(self.skel_root, ignore_rigged = False)
-        rigging.rig_base.Component_Base.zero_all_rigging(self.network['character'])
-        rigging.skeleton.zero_skeleton_joints(skeleton_chain)
+        skeleton.zero_character(self.skel_root, ignore_rigged = False)
+        rig_base.Component_Base.zero_all_rigging(self.network['character'])
+        skeleton.zero_skeleton_joints(skeleton_chain)
 
         constraint_list = []
         maya_utils.node_utils.force_align(target_chain[-3], control_chain[-3])
@@ -303,8 +303,8 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         pm.autoKeyframe(state=False)
 
         character_network = self.network['character']
-        rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
-        rigging.rig_base.Component_Base.zero_all_rigging(character_network)
+        rig_base.Component_Base.zero_all_overdrivers(character_network)
+        rig_base.Component_Base.zero_all_rigging(character_network)
 
         heel_loc = pm.spaceLocator(name="rf_fix_heel_loc")
         toe_rot_loc = pm.spaceLocator(name="rf_fix_toe_rot_loc")
@@ -312,7 +312,7 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
 
         control_list = self.network['controls'].get_connections()
         to_order_list = [x for x in control_list if 'toe_ik' not in x.name()]
-        ordered_controls = rigging.skeleton.sort_chain_by_hierarchy(to_order_list)
+        ordered_controls = skeleton.sort_chain_by_hierarchy(to_order_list)
         ik_control = get_first_or_default([x for x in control_list if x not in ordered_controls])
 
         del_constraint = []
@@ -353,16 +353,16 @@ class ReverseFoot(rigging.rig_base.Rig_Component):
         control_list = self.network['controls'].get_connections()
         attachment_control = get_first_or_default([x for x in control_list if "attach" in x.name()])
 
-        leg_component_network = rigging.skeleton.get_rig_network(attachment_joint)
+        leg_component_network = skeleton.get_rig_network(attachment_joint)
         if leg_component_network and "ik" in leg_component_network.get('component_type'):
-            leg_ik_component = rigging.rig_base.Component_Base.create_from_network_node(leg_component_network.node)
+            leg_ik_component = rig_base.Component_Base.create_from_network_node(leg_component_network.node)
             overdriver_list = leg_ik_component.is_in_addon()
             if overdriver_list:
                 for od in overdriver_list:
                     od.remove()
 
             ik_handle = leg_ik_component.get_control('ik_handle')
-            leg_ik_component.switch_space(ik_handle, rigging.overdriver.Overdriver, [attachment_control])
+            leg_ik_component.switch_space(ik_handle, overdriver.Overdriver, [attachment_control])
 
     def get_rigger_methods(self):
         method_dict = {}

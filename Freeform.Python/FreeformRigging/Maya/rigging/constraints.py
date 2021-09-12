@@ -170,7 +170,7 @@ def bake_constrained_rig_controls(obj_list):
             bake_dict[type(constraint_obj)].append(rig_control)
 
     # Unlock constrained channels before baking
-    for constraint_type, bake_list in bake_dict.iteritems():
+    for constraint_type, bake_list in bake_dict.items():
         bake_translate, bake_rotate, bake_scale = CONSTRAINT_BAKE_SETTINGS[constraint_type]
         for bake_obj in bake_list:
             for attr in CONSTRAINT_CHANNELS[constraint_type]:

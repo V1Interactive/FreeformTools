@@ -76,10 +76,10 @@ class HelixRigger:
             self.vm.AddRigType(module, type_name)
         self.vm.SelectedRigType = "FK"
 
-        for preset in rigging.settings_binding.Binding_Sets.USER_OPTIONS:
+        for preset in rigging.settings_binding.Binding_Sets.USER_OPTIONS.value:
             self.vm.SettingsPresetList.Add(preset)
 
-        self.vm.SelectedPreset = get_first_or_default(rigging.settings_binding.Binding_Sets.USER_OPTIONS)
+        self.vm.SelectedPreset = get_first_or_default(rigging.settings_binding.Binding_Sets.USER_OPTIONS.value)
 
         self.create_rig_buttons()
         self.load_quick_search_buttons()
@@ -545,7 +545,7 @@ class HelixRigger:
                 settings_dict = v1_core.global_settings.GlobalSettings().get_settings()
                 category_dict = settings_dict.get(self.ToolVisibilityCategory)
 
-                method_list = method_dict.keys()
+                method_list = list(method_dict.keys())
                 method_list.sort()
                 for method in method_list:
                     method_info = method_dict[method]
@@ -767,7 +767,7 @@ class HelixRigger:
         quick_buttons_file = os.path.join(os.path.expanduser("~"), "V1", "rigging", "quick_select_buttons.json")
         button_dict = v1_core.json_utils.read_json(quick_buttons_file) if os.path.exists(quick_buttons_file) else {}
 
-        for button_name, selection_set in button_dict.iteritems():
+        for button_name, selection_set in button_dict.items():
             button = self.vm.CreateQuickSearchButton(button_name)
             button.SelectionSet = selection_set
 
@@ -927,7 +927,7 @@ class HelixRigger:
         '''
         component_lookup_copy = self.component_lookup.copy()
         self.component_lookup = {}
-        for node, (c_character, c_component) in component_lookup_copy.iteritems():
+        for node, (c_character, c_component) in component_lookup_copy.items():
             if node.exists():
                 self.component_lookup[node] = (c_character, c_component)
             else:
@@ -1072,7 +1072,7 @@ class HelixRigger:
                 select_lock_state = "unlocked"
 
             new_c_component.LockedState = select_lock_state
-        except Exception, e:
+        except Exception as e:
             new_c_component.ErrorMessage = v1_core.exceptions.get_exception_message()
             new_c_component.Enabled = False
         finally:
@@ -1092,8 +1092,8 @@ class HelixRigger:
         joints_core = character_network.get_downstream(metadata.network_core.JointsCore)
         first_joint = joints_core.get_first_connection()
         skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
-        for side, region_dict in skeleton_dict.iteritems():
-            for region, tag_dict in region_dict.iteritems():
+        for side, region_dict in skeleton_dict.items():
+            for region, tag_dict in region_dict.items():
                 new_reg = Freeform.Rigging.SkeletonRegion(side, region, tag_dict['root'].longName(), tag_dict['end'].longName())
                 c_character.RegionList.Add(new_reg)
                 c_character.SelectedRegion = new_reg;
@@ -1754,7 +1754,7 @@ class HelixRigger:
         '''
         if pm.objExists(event_args.character.NodeName):
             character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(event_args.character.NodeName))
-            binding_list = rigging.settings_binding.Binding_Sets[event_args.preset]
+            binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
 
             rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list)
 
@@ -1766,7 +1766,7 @@ class HelixRigger:
             event_args.character.OutOfDate = self.check_settings(character_network, event_args.character)
             self.update_active_character_regions()
         else:
-            print "Found nothing to load settings on"
+            print("Found nothing to load settings on")
 
     @csharp_error_catcher
     def load_settings_profile(self, c_v1_menu_item, event_args):
@@ -1780,14 +1780,14 @@ class HelixRigger:
         '''
         if pm.objExists(self.vm.ActiveCharacter.NodeName):
             character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
-            binding_list = rigging.settings_binding.Binding_Sets[self.vm.SelectedPreset.upper()]
+            binding_list = rigging.settings_binding.Binding_Sets[self.vm.SelectedPreset.upper()].value
 
             rigging.file_ops.load_settings_from_json(character_network.group, c_v1_menu_item.Data, binding_list)
 
             self.vm.ActiveCharacter.OutOfDate = self.check_settings(character_network, self.vm.ActiveCharacter)
             self.update_active_character_regions()
         else:
-            print "Found nothing to load settings on"
+            print("Found nothing to load settings on")
 
     @csharp_error_catcher
     def save_settings(self, vm, event_args):
@@ -1803,11 +1803,11 @@ class HelixRigger:
             character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(event_args.character.NodeName))
             joint_list   = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
             first_joint  = get_first_or_default(joint_list)
-            binding_list = rigging.settings_binding.Binding_Sets[event_args.preset]
+            binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
 
             rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "rig", character_network.get("varient"))
         else:
-            print "Found nothing to save settings from"
+            print("Found nothing to save settings from")
 
     @csharp_error_catcher
     def save_ue4_settings(self, vm, event_args):
@@ -1829,12 +1829,12 @@ class HelixRigger:
                 rigging.skeleton.zero_orient_joints(joint_list)
                 rigging.skeleton.set_base_pose(get_first_or_default(joint_list))
 
-                binding_list = rigging.settings_binding.Binding_Sets["SKELETON"]
+                binding_list = rigging.settings_binding.Binding_Sets["SKELETON"].value
                 rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "ue4", character_network.get("varient"))
             
                 rigging.file_ops.load_settings_from_json(character_network.group, os.path.join(directory_path, settings_path))
         else:
-            print "Found nothing to save settings from"
+            print("Found nothing to save settings from")
 
     @csharp_error_catcher
     def export_all(self, vm, event_args):
@@ -2796,8 +2796,8 @@ class HelixRigger:
             return
 
         content_root_path = config_manager.get_content_path()
-        search_folder_list = config_manager.get(v1_core.global_settings.ConfigKey.PROJECT).get("PropSearchPathList")
-        prop_folder_names = config_manager.get(v1_core.global_settings.ConfigKey.PROJECT).get("PropFolderList")
+        search_folder_list = config_manager.get(v1_core.global_settings.ConfigKey.PROJECT.value).get("PropSearchPathList")
+        prop_folder_names = config_manager.get(v1_core.global_settings.ConfigKey.PROJECT.value).get("PropFolderList")
 
         for search_folder in search_folder_list:
             search_path = os.path.join(content_root_path, search_folder)

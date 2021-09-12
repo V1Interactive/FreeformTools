@@ -45,7 +45,7 @@ def update_ordered_index():
             if component_network:
                 component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 component.set_control_orders()
-    except Exception, e:
+    except Exception as e:
         raise e
     finally:
         pm.progressBar(main_progress_bar, edit=True, endProgress=True)

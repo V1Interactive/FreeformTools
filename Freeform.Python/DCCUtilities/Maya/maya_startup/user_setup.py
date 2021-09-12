@@ -23,7 +23,6 @@ import maya.mel as mel
 
 import os
 import sys
-import Queue
 
 
 sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'FreeformTools', 'Freeform.Python', 'V1PyCore'))
@@ -35,7 +34,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 import maya.utils
-import maya_exceptions.maya_handler
+from maya_exceptions import maya_handler
 
 
 #region Maya Setup
@@ -50,7 +49,7 @@ def _init_except_hook():
         # Skip reporting if the exception originated from the console
         if trace and trace.tb_frame.f_code.co_filename == '<maya console>':
             return maya.utils._formatGuiException(type_, value, trace, detail)
-        maya_exceptions.maya_handler.except_hook(type_, value, trace)
+        maya_handler.except_hook(type_, value, trace)
         return repr(value)
 
     maya.utils.formatGuiException = _except_hook
