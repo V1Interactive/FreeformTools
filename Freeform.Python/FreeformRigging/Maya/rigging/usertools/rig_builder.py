@@ -87,17 +87,17 @@ class RigBuilder(object):
         character_network = self.active_character
 
         if not character_network:
-            character_node_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.CharacterCore)
+            character_node_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)
             if len(character_node_list) == 1:
                 character_node = get_first_or_default(character_node_list)
-                character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+                character_network = metadata.meta_network_utils.create_from_node(character_node)
 
         # If another tool hasn't set the active character, and there's more than 1 character in the scene, we'll use
         # user selection to determine which character to build rigging on.
         if not character_network:
             if obj_list:
                 selected_obj = obj_list[0]
-                character_network = metadata.network_core.MetaNode.get_first_network_entry(selected_obj, metadata.network_core.CharacterCore)
+                character_network = metadata.meta_network_utils.get_first_network_entry(selected_obj, metadata.network_core.CharacterCore)
                 if not character_network:
                     pm.confirmDialog( title="Not Part of a Character", message="Select part of a character to build the template", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
             else:
@@ -157,7 +157,7 @@ class RigBuilder(object):
     def rig_builder_update(self, character_node_name):
         if pm.objExists(character_node_name):
             character_node = pm.PyNode(character_node_name)
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
         else:
             character_network = None
 

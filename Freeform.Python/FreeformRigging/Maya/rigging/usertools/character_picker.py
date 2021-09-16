@@ -178,7 +178,7 @@ class RigSwapper(CharacterPicker):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
-        source_network = metadata.network_core.MetaNode.create_from_node(self.source_node)
+        source_network = metadata.meta_network_utils.create_from_node(self.source_node)
         source_joint_core_network = source_network.get_downstream(metadata.network_core.JointsCore)
         source_joint = source_joint_core_network.get_first_connection()
         source_root_joint = rigging.skeleton.get_root_joint(source_joint)
@@ -210,13 +210,13 @@ class RigSwapper(CharacterPicker):
             character_node = get_first_or_default(character_node_list)
         else:
             character_node = get_first_or_default([x for x in character_node_list if 'head' not in x.character_name.get().lower()])
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
         character_joint = joint_core_network.get_first_connection()
         character_root_joint = rigging.skeleton.get_root_joint(character_joint)
 
-        source_root_properties = metadata.meta_properties.get_properties_dict(source_root_joint)
-        animation_asset_list = source_root_properties.get(metadata.meta_properties.CharacterAnimationAsset)
+        source_root_properties = metadata.meta_property_utils.get_properties_dict(source_root_joint)
+        animation_asset_list = source_root_properties.get(metadata.exporter_properties.CharacterAnimationAsset)
         if animation_asset_list:
             for animation_asset in animation_asset_list:
                 animation_asset.disconnect_node(source_root_joint)
@@ -291,8 +291,8 @@ class RigSwapper(CharacterPicker):
             new_joints_network.disconnect_node(jnt)
             jnt.rename(jnt.name().replace(new_namespace, source_namespace))
 
-            property_dict = metadata.meta_properties.get_properties_dict(jnt)
-            for propetry_list in property_dict.itervalues():
+            property_dict = metadata.meta_property_utils.get_properties_dict(jnt)
+            for propetry_list in property_dict.values():
                 for network in propetry_list:
                     network.node.rename(network.node.name().replace(new_namespace, source_namespace))
         
@@ -324,7 +324,7 @@ class RigSwapper(CharacterPicker):
         # Make sure character connections attach back to the root, excluding Properties
         root_connected_nodes = source_root_joint.affectedBy.listConnections(s=True, d=False)
         for node in root_connected_nodes:
-            network = metadata.network_core.MetaNode.create_from_node(node)
+            network = metadata.meta_network_utils.create_from_node(node)
             if network and not isinstance(network, metadata.meta_properties.PropertyNode):
                 network.node.rename(network.node.name().replace(new_namespace, source_namespace))
                 network.connect_node(new_root_joint)
@@ -365,7 +365,7 @@ class RigSwapper(CharacterPicker):
             if is_rigged or skeleton_constraint_list:
                 # If the joint is rigged connect it into the rigging network
                 if is_rigged:
-                    component_joint_network_list = metadata.network_core.MetaNode.get_network_entries(source_jnt, metadata.network_core.SkeletonJoints)
+                    component_joint_network_list = metadata.meta_network_utils.get_network_entries(source_jnt, metadata.network_core.SkeletonJoints)
                     for component_joint_network in component_joint_network_list:
                         component_joint_network.disconnect_node(source_jnt)
                         component_joint_network.connect_node(new_jnt)

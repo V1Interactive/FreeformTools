@@ -24,15 +24,15 @@ from copy import deepcopy
 
 import operator
 
-from v1_core import py_helpers
+from v1_core.py_helpers import Freeform_Enum
 from v1_core import json_utils
 
 
-class EnvironmentKey(py_helpers.Freeform_Enum):
+class EnvironmentKey(Freeform_Enum):
     TOOLSROOT = "V1TOOLSROOT"
     CONTENT = "CONTENT_ROOT"
 
-class ConfigKey(py_helpers.Freeform_Enum):
+class ConfigKey(Freeform_Enum):
     DEVELOPER = "Developer"
     PROJECT = "Project"
     EXPORTER = "Exporter"
@@ -204,8 +204,6 @@ class SettingsCategory(object):
     Attributes:
         property_list (list<SettingsProperty>): List of SettingsProperty objects for all category values
     '''
-
-    __metaclass__ = ABCMeta
     property_list = []
 
     @property

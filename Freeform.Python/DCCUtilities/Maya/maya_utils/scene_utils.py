@@ -212,20 +212,20 @@ def setup_exporter():
     '''
     Quick initial Exporter setup from scene objects.
     '''
-    export_definition_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.ExportDefinition)
-    current_definition = metadata.network_core.MetaNode.create_from_node(export_definition_list[0]) if export_definition_list else None
+    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.ExportDefinition)
+    current_definition = metadata.meta_network_utils.create_from_node(export_definition_list[0]) if export_definition_list else None
     export_definition = current_definition if current_definition else metadata.network_core.ExportDefinition()
     export_definition.set('use_scene_name', True)
 
-    character_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.CharacterCore)
+    character_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)
     for character_node in character_list:
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
         root_joint = node_utils.get_root_node(joints_network.get_first_connection(), 'joint')
         character_name = root_joint.namespace().strip(":").upper()
     
-        existing_export_property = metadata.meta_properties.get_property(root_joint, metadata.meta_properties.CharacterAnimationAsset)
-        export_property = existing_export_property if existing_export_property else metadata.meta_properties.CharacterAnimationAsset()
+        existing_export_property = metadata.meta_property_utils.get_property(root_joint, metadata.exporter_properties.CharacterAnimationAsset)
+        export_property = existing_export_property if existing_export_property else metadata.exporter_properties.CharacterAnimationAsset()
         export_property.set('asset_name', character_name)
     
         export_property.connect_node(root_joint)

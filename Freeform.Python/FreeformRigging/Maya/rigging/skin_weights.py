@@ -109,7 +109,7 @@ def apply_index_weighting(obj, weight_data):
 
     skin_cluster = find_skin_cluster(obj) if find_skin_cluster(obj) else pm.skinCluster([obj]+combined_joint_list, toSelectedBones=True)
 
-    for weight_entry in weight_cloud.itervalues():
+    for weight_entry in weight_cloud.values():
         if pm.progressBar(main_progress_bar, query=True, isCancelled=True ) :
             break
         entry_obj = pm.PyNode(obj.namespace() + weight_entry[1])

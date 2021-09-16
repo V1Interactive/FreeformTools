@@ -43,6 +43,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 class Overdriver(rig_base.Addon_Component):
+    _do_register = True
 
     @staticmethod
     def get_inherited_classes():
@@ -152,7 +153,7 @@ class Overdriver(rig_base.Addon_Component):
                 driver_control.getParent().rotate.set([0,0,0])
 
         maya_utils.node_utils.force_align(control, driver_control)
-        control_property = metadata.meta_properties.get_property(driver_control, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(driver_control, metadata.meta_properties.ControlProperty)
         zero_translate = control_property.set('zero_translate', driver_control.translate.get(), 'double3')
         zero_rotate = control_property.set('zero_rotate', driver_control.rotate.get(), 'double3')
 
@@ -565,6 +566,7 @@ class Channel_Overdriver(rig_base.Addon_Component):
     '''
 
     '''
+    _do_register = True
     _promoteselection = False
 
     @classmethod
@@ -580,7 +582,7 @@ class Channel_Overdriver(rig_base.Addon_Component):
 
         target_type = get_first_or_default(addon_component_dict['target_type'].split(','))
 
-        network_entries = metadata.network_core.MetaNode.get_network_entries(control, metadata.network_core.RigComponent)
+        network_entries = metadata.meta_network_utils.get_network_entries(control, metadata.network_core.RigComponent)
         type_list = []
         if network_entries:
             component_network = network_entries[0].get_upstream(metadata.network_core.RigComponent)
@@ -704,7 +706,7 @@ class Channel_Overdriver(rig_base.Addon_Component):
 
 
 class Attribute_Translator(rig_base.Addon_Component):
-
+    _do_register = True
     _promoteselection = False
 
     @classmethod

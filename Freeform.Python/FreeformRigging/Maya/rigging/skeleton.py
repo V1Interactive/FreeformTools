@@ -49,7 +49,7 @@ def setup_joint(jnt, joints_core):
         joints_core (MetaNode): The MetaNode to connect the joint to, should be a JointsCore object
     '''
     joints_core.connect_node(jnt)
-    metadata.meta_properties.add_property(jnt, metadata.meta_properties.ExportProperty)
+    metadata.meta_property_utils.add_property(jnt, metadata.meta_properties.ExportProperty)
     if not jnt.hasAttr('bind_translate'):
         pm.addAttr(jnt, ln='bind_translate', dt='double3')
     if not jnt.hasAttr('bind_rotate'):
@@ -68,7 +68,7 @@ def setup_joints(character_node):
     Args:
         character_node (PyNode): Maya scene network node for the character network
     '''
-    character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+    character_network = metadata.meta_network_utils.create_from_node(character_node)
     root_joint = get_first_or_default(character_network.group.listRelatives(type='joint'))
     if root_joint:
         joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
@@ -123,7 +123,7 @@ def get_skeleton_dict(jnt):
     Returns:
         dictionary. All joints marked up by RigMarkupProperties organized by region and side
     '''
-    character_network = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
     regions_network = character_network.get_downstream(metadata.network_core.RegionsCore)
     skeleton_dict = {}
     # Fast search for new characters
@@ -139,9 +139,9 @@ def get_skeleton_dict(jnt):
         root_joint = get_root_joint(jnt)
         joint_list = [root_joint] + pm.listRelatives(root_joint, ad=True, type='joint')
         for skeleton_joint in joint_list:
-            property_dict = metadata.meta_properties.get_properties_dict(skeleton_joint)
+            property_dict = metadata.meta_property_utils.get_properties_dict(skeleton_joint)
 
-            rig_markup_property_list = property_dict.get(metadata.meta_properties.RigMarkupProperty)
+            rig_markup_property_list = property_dict.get(metadata.joint_properties.RigMarkupProperty)
             if rig_markup_property_list:
                 for rig_markup in rig_markup_property_list:
                     side = rig_markup.data['side']
@@ -169,8 +169,8 @@ def clean_skeleton_dict(skeleton_dict):
                 remove_item[side] = region
                 orphan_jnt = root_jnt if root_jnt else end_jnt
             
-                property_dict = metadata.meta_properties.get_properties_dict(orphan_jnt)
-                rig_markup_list = property_dict.get(metadata.meta_properties.RigMarkupProperty)
+                property_dict = metadata.meta_property_utils.get_properties_dict(orphan_jnt)
+                rig_markup_list = property_dict.get(metadata.joint_properties.RigMarkupProperty)
                 for rig_markup in rig_markup_list:
                     if rig_markup.get('side') == side and rig_markup.get('region') == region:
                         pm.delete(rig_markup.node)
@@ -202,10 +202,10 @@ def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict,
             for data_name, jnt_name in data_dict.items():
                 if pm.objExists(namespace+jnt_name):
                     markup_jnt = pm.PyNode(namespace+jnt_name)
-                    new_rig_markup = metadata.meta_properties.RigMarkupProperty()
+                    new_rig_markup = metadata.joint_properties.RigMarkupProperty()
                     new_rig_markup.data = {'side':side, 'region':region, 'tag':data_name, 'group':data_dict.get('group')}
                     
-                    rig_markup_network_list = metadata.meta_properties.get_property_list(markup_jnt, metadata.meta_properties.RigMarkupProperty)
+                    rig_markup_network_list = metadata.meta_property_utils.get_property_list(markup_jnt, metadata.joint_properties.RigMarkupProperty)
                     matching_markup = []
                     for rig_markup_network in rig_markup_network_list:
                         markup_data = new_rig_markup.data
@@ -237,7 +237,7 @@ def remove_invalid_rig_markup(jnt):
         for region, tag_dict in region_dict.items():
             if len(tag_dict) == 1:
                 for tag_jnt in tag_dict.values():
-                    rig_markup_list = metadata.meta_properties.get_property_list(tag_jnt, metadata.meta_properties.RigMarkupProperty)
+                    rig_markup_list = metadata.meta_property_utils.get_property_list(tag_jnt, metadata.joint_properties.RigMarkupProperty)
                     for rig_markup in rig_markup_list:
                         if rig_markup.get('side') == side and rig_markup.get('region') == region:
                             pm.delete(rig_markup.node)
@@ -276,7 +276,7 @@ def create_center_of_mass(obj):
     return com_obj
 
 def get_com_weight_dictionary(obj):
-    character_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.CharacterCore)
     joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
     skeleton_dict = rigging.skeleton.get_skeleton_dict(joints_network.root)
     regions_network = character_network.get_downstream(metadata.network_core.RegionsCore)
@@ -308,7 +308,7 @@ def create_single_joint_skeleton_dict(jnt, temporary = False):
     root_joint = get_root_joint(jnt)
     joint_list = [root_joint] + pm.listRelatives(root_joint, ad=True, type='joint')
     for skeleton_joint in joint_list:
-        property_dict = metadata.meta_properties.get_properties_dict(skeleton_joint)
+        property_dict = metadata.meta_property_utils.get_properties_dict(skeleton_joint)
         export_property = get_first_or_default(property_dict.get(metadata.meta_properties.ExportProperty))
 
         if export_property.data['export'] == True:
@@ -317,16 +317,16 @@ def create_single_joint_skeleton_dict(jnt, temporary = False):
             joint_name = skeleton_joint.stripNamespace()
             region = joint_name
             
-            markup_property_list = property_dict.get(metadata.meta_properties.RigMarkupProperty)
+            markup_property_list = property_dict.get(metadata.joint_properties.RigMarkupProperty)
             if not markup_property_list or not [x for x in markup_property_list if (x.data['side'] == side and x.data['region'] == region and x.data['tag'] == 'root')]:
-                rig_prop = metadata.meta_properties.add_property(skeleton_joint, metadata.meta_properties.RigMarkupProperty)
+                rig_prop = metadata.meta_property_utils.add_property(skeleton_joint, metadata.joint_properties.RigMarkupProperty)
                 rig_prop.data = {'side':side, 'region':region, 'tag':'root'}
                 if temporary:
                     rig_prop.set('group', 'Temporary')
                     rig_prop.set('temporary', True)
 
             if not markup_property_list or not [x for x in markup_property_list if (x.data['side'] == side and x.data['region'] == region and x.data['tag'] == 'end')]:
-                rig_prop = metadata.meta_properties.add_property(skeleton_joint, metadata.meta_properties.RigMarkupProperty)
+                rig_prop = metadata.meta_property_utils.add_property(skeleton_joint, metadata.joint_properties.RigMarkupProperty)
                 rig_prop.data = {'side':side, 'region':region, 'tag':'end'}
                 if temporary:
                     rig_prop.set('group', 'Temporary')
@@ -410,10 +410,10 @@ def get_joint_chain(root, end):
 
 def get_control_joint(rig_control):
     skeleton_joint = None
-    control_property = metadata.meta_properties.get_property(rig_control, metadata.meta_properties.ControlProperty)
+    control_property = metadata.meta_property_utils.get_property(rig_control, metadata.meta_properties.ControlProperty)
     if control_property:
         control_index = control_property.get('ordered_index')
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(rig_control, metadata.network_core.ComponentCore)
+        component_network = metadata.meta_network_utils.get_first_network_entry(rig_control, metadata.network_core.ComponentCore)
         skeleton_network = component_network.get_downstream(metadata.network_core.SkeletonJoints)
         sorted_chain = rigging.skeleton.sort_chain_by_hierarchy( skeleton_network.get_connections() )
         skeleton_joint = sorted_chain[control_index]
@@ -448,7 +448,7 @@ def get_joint_markup_details_recursive(jnt, ref_jnt):
     if jnt == None:
         return None
 
-    markup_property = metadata.meta_properties.get_property(jnt, metadata.meta_properties.RigMarkupProperty)
+    markup_property = metadata.meta_property_utils.get_property(jnt, metadata.joint_properties.RigMarkupProperty)
     if markup_property and markup_property.get('tag') != 'exclude':
         skeleton_dict = get_skeleton_dict(ref_jnt)
         side = markup_property.node.side.get()
@@ -677,9 +677,9 @@ def get_active_rig_network(jnt):
         MetaNode. ComponentCore if the joint is rigged, Addon Component if the rig control for that joint
             is controlled by an overdriver
     '''
-    component_network_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.AddonCore)
+    component_network_list = metadata.meta_network_utils.get_network_entries(jnt, metadata.network_core.AddonCore)
     if not component_network_list:
-        component_network_list = metadata.network_core.MetaNode.get_network_entries(jnt, metadata.network_core.ComponentCore)
+        component_network_list = metadata.meta_network_utils.get_network_entries(jnt, metadata.network_core.ComponentCore)
 
     return filter_component_networks(jnt, component_network_list)
 
@@ -694,9 +694,9 @@ def get_primary_rig_network(jnt):
         List<MetaNode>. All ComponentCore and AddonCore influencing the rig control
     '''
     component_network_list = []
-    network_entry = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.AddonControls)
+    network_entry = metadata.meta_network_utils.get_first_network_entry(jnt, metadata.network_core.AddonControls)
     if not network_entry:
-        network_entry = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.ControlJoints)
+        network_entry = metadata.meta_network_utils.get_first_network_entry(jnt, metadata.network_core.ControlJoints)
         component_network_list.append( network_entry.get_upstream(metadata.network_core.ComponentCore) )
     else:
         component_network_list.append( network_entry.get_upstream(metadata.network_core.AddonCore) )
@@ -722,7 +722,7 @@ def filter_component_networks(jnt, component_network_list):
 
     # If the joint is in a component but marked to be excluded from that component, don't include the component in the
     # returned list.
-    markup_list = metadata.meta_properties.get_properties([jnt], metadata.meta_properties.RigMarkupProperty)
+    markup_list = metadata.meta_property_utils.get_properties([jnt], metadata.joint_properties.RigMarkupProperty)
     exlude_property_list = [x for x in markup_list if x.get('tag') == 'exclude']
     remove_component_list = []
     for exclude_property in exlude_property_list:
@@ -938,12 +938,12 @@ def joint_transfer_animations(source_node, dest_node, keep_offset = True):
     autokey_state = pm.autoKeyframe(q=True, state=True)
     pm.autoKeyframe(state=False)
 
-    character_network = metadata.network_core.MetaNode.create_from_node(dest_node)
+    character_network = metadata.meta_network_utils.create_from_node(dest_node)
     joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
     character_joint_list = joint_core_network.get_connections()
     character_namespace = character_network.group.namespace()
 
-    source_network = metadata.network_core.MetaNode.create_from_node(source_node)
+    source_network = metadata.meta_network_utils.create_from_node(source_node)
     namespace = source_network.group.namespace()
 
     first_joint = get_first_or_default(character_joint_list)
@@ -1218,8 +1218,8 @@ def zero_character_eyes():
     Returns:
         None
     '''
-    for character_node in metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.CharacterCore):
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+    for character_node in metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore):
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         joint_network = character_network.get_downstream(metadata.network_core.JointsCore)
         eye_joint_list = [x for x in joint_network.get_connections() if 'eye' in x.stripNamespace()]
         for eye_joint in eye_joint_list:

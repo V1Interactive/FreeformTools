@@ -438,7 +438,7 @@ namespace Freeform.Rigging
             AllowSelectComponent = true;
         }
 
-        public void RigRegionCall(List<string> rigTypeName, bool isWorldSpaceArg)
+        public void RigRegionCall(string rigTypeName, bool isWorldSpaceArg)
         {
             List<SkeletonRegion> regionList = new List<SkeletonRegion>();
 
@@ -449,7 +449,7 @@ namespace Freeform.Rigging
                 RigRegionEventArgs eventArgs = new RigRegionEventArgs()
                 {
                     skeletonRegion = region,
-                    rigType = rigTypeName,
+                    rigTypeName = rigTypeName,
                     isWorldSpace = isWorldSpaceArg
                 };
 
@@ -484,7 +484,7 @@ namespace Freeform.Rigging
         public class RigRegionEventArgs : EventArgs
         {
             public SkeletonRegion skeletonRegion = null;
-            public List<string> rigType = null;
+            public string rigTypeName = null;
             public bool isWorldSpace = false;
         }
 

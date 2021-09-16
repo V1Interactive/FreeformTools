@@ -138,7 +138,7 @@ def switch_rigging(component_network):
     component_root = joint_list[-1]
     skeleton_dict = skeleton.get_skeleton_dict(component_root)
 
-    switch_network_list = metadata.meta_properties.get_property_list(component_root, metadata.meta_properties.RigSwitchProperty)
+    switch_network_list = metadata.meta_property_utils.get_property_list(component_root, metadata.joint_properties.RigSwitchProperty)
     success = False
     for switch_network in switch_network_list:
         # We use a copy of component.data because the component node may get deleted before
@@ -149,8 +149,9 @@ def switch_rigging(component_network):
             switch_type = switch_network.get('switch_type')
 
             if switch_side != '' and switch_region != '':
-                module, type = v1_shared.shared_utils.get_class_info( switch_type )
-                switch_component_type = getattr(sys.modules[module], type)
+                module_name, type_name = v1_shared.shared_utils.get_class_info( switch_type )
+                switch_component_type = component_registry.Component_Registry().get(type_name)
+                # switch_component_type = getattr(sys.modules[module_name], type_name)
 
                 rig_region(skeleton_dict, switch_side, region, character_network, switch_component_type)
             else:
@@ -163,7 +164,7 @@ def switch_rigging(component_network):
 
 
 def quick_rig_joint(jnt):
-    character_network = metadata.network_core.MetaNode.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
 
     file_path = v1_shared.file_path_utils.relative_path_to_content(character_network.get('rig_file_path'))
 
@@ -192,8 +193,8 @@ def temporary_rig(start_jnt, end_jnt, type):
         end_jnt = start_jnt
         start_jnt = temp_jnt
 
-    start_property = metadata.meta_properties.add_property(start_jnt, metadata.meta_properties.RigMarkupProperty)
-    end_property = metadata.meta_properties.add_property(end_jnt, metadata.meta_properties.RigMarkupProperty)
+    start_property = metadata.meta_property_utils.add_property(start_jnt, metadata.joint_properties.RigMarkupProperty)
+    end_property = metadata.meta_property_utils.add_property(end_jnt, metadata.joint_properties.RigMarkupProperty)
 
     side = skeleton.get_joint_side(start_jnt)
     region = "temp_{0}".format(start_jnt.stripNamespace())
@@ -210,7 +211,7 @@ def temporary_rig(start_jnt, end_jnt, type):
     end_property.set('group', 'Temporary')
     end_property.set('temporary', True)
 
-    character_network = metadata.network_core.MetaNode.get_first_network_entry(start_jnt, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(start_jnt, metadata.network_core.CharacterCore)
     skeleton_dict = skeleton.get_skeleton_dict(start_jnt)
     
     rig_region(skeleton_dict, side, region, character_network, type, reverse)

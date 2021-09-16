@@ -40,6 +40,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 class ReverseFoot(rig_base.Rig_Component):
+    _do_register = True
     _inherittype = "component"
     _spacetype = "world"
     _hasattachment = "root"
@@ -168,7 +169,7 @@ class ReverseFoot(rig_base.Rig_Component):
             self.create_controls([toe_ik_control], side, region, 'toe_ik', control_holder_list)
         self.create_controls(control_chain, side, region, 'reverse_fk', control_holder_list, index_offset)
 
-        control_property = metadata.meta_properties.get_property(control_chain_start, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(control_chain_start, metadata.meta_properties.ControlProperty)
         control_property.set('world_space', True, 'bool')
 
         for i, child_control in enumerate(control_chain[:-1]):

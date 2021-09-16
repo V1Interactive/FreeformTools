@@ -658,13 +658,9 @@ namespace Freeform.Rigging
             }
         }
 
-
-        public Dictionary<string, List<string>> RigTypeLookup;
-
-        public void AddRigType(string module, string cls)
+        public void AddRigType(string cls_name)
         {
-            RigTypes.Add(cls);
-            RigTypeLookup[cls] = new List<string> { module, cls };
+            RigTypes.Add(cls_name);
         }
 
         public void UpdateRiggerInPlace()
@@ -828,7 +824,6 @@ namespace Freeform.Rigging
             RiggingMenuItems = new ObservableCollection<V1MenuItem>();
 
             RigTypes = new ObservableCollection<string>();
-            RigTypeLookup = new Dictionary<string, List<string>>();
 
             PropList = new ObservableCollection<PropFile>();
         }
@@ -1366,7 +1361,7 @@ namespace Freeform.Rigging
 
         public void RigRegionEventCall(object sender)
         {
-            ActiveCharacter.RigRegionCall(RigTypeLookup[SelectedRigType], IsWorldSpace);
+            ActiveCharacter.RigRegionCall(SelectedRigType, IsWorldSpace);
         }
 
         public void OpenRegionEditorEventCall(object sender)

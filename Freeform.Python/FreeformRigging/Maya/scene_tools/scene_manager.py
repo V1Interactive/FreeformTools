@@ -22,6 +22,8 @@ import pymel.core as pm
 import v1_core
 import v1_shared
 
+from v1_core.py_helpers import Singleton
+
 
 class InvalidPyMelError(Exception):
     """Exception to call to inform user that non-integers were found in the bake range"""
@@ -29,7 +31,7 @@ class InvalidPyMelError(Exception):
         message = "An Invalid Pymel object was selected.  Scene Manager will not update until only valid objects are selected."
         super(InvalidPyMelError, self).__init__(message)
 
-class SceneManager(object):
+class SceneManager(object, metaclass=Singleton):
     '''
     Manages all tools and scene updating whenever a new Maya scene is opened.  Tools register their update method
     on __init__ and clear it om close().  General scene updates are internal to the class.
@@ -43,8 +45,6 @@ class SceneManager(object):
         selection_changed_id (int): ID # of the scriptJob that is running on selection
         selection_changed_list (list<method>): List of all methods to run when the selection changes
     '''
-    __metaclass__ = v1_core.py_helpers.Singleton
-
     
     method_list = []
 

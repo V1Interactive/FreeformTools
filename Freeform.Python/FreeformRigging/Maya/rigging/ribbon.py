@@ -41,6 +41,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 class Ribbon(rig_base.Rig_Component):
+    _do_register = True
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
