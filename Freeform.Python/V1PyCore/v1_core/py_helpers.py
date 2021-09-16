@@ -38,9 +38,9 @@ class Singleton(type):
     '''
     _instances = {}
     def __call__(self, *args, **kwargs):
-        if self not in self._instances:
-            self._instances[self] = super(Singleton, self).__call__(*args, **kwargs)
-        return self._instances[self]
+        if self.__name__ not in self._instances:
+            self._instances[self.__name__] = super(Singleton, self).__call__(*args, **kwargs)
+        return self._instances[self.__name__]
 
 class UI_Singleton(Singleton):
     '''
@@ -52,11 +52,10 @@ class UI_Singleton(Singleton):
         return return_value
 
 
-class UI_Singleton_Base(object):
+class UI_Singleton_Base(object, metaclass=UI_Singleton):
     '''
     Singleton metaclass that handles events from a C# UI to enforce singleton behavior on the UI
     '''
-    __metaclass__ = UI_Singleton
 
     def show(self):
         self.ui.Show()
@@ -69,6 +68,47 @@ class UI_Singleton_Base(object):
         '''
         Registered to the C# UI to clear out the singleton and clean up the UI when disposed
         '''
-        if type(self) in self.__metaclass__._instances:
+        if self.__name__ in UI_Singleton_Base._instances:
             self.close()
-            del(self.__metaclass__._instances[type(self)])
+            del(UI_Singleton_Base._instances[self.__name__])
+
+
+class Freeform_Registry(object, metaclass=Singleton):
+    '''
+    Base Registry class for gathering components of the Freeform Tools
+    '''
+    def __init__(self):
+        self.registry = {}
+        self.hidden_registry = {}
+
+    def _add_internal(self, a_name, a_type, internal_registry):
+        if a_name not in internal_registry:
+            internal_registry[a_name] = a_type
+
+    def add(self, a_name, a_type):
+        self._add_internal(a_name, a_type, self.registry)
+
+    def add_hidden(self, a_name, a_type):
+        self._add_internal(a_name, a_type, self.hidden_registry)
+
+    def clear(self):
+        self.registry.clear()
+
+    def _get_internal(self, get_name, internal_registry, all_registries=False):
+        return_item = None
+        if not all_registries:
+            return_item = internal_registry.get(get_name)
+        else:
+            registry_list = [x for x in Freeform_Registry._instances.values() if isinstance(x,Freeform_Registry)]
+            for registry in registry_list:
+                return_item = registry.get(get_name)
+                if return_item:
+                    break
+
+        return return_item
+
+    def get(self, get_name, all_registries=False):
+        return self._get_internal(get_name, self.registry, all_registries)
+
+    def get_hidden(self, get_name, all_registries=False):
+        return self._get_internal(get_name, self.hidden_registry, all_registries)

@@ -28,13 +28,19 @@ import rigging
 import freeform_utils
 import metadata
 
+from metadata.meta_properties import ControlProperty, CommonProperty, ModelProperty
+from metadata.joint_properties import JointProperty
+from metadata.network_core import RigComponent, CharacterCore, ComponentCore
+
+from v1_core.py_helpers import Singleton
+
 
 def refresh_menu():
     if V1_Context_Menu().menu == None:
         V1_Context_Menu().create_menu()
         V1_Context_Menu().reset_menu()
 
-class V1_Context_Menu(object):
+class V1_Context_Menu(object, metaclass=Singleton):
     '''
     Creates a context sensitive marking menu by gathering the name of the object under the cursor and building a menu based
     what was found.
@@ -45,9 +51,6 @@ class V1_Context_Menu(object):
         node (PyNode): Scene pynode that the menu will build for
         menu_dict (dictionary): Dictionary of menu items that get created, keyed by the menu's category
     '''
-
-    __metaclass__ = v1_core.py_helpers.Singleton
-
 
     def __init__(self):
         self.node = None
@@ -114,7 +117,7 @@ class V1_Context_Menu(object):
             node_simple_name = self.node.name().split('|')[-1]
             #pm.inViewMessage(assistMessage = node_simple_name, position = "topCenter", fade = True, fontSize = 10, fst = 2000, dragKill = False)
             rig_menu = pm.menuItem(label=node_simple_name, parent=self.menu, rp="N")
-            if not metadata.meta_properties.get_properties_dict(self.node).get(metadata.meta_properties.ControlProperty):
+            if not metadata.meta_property_utils.get_properties_dict(self.node).get(ControlProperty):
                 # Build our Context Menu if we've found a dag object
                 self.menu_dict['properties'] = self.build_property_menu()
             else:
@@ -124,10 +127,10 @@ class V1_Context_Menu(object):
         '''
         Build the menu for rig component objects.  Queries the rig component object for menu itmes
         '''
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(self.node, metadata.network_core.RigComponent)
+        component_network = metadata.meta_network_utils.get_first_network_entry(self.node, RigComponent)
         component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
 
-        character_network = component_network.get_upstream(metadata.network_core.CharacterCore)
+        character_network = component_network.get_upstream(CharacterCore)
 
         rig_menu = pm.menuItem(label='Rig Commands', parent=self.menu, subMenu=True, rp="S")
         component.create_menu(rig_menu, self.node)
@@ -135,7 +138,7 @@ class V1_Context_Menu(object):
         lj_method, lj_args, lj_kwargs = v1_core.v1_logging.logging_wrapper(rigging.file_ops.load_from_json_with_dialog, "Context Menu", character_network)
         rig_menu = pm.menuItem(label='Load File...', parent=self.menu, rp="W", command = lambda _: lj_method(*lj_args, **lj_kwargs))
 
-        if type(component_network) == metadata.network_core.ComponentCore:
+        if type(component_network) == ComponentCore:
             sa_method, sa_args, sa_kwargs = v1_core.v1_logging.logging_wrapper(component.bake_and_remove, "Context Menu", use_global_queue = False)
             rig_menu = pm.menuItem(label='Bake And Remove', parent=self.menu, rp="E", command = lambda _: sa_method(*sa_args, **sa_kwargs))
 
@@ -144,13 +147,13 @@ class V1_Context_Menu(object):
         Build the menu for non-rig objects, if part of a meta network query to metadata.meta_properties to get 
         appropriate menu items.
         '''
-        if metadata.network_core.MetaNode.get_network_entries(self.node):
-            current_property_list = metadata.meta_properties.get_properties_dict(self.node).keys()
+        if metadata.meta_network_utils.get_network_entries(self.node):
+            current_property_list = metadata.meta_property_utils.get_properties_dict(self.node).keys()
 
             prop_menu = pm.menuItem(label='Properties', parent=self.menu, subMenu=True, rp="S")
-            self.create_properties(metadata.meta_properties.CommonProperty, prop_menu, current_property_list)
+            self.create_properties(CommonProperty, prop_menu, current_property_list)
             if type(self.node) == pm.nodetypes.Joint:
-                self.create_properties(metadata.meta_properties.JointProperty, prop_menu, current_property_list)
+                self.create_properties(JointProperty, prop_menu, current_property_list)
 
                 quick_rig_method, quick_rig_args, quick_rig_kwargs = v1_core.v1_logging.logging_wrapper(rigging.rig_tools.quick_rig_joint, "Context Menu", self.node)
                 quick_rig_menu = pm.menuItem(label='Load Last Preset', parent=self.menu, rp="E", command = lambda _: quick_rig_method(*quick_rig_args, **quick_rig_kwargs))
@@ -162,7 +165,7 @@ class V1_Context_Menu(object):
                 tik_rig_method, tik_rig_args, tik_rig_kwargs = v1_core.v1_logging.logging_wrapper(rigging.rig_tools.temporary_rig, "Context Menu", selection[0], selection[-1], rigging.ik.IK)
                 quick_rig_menu = pm.menuItem(label='Temporary IK', parent=self.menu, rp="SE", command = lambda _: tik_rig_method(*tik_rig_args, **tik_rig_kwargs))
             elif type(self.node) == pm.nodetypes.Transform:
-                self.create_properties(metadata.meta_properties.ModelProperty, prop_menu, current_property_list)
+                self.create_properties(ModelProperty, prop_menu, current_property_list)
         else:
             char_method, char_args, char_kwargs = v1_core.v1_logging.logging_wrapper(freeform_utils.character_utils.characterize_skeleton, "Context Menu", self.node)
             prop_menu = pm.menuItem(label='Characterize Skeleton', parent=self.menu, rp="S", command = lambda _: char_method(*char_args, **char_kwargs))
@@ -188,5 +191,5 @@ class V1_Context_Menu(object):
         '''
         for prop in [x for x in base_class.get_inherited_classes() if x not in current_properties]:
             prop_module_type = v1_shared.shared_utils.get_class_info(str(prop))
-            com = (lambda prop_module_type: lambda _: metadata.meta_properties.add_property_by_name(self.node, prop_module_type))(prop_module_type)
+            com = (lambda prop_module_type: lambda _: metadata.meta_property_utils.add_property_by_name(self.node, prop_module_type))(prop_module_type)
             pm.menuItem(label=prop_module_type[1], parent=prop_menu, command = com)

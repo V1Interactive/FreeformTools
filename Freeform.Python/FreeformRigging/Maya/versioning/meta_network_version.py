@@ -41,7 +41,7 @@ def update_ordered_index():
         for property_node in update_list:
             pm.progressBar(main_progress_bar, edit=True, step=1)
             control = get_first_or_default(property_node.message.listConnections())
-            component_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.ComponentCore)
+            component_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.ComponentCore)
             if component_network:
                 component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 component.set_control_orders()

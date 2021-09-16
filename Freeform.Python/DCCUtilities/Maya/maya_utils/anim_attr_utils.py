@@ -121,10 +121,10 @@ def get_key_range(obj, start_frame = None, end_frame = None):
         last_key = pm.findKeyframe(animCurves, which='last')
 
     # We use frame -10000 and -10001 as a special holder frame for keys used by tools
-    start_frame = first_key if first_key < start_frame or start_frame == None else start_frame
-    start_frame = None if start_frame == -10000 or start_frame == -10001 else start_frame
-    end_frame = last_key if last_key > end_frame or end_frame == None else end_frame
-    end_frame = None if end_frame == -10000 or end_frame == -10001 else end_frame
+    start_frame = first_key if (start_frame == None or first_key < start_frame) else start_frame
+    start_frame = None if (start_frame == -10000 or start_frame == -10001) else start_frame
+    end_frame = last_key if (end_frame == None or last_key > end_frame) else end_frame
+    end_frame = None if (end_frame == -10000 or end_frame == -10001) else end_frame
 
     return (start_frame, end_frame)
 

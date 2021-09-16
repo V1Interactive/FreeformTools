@@ -26,6 +26,7 @@ import v1_core
 import v1_shared
 import metadata
 
+from v1_core.py_helpers import Freeform_Enum
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
@@ -39,7 +40,7 @@ class Binding():
         attribute (str): Name to save the attribute under
         binding (list<str>): List of all attribute names that should be saved
     '''
-    __metaclass__ = ABCMeta
+
     def __init__(self):
         self.category = None
         self.attribute = None
@@ -270,12 +271,12 @@ class Properties_Binding(Binding):
             args (args): Optional args
         '''
         data.setdefault(self.category, {})
-        for prop_type, prop_list in metadata.meta_properties.get_properties_dict(obj).items():
+        for prop_type, prop_list in metadata.meta_property_utils.get_properties_dict(obj).items():
             prop_type_data = v1_shared.shared_utils.get_class_info(str(prop_type))
             for prop in prop_list:
                 # Only add properties that don't already exist
                 prop_found = False
-                for current_prop in data[self.category].itervalues():
+                for current_prop in data[self.category].values():
                     if prop.compare(current_prop['data']):
                         prop_found = True
 
@@ -296,9 +297,13 @@ class Properties_Binding(Binding):
         '''
         data_dict = data.get(self.category)
         data_dict = data_dict if data_dict else {}
-        for property_data in data_dict.itervalues():
-            property_class = getattr(sys.modules[property_data['module']], property_data['type'])
-            current_properties = metadata.meta_properties.get_properties_dict(obj)
+        for property_data in data_dict.values():
+            property_name = property_data['type']
+            property_class = metadata.network_registry.Property_Registry().get(property_name)
+            if not property_class:
+                property_class = metadata.network_registry.Network_Registry(property_name)
+            #property_class = getattr(sys.modules[property_data['module']], property_data['type'])
+            current_properties = metadata.meta_property_utils.get_properties_dict(obj)
             data = property_data['data']
 
             # If the property already exists with correct data update and move on
@@ -315,11 +320,11 @@ class Properties_Binding(Binding):
             if property_class == metadata.meta_properties.ExportProperty and property_class in current_properties.keys():
                 get_first_or_default(current_properties[property_class]).data = data
             else:
-                new_property = metadata.meta_properties.add_property(obj, property_class)
+                new_property = metadata.meta_property_utils.add_property(obj, property_class)
                 new_property.data = data
 
 
-class Binding_Sets(v1_core.py_helpers.Freeform_Enum):
+class Binding_Sets(Freeform_Enum):
     '''
     Enum to store sets of Bindings for quick save/load options
     '''

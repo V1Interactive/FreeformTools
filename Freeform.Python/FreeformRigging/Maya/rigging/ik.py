@@ -42,6 +42,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 class IK(rig_base.Rig_Component):
+    _do_register = True
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
@@ -100,7 +101,7 @@ class IK(rig_base.Rig_Component):
         self.network['controls'].connect_nodes(control_chain)
         self.create_controls(control_chain, side, region, 'ik_handle', control_holder_list)
         for control in control_chain:
-            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
             control_property.set('world_space', True, 'bool')
         
         skel_root = skeleton_dict[side][region]['root']
@@ -116,7 +117,7 @@ class IK(rig_base.Rig_Component):
             self.create_controls([pv_control], side, region, 'pv', control_holder_list)
             pm.controller([pv_control, get_first_or_default(control_chain)], p=True)
 
-            pv_control_property = metadata.meta_properties.get_property(pv_control, metadata.meta_properties.ControlProperty)
+            pv_control_property = metadata.meta_property_utils.get_property(pv_control, metadata.meta_properties.ControlProperty)
             pv_control_property.set('world_space', True, 'bool')
 
         pm.parentConstraint(self.character_root, world_group, mo=True)

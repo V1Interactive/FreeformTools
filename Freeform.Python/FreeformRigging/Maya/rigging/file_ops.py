@@ -33,6 +33,7 @@ import metadata
 from rigging import rig_base
 from rigging import settings_binding
 from rigging import skeleton
+from rigging import component_registry
 
 import maya_utils
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -165,7 +166,7 @@ def get_skeleton_dict_from_settings(settings_file_path):
 
     skeleton_dict = {}
     for jnt_name, data_dict in load_data.items():
-        for property_data in data_dict.get('properties').itervalues():
+        for property_data in data_dict.get('properties').values():
             if property_data['type'] == "RigMarkupProperty":
                 data = property_data.get('data')
                 side = data.get('side')
@@ -253,7 +254,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = settings_bi
 
     load_data = v1_core.json_utils.read_json(file_path).get('skeleton')
 
-    character_network = metadata.network_core.MetaNode.get_first_network_entry(character_grp, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(character_grp, metadata.network_core.CharacterCore)
     joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
     target_namespace = character_grp.namespace()
 
@@ -411,7 +412,8 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
         created_rigging.setdefault(side, {})
         region_iteritems = [(x,y) for x,y in region_dict.items() if x in region_filter] if region_filter else region_dict.items()
         for region, component_dict in region_iteritems:
-            component_type = getattr(sys.modules[component_dict['module']], component_dict['type'])
+            component_type = component_registry.Component_Registry().get(component_dict['type'])
+            # component_type = getattr(sys.modules[component_dict['module']], component_dict['type'])
             side_data = target_skeleton_dict.get(side)
             region_data = side_data.get(region) if side_data else None
             if region_data:
@@ -450,7 +452,8 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
                     target_region = target_side.get(target_data.region) if target_side else None
 
                 if component and not did_exist and target_region:
-                    addon_component_type = getattr(sys.modules[addon_component_dict['module']], addon_component_dict['type'])
+                    addon_component_type = component_registry.Addon_Registry().get(addon_component_dict['type'])
+                    # addon_component_type = getattr(sys.modules[addon_component_dict['module']], addon_component_dict['type'])
                     addon_component = addon_component_type.rig_from_json(component, addon_component_dict, created_rigging)
     v1_core.v1_logging.get_logger().info("Addons Created in {0} Seconds".format(time.clock() - addon_time))
 

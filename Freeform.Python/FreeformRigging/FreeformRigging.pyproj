@@ -6,12 +6,12 @@
     <ProjectGuid>{ab10f252-39a2-45e1-a7d7-611755678e96}</ProjectGuid>
     <ProjectHome />
     <StartupFile />
-    <SearchPath>Maya;..\V1PyCore;..\DCCUtilities\Maya</SearchPath>
+    <SearchPath>Maya;..\V1PyCore;..\DCCUtilities\Maya;W:\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>Global|VisualStudio|Maya 2020 Python 2.7</InterpreterId>
+    <InterpreterId>Global|PythonCore|3.7</InterpreterId>
     <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
@@ -43,8 +43,26 @@
     <Compile Include="Maya\freeform_utils\materials.py" />
     <Compile Include="Maya\freeform_utils\anim_attributes.py" />
     <Compile Include="Maya\freeform_utils\__init__.py" />
+    <Compile Include="Maya\metadata\exporter_properties.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\metadata\export_modify_propreties.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\metadata\joint_properties.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\metadata\meta_network_utils.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\metadata\meta_properties.py" />
     <Compile Include="Maya\metadata\network_core.py" />
+    <Compile Include="Maya\metadata\network_registry.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\metadata\meta_property_utils.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\metadata\__init__.py" />
     <Compile Include="Maya\rigging\constraints.py">
       <SubType>Code</SubType>
@@ -53,6 +71,9 @@
     <Compile Include="Maya\rigging\file_ops.py" />
     <Compile Include="Maya\rigging\fk.py" />
     <Compile Include="Maya\rigging\ik.py" />
+    <Compile Include="Maya\rigging\component_registry.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\rigging\overdriver.py" />
     <Compile Include="Maya\rigging\reverse_foot.py" />
     <Compile Include="Maya\rigging\ribbon.py">
@@ -89,7 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|2.7" />
-    <InterpreterReference Include="Global|VisualStudio|Maya 2020 Python 2.7" />
+    <InterpreterReference Include="Global|PythonCore|3.7" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

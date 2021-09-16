@@ -148,7 +148,7 @@ class AnimAttributes(object):
         Look through the node network for the skeleton's root node and it's controller
         '''
         #if(self.root == None):
-        #    core_network = metadata.network_core.MetaNode.create_from_node( metadata.network_core.MetaNode.get_network_core() )
+        #    core_network = metadata.meta_network_utils.create_from_node( metadata.meta_network_utils.get_network_core() )
         #    comp_network = [x for x in core_network.get_all_downstream(metadata.network_core.ComponentCore) if x.node.region.get() == 'root']
         #    
         #    if(len(comp_network) > 0):

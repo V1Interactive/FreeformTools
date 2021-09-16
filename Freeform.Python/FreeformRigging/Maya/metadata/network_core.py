@@ -28,11 +28,14 @@ import System
 import v1_core
 import v1_shared
 
+from metadata.network_registry import Network_Registry, Network_Meta, Property_Registry
+from metadata import meta_network_utils
+
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
 
-class MetaNode(object):
+class MetaNode(object, metaclass=Network_Meta):
     '''
     Abstract Base Class for all Maya network node class wrappers.  Handles all general functionality for working with and creating classes
     from scene objects and getting initial access to the network graph from scene objects.
@@ -44,152 +47,10 @@ class MetaNode(object):
     Attributes:
         node (PyNode): The scene network node that represents the property
     '''
-    __metaclass__ = ABCMeta
+    _do_register = False
 
     type_dict = {str : "string", int : "short", float : 'double', bool : "bool", list : 'double3', pm.dt.Vector : 'double3'}
     type_match = {str : [str, None]}
-
-    #region Static Methods
-    @staticmethod
-    def get_network_core():
-        '''
-        Find the initial network tree node.  If one doesn't exist create it
-
-        Returns:
-            (PyNode). Maya scene network node for the network Core
-        '''
-        core_node = [x for x in pm.ls(type='network') if x.meta_type.get() == str(Core)]
-        if not core_node:
-            return Core().node
-        else:
-            return get_first_or_default(core_node)
-
-    @staticmethod
-    def get_node_type(pynode):
-        '''
-        Create the appropriate MetaNode class type from a scene network node
-
-        Args:
-            pynode (PyNode): Maya scene node to create class from
-
-        Returns:
-            (MetaNode). Instantiated appropriate MetaNode class based on the provided network node
-        '''
-        node_type = None
-        if hasattr(pynode, 'meta_type'):
-            module, type_name = v1_shared.shared_utils.get_class_info( pynode.meta_type.get() )
-            node_type = getattr(sys.modules[module], type_name)
-
-        return node_type
-
-    @staticmethod
-    def create_from_node(pynode):
-        '''
-        Create the appropriate MetaNode class from a scene network node
-
-        Args:
-            pynode (PyNode): Maya scene node to create class from
-
-        Returns:
-            (MetaNode). Instantiated appropriate MetaNode class based on the provided network node
-        '''
-        class_type = MetaNode.get_node_type(pynode)
-        return class_type(node = pynode) if class_type else None
-
-    @staticmethod
-    def is_in_network(obj):
-        '''
-        Check whether or not an object is connected to the MetaNode graph
-
-        Args:
-            obj (PyNode): Maya scene object to check
-
-        Returns:
-            (boolean). Whether or not the given object is connected to a MetaNode graph
-        '''
-        if pm.attributeQuery('affectedBy', node=obj, exists=True ):
-            return True
-        return False
-
-    @staticmethod
-    def get_network_entries(obj, in_network_type=None):
-        '''
-        Get all network nodes that are connected to the given object.  Used to find the entry point into the
-        MetaNode graph for a maya scene object.
-
-        Args:
-            obj (PyNode): Maya scene object to query
-            in_network_type (type): Filter to find the network node that connects backwards to the given type
-
-        Returns:
-            (list<MetaNode>). List of all MetaNode classes that have a node connected to the given scene object
-        '''
-        entry_network_list = []
-        if MetaNode.is_in_network(obj):
-            for net_node in pm.listConnections(obj.affectedBy, type='network'):
-                network_entry = MetaNode.create_from_node(net_node)
-                if in_network_type:
-                    network_entry = network_entry.get_upstream(in_network_type)
-                if network_entry:
-                    entry_network_list.append( network_entry )
-
-        return entry_network_list
-
-    @staticmethod
-    def get_first_network_entry(obj, in_network_type=None):
-        '''
-        Gets the first network node connected to the given object.  Used to find the entry point into the
-        MetaNode graph for a maya scene object.
-
-        Args:
-            obj (PyNode): Maya scene object to query
-            in_network_type (type): Filter to find the network node that connects backwards to the given type
-
-        Returns:
-            (list<MetaNode>). List of all MetaNode classes that have a node connected to the given scene object
-        '''
-        return get_first_or_default(MetaNode.get_network_entries(obj, in_network_type))
-
-    @staticmethod
-    def get_all_network_nodes(node_type):
-        '''
-        Get all network nodes of a given type
-
-        Args:
-            node_type (type): Type of MetaNode to get
-
-        Returns:
-            (list<MetaNode>). List of all MetaNodes in the scene of the requested type
-        '''
-        class_info_string = str(node_type)
-        return [x for x in pm.ls(type='network') if x.meta_type.get() == class_info_string]
-
-    @staticmethod
-    def get_network_chain(network_node, delete_list):
-        '''
-        Recursive. Finds all network nodes connected downstream from the given network node
-
-        Args:
-            network_node (PyNode): Maya scene network node to search from
-            delete_list (list<PyNode>): Initial list used for recursive behavior
-        '''
-        delete_list.append(network_node)
-        for node in pm.listConnections(network_node, type='network', s=False, d=True):
-            MetaNode.get_network_chain(node, delete_list)
-
-    @staticmethod
-    def delete_network(network_node):
-        '''
-        Deletes all network nodes downstream(inclusive) from the given node
-
-        Args:
-            network_node (PyNode): Maya scene network node to delete from
-        '''
-        delete_list = []
-        MetaNode.get_network_chain(network_node, delete_list)
-        pm.delete([x for x in delete_list if x.exists()])
-        
-    #endregion
 
     @property
     def data(self):
@@ -344,7 +205,7 @@ class MetaNode(object):
         Args:
             node (PyNode): Node to connect
         '''
-        if not MetaNode.is_in_network(node):
+        if not meta_network_utils.is_in_network(node):
             pm.addAttr(node, ln='affectedBy', dt='stringArray', m=True)
 
         # Only connect nodes that aren't already connected
@@ -405,6 +266,53 @@ class MetaNode(object):
         for meta_node in meta_node_list:
             meta_node.delete()
 
+    def get_network_node(self, start_node, check_type, attribute, validate = True):
+        '''
+        Recursive. Core functionality for get_upstream and get_downstream.  Searches all connections of the given attribute
+        recursively until there are no connections to the attribute or the given check_type of object is found
+
+        Args:
+            start_node (PyNode): Maya scene network node to start the search from
+            check_type (type): MetaNode type to search for
+            attribute (str): Name of the attribute to search on
+
+        Returns:
+            (MetaNode). The first MetaNode found that matches the check_type
+        '''
+        if validate:
+            validate_type = meta_network_utils.validate_network_type(check_type)
+            if not validate_type:
+                return None
+        else:
+            validate_type = check_type
+
+        # Check first node
+        if type(start_node) == pm.nodetypes.Network:
+            node_type = meta_network_utils.get_node_type(start_node)
+            
+            if validate_type in node_type.mro():
+                return meta_network_utils.create_from_node(start_node)
+        
+        # Check children nodes
+        node_check_list = []
+        for node in pm.listConnections(pm.PyNode("{0}.{1}".format(start_node, attribute)), type='network'):
+            node_type = meta_network_utils.get_node_type(node)
+
+            if validate_type in node_type.mro():
+                return meta_network_utils.create_from_node(node)
+            else:
+                node_check_list.append(node)
+        
+        # Recursive check through tree hierarchy
+        for node in node_check_list:		
+            next_node = self.get_network_node(node, validate_type, attribute, False)
+            if next_node == None:
+                continue
+            else:
+                return self.get_network_node(node, validate_type, attribute, False)
+
+        return None
+
     def get_downstream(self, check_type):
         '''
         Get the first network node by following the .message attribute connections
@@ -428,44 +336,6 @@ class MetaNode(object):
             (MetaNode). The first MetaNode found that matches the check_type
         '''
         return self.get_network_node(self.node, check_type, 'affectedBy')
-
-    def get_network_node(self, start_node, check_type, attribute):
-        '''
-        Recursive. Core functionality for get_upstream and get_downstream.  Searches all connections of the given attribute
-        recursively until there are no connections to the attribute or the given check_type of object is found
-
-        Args:
-            start_node (PyNode): Maya scene network node to start the search from
-            check_type (type): MetaNode type to search for
-            attribute (str): Name of the attribute to search on
-
-        Returns:
-            (MetaNode). The first MetaNode found that matches the check_type
-        '''
-        type_name = str(check_type)
-        if type(start_node) == pm.nodetypes.Network:
-            node_type = MetaNode.get_node_type(start_node)
-
-            if check_type in node_type.mro():
-                return MetaNode.create_from_node(start_node)
-        
-        node_check_list = []
-        for node in pm.listConnections(pm.PyNode("{0}.{1}".format(start_node, attribute)), type='network'):
-            node_type = MetaNode.get_node_type(node)
-
-            if check_type in node_type.mro():
-                return MetaNode.create_from_node(node)
-            else:
-                node_check_list.append(node)
-        
-        for node in node_check_list:		
-            next_node = self.get_network_node(node, check_type, attribute)
-            if next_node == None:
-                continue
-            else:
-                return self.get_network_node(node, check_type, attribute)
-
-        return None
 
 
     def get_all_downstream(self, node_type):
@@ -505,13 +375,15 @@ class MetaNode(object):
         Returns:
             (list<MetaNode>). All MetaNodes found that matches the check_type
         '''
+        validate_type = meta_network_utils.validate_network_type(check_type)
+
         all_node_list = []
         if type(self.node) == pm.nodetypes.Network:
-            node_type = MetaNode.get_node_type(self.node)
+            node_type = meta_network_utils.get_node_type(self.node)
 
-            all_node_list = [MetaNode.create_from_node(self.node)] if not check_type or check_type in node_type.mro() else []
+            all_node_list = [meta_network_utils.create_from_node(self.node)] if not validate_type or validate_type in node_type.mro() else []
             for node in pm.listConnections(pm.PyNode("{0}.{1}".format(self.node, attribute)), type='network'):
-                self._get_all_recursive(node, all_node_list, check_type, attribute)
+                self._get_all_recursive(node, all_node_list, validate_type, attribute)
     
         return all_node_list
 
@@ -528,10 +400,10 @@ class MetaNode(object):
             (list<MetaNode>). All MetaNodes found that matches the check_type
         '''
         if type(start_node) == pm.nodetypes.Network:
-            node_type = MetaNode.get_node_type(start_node)
+            node_type = meta_network_utils.get_node_type(start_node)
 
             if not check_type or check_type in node_type.mro():
-                list.append(MetaNode.create_from_node(start_node))
+                list.append(meta_network_utils.create_from_node(start_node))
 
             for node in pm.listConnections(pm.PyNode("{0}.{1}".format(start_node, attribute)), type='network'):
                 self._get_all_recursive(node, list, check_type, attribute)
@@ -550,6 +422,8 @@ class Core(MetaNode):
     Attributes:
         node (PyNode): The scene network node that represents the property
     '''
+    _do_register = True
+
     def __init__(self, node_name = 'network_core', node = None, namespace = "", **kwargs):
         super(Core, self).__init__(node_name, node, namespace, **kwargs)
 
@@ -569,8 +443,6 @@ class DependentNode(MetaNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    __metaclass__ = ABCMeta
-
     dependent_node = None
 
     @property
@@ -584,7 +456,7 @@ class DependentNode(MetaNode):
         super(DependentNode, self).__init__(node_name, node, namespace, **kwargs)
         if not node:
             parent_node = parent if parent else self.get_network_core()
-            parent_network = MetaNode.create_from_node(parent_node)
+            parent_network = meta_network_utils.create_from_node(parent_node)
 
             dependent_network = parent_network.get_downstream(self.dependent_node)
             if not dependent_network:
@@ -606,6 +478,7 @@ class ExportCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = Core
 
     def __init__(self, parent = None, node_name = 'v1_export_core', node = None, namespace = ""):
@@ -630,6 +503,7 @@ class ExportDefinition(DependentNode):
         end_frame (int): End frame for this export
         frame_range (boolean): True to use the start and end frame, False to use maya timeslider range
     '''
+    _do_register = True
     dependent_node = ExportCore
 
     def __init__(self, parent = None, node_name = 'v1_export_definition', node = None, namespace = ""):
@@ -666,6 +540,10 @@ class CharacterCore(DependentNode):
         character_name (str): Name of the character
         root_path (int): CONTENT_ROOT relative path to the folder for this character
     '''
+    _do_register = True
+    dependent_node = Core
+
+
     @property
     def character_folders(self):
         content_path = v1_shared.file_path_utils.relative_path_to_content(self.get('root_path'))
@@ -674,9 +552,7 @@ class CharacterCore(DependentNode):
 
         folder_path_list = [content_path] + sub_path_list
         return folder_path_list
-
-
-    dependent_node = Core
+    
 
     def __init__(self, parent = None, node_name = 'v1_character', node = None, namespace = ""):
         super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = ("", 'string'), character_name = ("", 'string'), root_path = ("", 'string'),
@@ -712,6 +588,7 @@ class SkeletonCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = CharacterCore
 
     def __init__(self, parent = None, node_name = 'skeleton_core', node = None, namespace = ""):
@@ -729,6 +606,7 @@ class JointsCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = SkeletonCore
 
     @property
@@ -770,6 +648,7 @@ class RegionsCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = CharacterCore
 
     def __init__(self, parent = None, node_name = 'regions_core', node = None, namespace = ""):
@@ -787,6 +666,7 @@ class RigCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = CharacterCore
 
     @property
@@ -825,7 +705,7 @@ class RigComponent(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    __metaclass__ = ABCMeta
+    _do_register = True
     dependent_node = None
 
     def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = "", **kwargs):
@@ -898,6 +778,7 @@ class ComponentCore(RigComponent):
         region (str): Region this component was built on
         group_name (str): Group name that this rig component will sort into in the UI
     '''
+    _do_register = True
     dependent_node = RigCore
 
     def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):
@@ -923,6 +804,7 @@ class ControlJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'control_joints', node = None, namespace = ""):
@@ -940,6 +822,7 @@ class RiggingJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'rigging_joints', node = None, namespace = ""):
@@ -957,6 +840,7 @@ class AttachmentJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'attachment_joints', node = None, namespace = ""):
@@ -974,6 +858,7 @@ class SkeletonJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'skeleton_joints', node = None, namespace = ""):
@@ -1004,7 +889,7 @@ class AddonCore(RigComponent):
         target_data (str): Data attribute from the MetaNode for the rig component that this is controlling
         target_data (str): Constraint weight values for each space
     '''
-
+    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'addon_core', node = None, namespace = ""):
@@ -1035,6 +920,7 @@ class AddonControls(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = AddonCore
 
     def __init__(self, parent = None, node_name = 'addon_controls', node = None, namespace = ""):
@@ -1052,6 +938,7 @@ class OverDrivenControl(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = AddonCore
 
     def __init__(self, parent = None, node_name = 'overdriven_control', node = None, namespace = ""):

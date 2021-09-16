@@ -152,7 +152,7 @@ def get_control_targets(obj):
         driver_obj_list = get_constraint_driver_list(constraint_obj)
         if obj in driver_obj_list:
             target_obj = get_first_or_default( [x for x in constraint_obj.listConnections(type='joint') if x not in driver_obj_list] )
-            if metadata.meta_properties.get_property(target_obj, metadata.meta_properties.ControlProperty):
+            if metadata.meta_property_utils.get_property(target_obj, metadata.meta_properties.ControlProperty):
                 target_obj_list.append([target_obj, constraint_obj])
 
     return target_obj_list

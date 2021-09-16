@@ -59,13 +59,13 @@ class RegionEditor(object):
         self.character_node = pm.PyNode(character_node_name)
 
         # Find All Regions from character
-        character_network = metadata.network_core.MetaNode.create_from_node(self.character_node)
+        character_network = metadata.meta_network_utils.create_from_node(self.character_node)
         jnt = character_network.get_downstream(metadata.network_core.JointsCore).get_first_connection('joint')
         skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
         for side, region_dict in skeleton_dict.items():
             for region, joint_dict in region_dict.items():
-                markup_properties = metadata.meta_properties.get_properties([pm.PyNode(joint_dict['root'].name())], metadata.meta_properties.RigMarkupProperty)
+                markup_properties = metadata.meta_property_utils.get_properties([pm.PyNode(joint_dict['root'].name())], metadata.joint_properties.RigMarkupProperty)
                 markup = get_first_or_default([x for x in markup_properties if x.data['side'] == side and x.data['region'] == region])
                 self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name(), markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
 
@@ -215,7 +215,7 @@ class RegionEditor(object):
         root_joint =  pm.PyNode(event_args.Region.Root) if pm.objExists(event_args.Region.Root) else None
         end_joint = pm.PyNode(event_args.Region.End) if pm.objExists(event_args.Region.End) else None
 
-        markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
+        markup_properties = metadata.meta_property_utils.get_properties([root_joint, end_joint], metadata.joint_properties.RigMarkupProperty)
         for markup in self.get_matching_markup(markup_properties, event_args.Region):
             if markup.node.exists():
                 pm.delete(markup.node)
@@ -241,7 +241,7 @@ class RegionEditor(object):
             pm.confirmDialog( title="Can't Add Markup", message="Root or End Joint not found", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
             return
 
-        markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
+        markup_properties = metadata.meta_property_utils.get_properties([root_joint, end_joint], metadata.joint_properties.RigMarkupProperty)
         markup_exists = True if self.get_matching_markup(markup_properties, event_args.Region) else False
 
         valid_check = rigging.skeleton.is_joint_below_hierarchy(end_joint, root_joint)
@@ -267,7 +267,7 @@ class RegionEditor(object):
             region (str): Name of the region being added
             tag (str): Whether we're adding a root or end property. Valid strings are 'root' and 'end'
         '''
-        rig_prop = metadata.meta_properties.add_property(jnt, metadata.meta_properties.RigMarkupProperty)
+        rig_prop = metadata.meta_property_utils.add_property(jnt, metadata.joint_properties.RigMarkupProperty)
         rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group' : group, 'com_region' : com_region, 'com_object' : com_object, 'com_weight' : com_weight}
 
     def _update_rigging(self, c_region, attr, value):
@@ -315,7 +315,7 @@ class RegionEditor(object):
 
         valid_check = rigging.skeleton.is_joint_below_hierarchy(end_joint, new_root) if old_root and new_root else False
         if valid_check:
-            markup_properties = metadata.meta_properties.get_properties([old_root], metadata.meta_properties.RigMarkupProperty)
+            markup_properties = metadata.meta_property_utils.get_properties([old_root], metadata.joint_properties.RigMarkupProperty)
             for markup in self.get_matching_markup(markup_properties, event_args.Region):
                 markup.disconnect()
                 markup.connect_node(new_root)
@@ -342,7 +342,7 @@ class RegionEditor(object):
 
         valid_check = rigging.skeleton.is_joint_below_hierarchy(new_end, root_joint) if old_end and new_end else False
         if valid_check:
-            markup_properties = metadata.meta_properties.get_properties([old_end], metadata.meta_properties.RigMarkupProperty)
+            markup_properties = metadata.meta_property_utils.get_properties([old_end], metadata.joint_properties.RigMarkupProperty)
             for markup in self.get_matching_markup(markup_properties, event_args.Region):
                 markup.disconnect()
                 markup.connect_node(new_end)
@@ -365,7 +365,7 @@ class RegionEditor(object):
         root_joint = pm.PyNode(c_region.Root) if pm.objExists(c_region.Root) else None
         end_joint = pm.PyNode(c_region.End) if pm.objExists(c_region.End) else None
 
-        markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
+        markup_properties = metadata.meta_property_utils.get_properties([root_joint, end_joint], metadata.joint_properties.RigMarkupProperty)
         markup_to_change = self.get_matching_markup(markup_properties, c_region)
 
         return markup_to_change

@@ -29,6 +29,7 @@ import metadata
 
 from rigging import skeleton
 from rigging import constraints
+from rigging.component_registry import Component_Meta, Component_Registry, Addon_Meta, Addon_Registry
 
 import v1_core
 import v1_shared
@@ -36,6 +37,9 @@ import maya_utils
 import scene_tools
 import freeform_utils.materials # redundant import for sphynx autodoc
 import freeform_utils.character_utils
+
+from metadata.joint_properties import RigMarkupProperty
+from metadata.meta_properties import ControlProperty
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from maya_utils.decorators import undoable
@@ -76,8 +80,8 @@ class ControlInfo(object):
 
     @classmethod
     def parse_control(cls, control_obj):
-        control_property = metadata.meta_properties.get_property(control_obj, metadata.meta_properties.ControlProperty)
-        component_core = metadata.network_core.MetaNode.get_first_network_entry(control_obj, metadata.network_core.ComponentCore)
+        control_property = metadata.meta_property_utils.get_property(control_obj, ControlProperty)
+        component_core = metadata.meta_network_utils.get_first_network_entry(control_obj, metadata.network_core.ComponentCore)
 
         control_info = None
         if control_property:
@@ -115,7 +119,7 @@ class ControlInfo(object):
 
         return control_info
 
-class Component_Base(object):
+class Component_Base(object, metaclass=Component_Meta):
     '''
     Abstract Base Class for all Maya Rig Components.  Rig Components handle building and removing rigs from a skeleton,
     transfering animation to and from the rig and skeleton and store all information about how the rig was setup
@@ -125,7 +129,7 @@ class Component_Base(object):
         prefix (str): Prefix for this rig component
         network (dictionary): Dictionary of all network objects made for this rig component
     '''
-    __metaclass__ = ABCMeta
+    _do_register = False
     _icon = "../../Resources/fk_icon.ico"
     _save_channel_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
 
@@ -138,6 +142,16 @@ class Component_Base(object):
             PyNode. Maya scene group node
         '''
         return self.network['character'].group
+
+    @property
+    def guid(self):
+        '''
+        Get group node that is the parent for all rig components
+
+        Returns:
+            PyNode. Maya scene group node
+        '''
+        return self.network['component'].get('guid')
 
     @property
     def character_root(self):
@@ -158,8 +172,9 @@ class Component_Base(object):
         # directly unpacking into variables causes unit test errors
         packed_info = v1_shared.shared_utils.get_class_info( network_node.component_type.get() )
         module_name, type_name = get_first_or_default(packed_info), get_index_or_default(packed_info, 1)
-        component_class = getattr(sys.modules[module_name], type_name)
-        component = component_class()
+        component_type = Component_Registry().get(type_name, True)
+        # component_class = getattr(sys.modules[module_name], type_name)
+        component = component_type()
         component.initialize_from_network_node(network_node)
         return component
 
@@ -236,17 +251,17 @@ class Component_Base(object):
         Args:
             charcter_node (PyNode): Maya scene character network node
         '''
-        character_network = metadata.network_core.MetaNode.create_from_node( character_node )
+        character_network = metadata.meta_network_utils.create_from_node( character_node )
         character_group = character_network.group
 
         # Disconnect character from any export groups
         character_root = character_network.get_downstream(metadata.network_core.JointsCore).root
         if character_root:
-            anim_asset_network_list = metadata.meta_properties.get_properties([character_root], metadata.meta_properties.CharacterAnimationAsset)
+            anim_asset_network_list = metadata.meta_property_utils.get_properties([character_root], metadata.exporter_properties.CharacterAnimationAsset)
             for obj in anim_asset_network_list:
                 obj.disconnect_self()
 
-        metadata.network_core.MetaNode.delete_network(character_network.node)
+        metadata.meta_network_utils.delete_network(character_network.node)
 
         # Remove any file references used by this character
         mesh_group_list = [x for x in character_group.listRelatives() if not hasattr(x, 'affectedBy')]
@@ -351,7 +366,7 @@ class Component_Base(object):
         Returns:
             str: CONTENT_ROOT relative path or None
         '''
-        character_network = metadata.network_core.MetaNode.get_first_network_entry(character_obj, metadata.network_core.CharacterCore)
+        character_network = metadata.meta_network_utils.get_first_network_entry(character_obj, metadata.network_core.CharacterCore)
         content_path = v1_shared.file_path_utils.relative_path_to_content(character_network.node.root_path.get())
 
         return content_path if os.path.exists(content_path) else ""
@@ -377,10 +392,10 @@ class Component_Base(object):
         the file with all new items.
         '''
         # clean out unused property nodes before we get them
-        network_node_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.meta_properties.ControlProperty)
+        network_node_list = metadata.meta_network_utils.get_all_network_nodes(ControlProperty)
         pm.delete([x for x in network_node_list if not pm.listConnections(x.message, type='joint')])
 
-        network_node_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.meta_properties.ControlProperty)
+        network_node_list = metadata.meta_network_utils.get_all_network_nodes(ControlProperty)
         control_list = [get_first_or_default(pm.listConnections(x.message, type='joint')) for x in network_node_list]
 
         first_control = get_first_or_default(control_list)
@@ -397,7 +412,7 @@ class Component_Base(object):
         control_holder_grp = pm.PyNode(grp_name) if pm.objExists(grp_name) else pm.group(empty=True, name=grp_name)
         control_holder_list.append(control_holder_grp)
         for control in control_list:
-            component_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.ComponentCore)
+            component_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.ComponentCore)
             component = Rig_Component.create_from_network_node(component_network.node)
             control_info = component.get_control_info(control)
             
@@ -436,7 +451,7 @@ class Component_Base(object):
         '''
         Applies the namespace from the character group node to all nodes in the character
         '''
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         character_group = character_network.group
 
         old_namespace = character_group.namespace()
@@ -445,14 +460,14 @@ class Component_Base(object):
         transform_list = [x for x in obj_list if not isinstance(x, pm.nt.Constraint)]
 
         network_list = []
-        metadata.network_core.MetaNode.get_network_chain(character_node, network_list)
+        metadata.meta_network_utils.get_network_chain(character_node, network_list)
 
         for obj in obj_list + network_list:
             if not pm.ls(obj, readOnly=True):
                 obj_namespace = obj.namespace()
                 new_name = obj.name().replace(obj_namespace, new_namespace) if obj_namespace else new_namespace + obj.name()
                 obj.rename(new_name)
-                property_dict = metadata.meta_properties.get_properties_dict(obj)
+                property_dict = metadata.meta_property_utils.get_properties_dict(obj)
                 for property_list in property_dict.values():
                     for property in property_list:
                         new_prop_name = property.node.name().replace(obj_namespace, new_namespace) if obj_namespace else new_namespace + property.node.name()
@@ -558,7 +573,8 @@ class Component_Base(object):
 
         for addon_network in component_network.get_all_downstream(metadata.network_core.AddonCore):
             addon_info = v1_shared.shared_utils.get_class_info(addon_network.node.component_type.get())
-            addon_component_type = getattr(sys.modules[get_first_or_default(addon_info)], get_index_or_default(addon_info, 1))
+            addon_component_type = Addon_Registry().get(get_index_or_default(addon_info, 1))
+            # addon_component_type = getattr(sys.modules[get_first_or_default(addon_info)], get_index_or_default(addon_info, 1))
             if addon_component_type._promoteselection:
                 addon_control_list = addon_network.get_downstream(metadata.network_core.AddonControls).get_connections()
                 
@@ -571,7 +587,7 @@ class Component_Base(object):
         # Only get unlocked controls
         return_control_list = []
         for control in control_list:
-            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
             if not control_property.get('locked', 'bool'):
                 return_control_list.append(control)
 
@@ -588,7 +604,7 @@ class Component_Base(object):
         Args:
             control (PyNode): The control to mirror
         '''
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.ComponentCore)
+        component_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.ComponentCore)
         component = Rig_Component.create_from_network_node(component_network.node)
         control_info = component.get_control_info(control)
 
@@ -804,13 +820,13 @@ class Component_Base(object):
 
             self.apply_control_shape(new_control_info, control, control_holder_list)
             
-            control_property = metadata.meta_properties.add_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.add_property(control, ControlProperty)
             self.network["component"].connect_node(control_property.node)
             zero_group_list.append( skeleton.create_zero_group(control) )
 
             joint_list = self.network['skeleton'].get_connections()
             joint_list = skeleton.sort_chain_by_hierarchy(joint_list)
-            root_markup_property_list = metadata.meta_properties.get_property_list(joint_list[-1], metadata.meta_properties.RigMarkupProperty)
+            root_markup_property_list = metadata.meta_property_utils.get_property_list(joint_list[-1], RigMarkupProperty)
             root_markup_property = None
             for root_markup in root_markup_property_list:
                 if root_markup.get('tag') == "root" and root_markup.get('side') == side and root_markup.get('region') == region:
@@ -876,7 +892,7 @@ class Component_Base(object):
         control_list = self.network['controls'].get_connections()
         control_list = skeleton.sort_chain_by_hierarchy(control_list)
         for i, control in enumerate(control_list):
-            control_property = get_first_or_default(metadata.meta_properties.get_properties_dict(control).get(metadata.meta_properties.ControlProperty))
+            control_property = get_first_or_default(metadata.meta_property_utils.get_properties_dict(control).get(ControlProperty))
             control_property.data = {'ordered_index': i}
 
     def get_ordered_controls(self):
@@ -890,7 +906,7 @@ class Component_Base(object):
         control_dict = {}
         index_list = []
         for control in control_list:
-            control_property = get_first_or_default(metadata.meta_properties.get_properties_dict(control).get(metadata.meta_properties.ControlProperty))
+            control_property = get_first_or_default(metadata.meta_property_utils.get_properties_dict(control).get(ControlProperty))
             index = control_property.data['ordered_index']
             index_list.append(index)
             control_dict[index] = control
@@ -911,7 +927,7 @@ class Component_Base(object):
         Returns:
             ControlInfo. ControlInfo storing all information from the control's ControlProperty, or None
         '''
-        control_property = get_first_or_default(metadata.meta_properties.get_properties_dict(control).get(metadata.meta_properties.ControlProperty))
+        control_property = get_first_or_default(metadata.meta_property_utils.get_properties_dict(control).get(ControlProperty))
         if control_property:
             control_type = control_property.data.get('control_type')
             ordered_index = control_property.data.get('ordered_index')
@@ -934,7 +950,7 @@ class Component_Base(object):
         control_list = self.network['controls'].get_connections()
 
         if control in control_list:
-            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
             control_index = control_property.get('ordered_index')
             joint_list = skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
             return joint_list[control_index] if type(control_index) == int else None
@@ -943,7 +959,7 @@ class Component_Base(object):
     #endregion
 
 #region Addon Components
-class Addon_Component(Component_Base):
+class Addon_Component(Component_Base, metaclass=Addon_Meta):
     '''
     Abstract Base Class for all Maya Addon Components.  Addon Rigs override the control of an existing rig 
     control, putting all or some of their transform into a different object space, or overriding their behavior
@@ -957,7 +973,6 @@ class Addon_Component(Component_Base):
         rotate (boolean): Whether or not this addon affects rotation
         scale (boolean): Whether or not this addon affect scale
     '''
-    __metaclass__ = ABCMeta
     _promoteselection = True
     _requires_space = True
     _uses_overrides = False
@@ -1064,7 +1079,7 @@ class Addon_Component(Component_Base):
 
         addon_start = time.clock()
         for object_space in object_space_list:
-            addon_network = metadata.network_core.MetaNode.get_first_network_entry(object_space, metadata.network_core.AddonControls)
+            addon_network = metadata.meta_network_utils.get_first_network_entry(object_space, metadata.network_core.AddonControls)
             if addon_network:
                 component_network = addon_network.get_upstream(metadata.network_core.RigComponent)
                 component = Component_Base.create_from_network_node(component_network.node)
@@ -1107,13 +1122,13 @@ class Addon_Component(Component_Base):
         object_space_list = [x for x in object_space_list if x]
         remove_space_list = []
         for object_space in object_space_list:
-            proptery_dict = metadata.meta_properties.get_properties_dict(object_space)
+            proptery_dict = metadata.meta_property_utils.get_properties_dict(object_space)
             markup_details = skeleton.get_joint_markup_details(object_space)
 
-            if proptery_dict.get(metadata.meta_properties.ControlProperty):
-                check_character_network = metadata.network_core.MetaNode.get_first_network_entry(object_space, metadata.network_core.CharacterCore)
+            if proptery_dict.get(ControlProperty):
+                check_character_network = metadata.meta_network_utils.get_first_network_entry(object_space, metadata.network_core.CharacterCore)
                 if character_network.node == check_character_network.node:
-                    component_network = metadata.network_core.MetaNode.get_first_network_entry(object_space, metadata.network_core.RigComponent)
+                    component_network = metadata.meta_network_utils.get_first_network_entry(object_space, metadata.network_core.RigComponent)
                     component = Component_Base.create_from_network_node(component_network.node)
             
                     control_info = component.get_control_info(object_space)
@@ -1234,7 +1249,7 @@ class Addon_Component(Component_Base):
         if self.network:
             return self.network
 
-        component_network = metadata.network_core.MetaNode.create_from_node(component_node)
+        component_network = metadata.meta_network_utils.create_from_node(component_node)
         character_network = component_network.get_upstream(metadata.network_core.CharacterCore)
         rig_core_network = component_network.get_upstream(metadata.network_core.RigCore)
         character_namespace = character_network.group.namespace()
@@ -1264,7 +1279,7 @@ class Addon_Component(Component_Base):
             dictionary. Dictionary with all MetaNodes for this object.  Valid keys are 'character', 'addon'
                 'overdriven_control', 'rig_core', 'component', and 'controls'
         '''
-        addon_network = metadata.network_core.MetaNode.create_from_node(addon_network_node)
+        addon_network = metadata.meta_network_utils.create_from_node(addon_network_node)
         component_network = addon_network.get_upstream(metadata.network_core.ComponentCore)
         character_network = addon_network.get_upstream(metadata.network_core.CharacterCore)
         rig_core_network = addon_network.get_upstream(metadata.network_core.RigCore)
@@ -1298,8 +1313,8 @@ class Addon_Component(Component_Base):
             dupe_shape = get_first_or_default(pm.duplicate(copy_control.getShape(), addShape=True))
             pm.parent(dupe_shape, jnt, s=True, r=True)
 
-        copy_property = metadata.meta_properties.get_property(copy_control, metadata.meta_properties.ControlProperty)
-        control_property = metadata.meta_properties.add_property(jnt, metadata.meta_properties.ControlProperty)
+        copy_property = metadata.meta_property_utils.get_property(copy_control, ControlProperty)
+        control_property = metadata.meta_property_utils.add_property(jnt, ControlProperty)
         ordered_index = copy_property.get('ordered_index') if copy_property else 0
         control_lock = copy_property.get('locked', 'bool') if copy_property else False
         control_property.data = {'control_type': 'overdriver', 'ordered_index': ordered_index, 'zero_translate' : jnt.translate.get(), 
@@ -1398,7 +1413,6 @@ class Rig_Component(Component_Base):
         network (dictionary): Dictionary of all network objects made for this rig component
         skeleton_dict (dictionary): Dictionary of the skeleton regions for the skeleton this component was applied to
     '''
-    __metaclass__ = ABCMeta
 
     @property
     def character_root(self):
@@ -1443,7 +1457,7 @@ class Rig_Component(Component_Base):
 
         # Check that either there is no component on the root and end, or that neither the component on the root or end are the same as this one
         if (not root_component_network or not end_component_network) or (str(compare_info) != str(root_info) and str(compare_info) != str(end_info)):
-            freeform_utils.character_utils.remove_existing_rigging(cls, region_chain, True)
+            freeform_utils.character_utils.remove_existing_rigging(cls._hasattachment, region_chain, True)
 
             kwargs_dict = {'world_orient_ik': not component_dict.get('ik_local_orient')} if component_dict.get('ik_local_orient') != None else {}
             if component_dict.get('up_axis'):
@@ -1665,7 +1679,7 @@ class Rig_Component(Component_Base):
         '''
         re-parent the component group to a joint on the skeleton of the character
         '''
-        control_property = metadata.meta_properties.get_property(new_parent, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(new_parent, ControlProperty)
         if control_property:
             new_parent = skeleton.get_control_joint(new_parent)
 
@@ -1780,7 +1794,7 @@ class Rig_Component(Component_Base):
             component_network = self.network['component']
             compare_dict = {'side':component_network.data.get('side'), 'region':component_network.data.get('region')}
     
-            markup_network_list = metadata.meta_properties.get_property_list(jnt, metadata.meta_properties.RigMarkupProperty)
+            markup_network_list = metadata.meta_property_utils.get_property_list(jnt, RigMarkupProperty)
             for markup_network in markup_network_list:
                 if markup_network.data_equals(compare_dict) and markup_network.get('temporary', 'bool') == True:
                     return_network_list.append(markup_network)
@@ -1800,7 +1814,7 @@ class Rig_Component(Component_Base):
         joint_list = self.network['skeleton'].get_connections()
         exclude_list = []
         for jnt in joint_list:
-            markup_list = metadata.meta_properties.get_property_list(jnt, metadata.meta_properties.RigMarkupProperty)
+            markup_list = metadata.meta_property_utils.get_property_list(jnt, RigMarkupProperty)
             side = self.network['component'].get('side')
             region = self.network['component'].get('region')
             for markup in markup_list:
@@ -2029,10 +2043,10 @@ class Rig_Component(Component_Base):
             dictionary. Dictionary with all MetaNodes for this object.  Valid keys are 'character', 'rig_core'
                 'component', 'rigging', 'controls', 'skeleton', and 'attachment'
         '''
-        markup_list = metadata.meta_properties.get_properties([skeleton_joint], metadata.meta_properties.RigMarkupProperty)
+        markup_list = metadata.meta_property_utils.get_properties([skeleton_joint], RigMarkupProperty)
         rig_markup = get_first_or_default([x for x in markup_list if x.data['side'] == side and x.data['region'] == region])
 
-        character_network = metadata.network_core.MetaNode.get_first_network_entry(skeleton_joint, metadata.network_core.CharacterCore)
+        character_network = metadata.meta_network_utils.get_first_network_entry(skeleton_joint, metadata.network_core.CharacterCore)
         character_namespace = character_network.group.namespace()
 
         rig_core_network = character_network.get_downstream(metadata.network_core.RigCore)
@@ -2071,7 +2085,7 @@ class Rig_Component(Component_Base):
             dictionary. Dictionary with all MetaNodes for this object.  Valid keys are 'character', 'rig_core'
                 'component', 'rigging', 'controls', 'skeleton', and 'attachment'
         '''
-        component_network = metadata.network_core.MetaNode.create_from_node(component_network_node)
+        component_network = metadata.meta_network_utils.create_from_node(component_network_node)
 
         character_network = component_network.get_upstream(metadata.network_core.CharacterCore)
         rig_core_network = component_network.get_upstream(metadata.network_core.RigCore)
@@ -2110,7 +2124,7 @@ class Rig_Component(Component_Base):
         '''
         control_list = self.network['controls'].get_connections()
         for control in control_list:
-            control_property_list = metadata.meta_properties.get_properties_dict(control).get(metadata.meta_properties.ControlProperty)
+            control_property_list = metadata.meta_property_utils.get_properties_dict(control).get(ControlProperty)
             for control_prop in control_property_list:
                 if control_prop.data['control_type'] == control_tag:
                     return control
@@ -2127,7 +2141,7 @@ class Rig_Component(Component_Base):
         control_dict = {}
         control_list = self.network['controls'].get_connections()
         for control in control_list:
-            control_property_list = metadata.meta_properties.get_properties_dict(control).get(metadata.meta_properties.ControlProperty)
+            control_property_list = metadata.meta_property_utils.get_properties_dict(control).get(ControlProperty)
             for control_prop in control_property_list:
                 control_dict.setdefault(control_prop.data['control_type'], [])
                 control_dict[control_prop.data['control_type']].append(control)
@@ -2312,7 +2326,7 @@ class Rig_Component(Component_Base):
         Returns:
             PyNode. The Maya scene addon network node, or None
         '''
-        overdriver_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.OverDrivenControl)
+        overdriver_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.OverDrivenControl)
         addon_control = None
         if overdriver_network:
             addon_component = Component_Base.create_from_network_node(overdriver_network.node)
@@ -2336,7 +2350,7 @@ class Rig_Component(Component_Base):
         control_network = self.network.get('controls')
         control_list = control_network.get_connections() if control_network != None else []
         addon_list = []
-        for addon_node in metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.AddonCore):
+        for addon_node in metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.AddonCore):
             addon_component = Component_Base.create_from_network_node(addon_node)
             addon_target = addon_component.get_target_object()
             if addon_target in control_list:
@@ -2360,7 +2374,7 @@ class Rig_Component(Component_Base):
         control_vars_string = ""
         for control in self.network['controls'].get_connections():
             control_network = skeleton.get_rig_network(control)
-            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
             control_type = control_property.get('control_type')
             control_index = control_property.get('ordered_index')
             if type(control_network) == metadata.network_core.AddonCore:
@@ -2368,7 +2382,7 @@ class Rig_Component(Component_Base):
 
             save_attrs = freeform_utils.character_utils.get_control_vars_strings(control)
             if save_attrs:
-                control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+                control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
                 control_vars_string += "{0};{1}|".format(control_type, control_index)
 
                 for attr_name, value in save_attrs.items():
@@ -2388,7 +2402,7 @@ class Rig_Component(Component_Base):
         if control_var_string:
             control_var_dict = freeform_utils.character_utils.parse_control_vars(control_var_string)
             for control in self.network['controls'].get_connections():
-                control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+                control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
                 control_dict = control_var_dict.get((control_property.get('control_type'), control_property.get('ordered_index')))
                 control_dict = control_dict if control_dict else {}
                 for attr_name, value in control_dict.items():

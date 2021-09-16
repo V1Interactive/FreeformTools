@@ -33,6 +33,7 @@ from v1_math.vector import Vector
 from maya_utils import anim_attr_utils
 from maya_utils.decorators import undoable
 
+from v1_core.py_helpers import Singleton
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
@@ -42,14 +43,13 @@ class BakeRangeError(Exception):
         message = "Bake Range must be 2 integer values.  Non integers found."
         super(BakeRangeError, self).__init__(message)
 
-class Global_Bake_Queue(object):
+class Global_Bake_Queue(object, metaclass=Singleton):
     '''
     Holds a singleton BakeQueue() object.
 
     Attributes:
         queue (BakeQueue): Queue to use for global registration
     '''
-    __metaclass__ = v1_core.py_helpers.Singleton
 
     def __init__(self, *args, **kwargs):
         self.queue = BakeQueue("Global Bake Queue")
@@ -117,7 +117,7 @@ class BakeQueue(object):
         # We want to be sure objects with the same bake arguements bake together and kwargs are the most unique identifier of a method.  
         # A dictionary(kwargs) can't be a key to another dictionary, so we pack and sort the kwargs dictionary to json then hash out
         # the json to a unique ID as the key for the method
-        kwargs_id = hashlib.sha1(json.dumps(kwargs, sort_keys=True)).hexdigest()
+        kwargs_id = hashlib.sha1(json.dumps(kwargs, sort_keys=True).encode('utf-8')).hexdigest()
         if kwargs_id not in self.queue.keys():
             self.queue[kwargs_id] = (method, obj_list, kwargs)
         else:
@@ -135,7 +135,10 @@ class BakeQueue(object):
             method (method): method to add
             kwargs (kwargs): keyword arguements for the method being added
         '''
-        self.post_process_list.append((method, kwargs))
+        # Don't add methods from the same component twice
+        check_list = [(x[0].__self__.guid, x[0].__name__) for x in self.post_process_list]
+        if (method.__self__.guid, method.__name__) not in check_list:
+            self.post_process_list.append((method, kwargs))
 
     def add_pre_process(self, method, kwargs, priority):
         '''
@@ -145,7 +148,10 @@ class BakeQueue(object):
             method (method): method to add
             kwargs (kwargs): keyword arguements for the method being added
         '''
-        self.pre_process_list.append((method, kwargs, priority))
+        # Don't add methods from the same component twice
+        check_list = [(x[0].__self__.guid, x[0].__name__) for x in self.pre_process_list]
+        if (method.__self__.guid, method.__name__) not in check_list:
+            self.pre_process_list.append((method, kwargs, priority))
 
     def run_queue(self):
         '''
@@ -179,7 +185,7 @@ class BakeQueue(object):
                     v1_core.v1_logging.get_logger().debug("PRE-PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.clock() - method_time))
 
             v1_core.v1_logging.get_logger().debug("Running {0} Bake Processes".format(len(self.queue.values())))
-            for method, obj_list, kwargs in self.queue.itervalues():
+            for method, obj_list, kwargs in self.queue.values():
                 method_time = time.clock()
                 if obj_list:
                     method(obj_list, **kwargs)
@@ -199,7 +205,7 @@ class BakeQueue(object):
         except Exception as e:
             exception_text = v1_core.exceptions.get_exception_message()
 
-            v1_core.v1_logging.get_logger().error(exception_text)
+            v1_core.v1_logging.get_logger().info(exception_text)
         finally:
             pm.autoKeyframe(state=autokey_state)
             self.queue = {}
@@ -361,9 +367,9 @@ def get_bake_time_range(obj_list, settings):
             start_frame, end_frame = check_constraints_for_key_range(obj, start_frame, end_frame)
 
         scene_range = (pm.playbackOptions(q=True, ast=True), pm.playbackOptions(q=True, aet=True))
-        if scene_range[0] < start_frame:
+        if start_frame and scene_range[0] < start_frame:
             start_frame = scene_range[0]
-        if scene_range[1] > end_frame:
+        if end_frame and scene_range[1] > end_frame:
             end_frame = scene_range[1]
             
         if start_frame == None:

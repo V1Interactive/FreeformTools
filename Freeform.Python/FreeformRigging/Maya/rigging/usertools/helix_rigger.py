@@ -70,10 +70,9 @@ class HelixRigger:
         self.vm = self.ui.DataContext
 
         self.component_lookup = {}
-
-        for rig_type in rigging.rig_base.Rig_Component.get_rig_subclasses():
-            module, type_name = v1_shared.shared_utils.get_class_info(str(rig_type))
-            self.vm.AddRigType(module, type_name)
+        
+        for rig_type_name in rigging.component_registry.Component_Registry().registry.keys():
+            self.vm.AddRigType(rig_type_name)
         self.vm.SelectedRigType = "FK"
 
         for preset in rigging.settings_binding.Binding_Sets.USER_OPTIONS.value:
@@ -525,12 +524,12 @@ class HelixRigger:
 
     def rigger_populate_component_category(self, selection_list):
         obj = get_first_or_default(selection_list)
-        control_property = metadata.meta_properties.get_property(obj, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(obj, metadata.meta_properties.ControlProperty)
         component_network = None
         if control_property:
-            component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.AddonCore)
+            component_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.AddonCore)
             if not component_network:
-                component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.ComponentCore)
+                component_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.ComponentCore)
 
         if component_network:
             method_category = self.vm.GetRigCategoryList("Component Methods")
@@ -546,7 +545,7 @@ class HelixRigger:
                 category_dict = settings_dict.get(self.ToolVisibilityCategory)
 
                 method_list = list(method_dict.keys())
-                method_list.sort()
+                method_list.sort(key=lambda x: x.__name__)
                 for method in method_list:
                     method_info = method_dict[method]
                     new_button = Freeform.Rigging.RigBarButton()
@@ -572,13 +571,13 @@ class HelixRigger:
         component_node_list = []
 
         for obj in selection_list:
-            control_property = metadata.meta_properties.get_property(obj, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(obj, metadata.meta_properties.ControlProperty)
             if control_property:
                 component_node = None
                 if control_property.node.hasAttr("affectedBy"):
                     component_node = control_property.get_first_connection(get_attribute=control_property.node.affectedBy)
                 if not component_node:
-                    component_node = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.ComponentCore).node
+                    component_node = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.ComponentCore).node
 
                 if component_node not in component_node_list:
                     component_node_list.append(component_node)
@@ -632,7 +631,7 @@ class HelixRigger:
         Finds all settings files in the character folder and populates the UI menu with them
         '''
         character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
 
         folder_path_list = character_network.character_folders
         folder_path_list = [x for x in folder_path_list if os.path.exists(x)]
@@ -646,7 +645,7 @@ class HelixRigger:
         Finds all rigging files in the character folder and populates the UI menu with them
         '''
         character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         rig_profile_list = rigging.file_ops.get_character_rig_profiles(character_network)
         for profile_full_path in rig_profile_list:
             self.create_menu_item(profile_full_path, self.load_rigging_profile, self.vm.RiggingMenuItems)
@@ -699,7 +698,7 @@ class HelixRigger:
         selection_string = ""
         selection = pm.ls(selection = True)
         for obj in selection:
-            control_property = metadata.meta_properties.get_property(obj, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(obj, metadata.meta_properties.ControlProperty)
             if control_property:
                 selection_string += str(control_property.get_control_info()) + ","
 
@@ -725,7 +724,7 @@ class HelixRigger:
             search_dict[control_info.side][control_info.region].append([control_info.control_type, control_info.ordered_index])
 
         character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         component_list = character_network.get_all_downstream(metadata.network_core.ComponentCore)
 
         for component_network in component_list:
@@ -734,7 +733,7 @@ class HelixRigger:
             if control_info_list:
                 control_list = component_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
                 for control in control_list:
-                    control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+                    control_property = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
                     for control_info in control_info_list:
                         if control_property.get("control_type") == control_info[0] and control_property.get("ordered_index") == control_info[1]:
                             selection_list.append(control)
@@ -799,7 +798,7 @@ class HelixRigger:
         sel_list = pm.ls(sl=True)
         character_network_list = []
         for obj in sel_list:
-            character_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.CharacterCore)
+            character_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.CharacterCore)
             if character_network and character_network.node.name() not in [x.node.name() for x in character_network_list]:
                 character_network_list.append(character_network)
 
@@ -852,7 +851,7 @@ class HelixRigger:
         Select all animated objects that are driving the character
         '''
         c_character = event_args.character
-        character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(c_character.NodeName))
+        character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(c_character.NodeName))
         if event_args.animated:
             freeform_utils.character_utils.select_all_animated(character_network)
         else:
@@ -880,9 +879,9 @@ class HelixRigger:
             self.vm.UnloadCharacter(c_character, False)
 
         if self.vm.UiManualUpdate:
-            update_character_list = [metadata.network_core.MetaNode.create_from_node(x) for x in [pm.PyNode(x.NodeName) for x in self.vm.CharacterList if pm.objExists(x.NodeName)]]
+            update_character_list = [metadata.meta_network_utils.create_from_node(x) for x in [pm.PyNode(x.NodeName) for x in self.vm.CharacterList if pm.objExists(x.NodeName)]]
         else:
-            update_character_list = [metadata.network_core.MetaNode.create_from_node(x) for x in metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.CharacterCore)]
+            update_character_list = [metadata.meta_network_utils.create_from_node(x) for x in metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)]
 
         for character_network in update_character_list:
             self.update_or_load_character(character_network)
@@ -890,12 +889,12 @@ class HelixRigger:
         self.vm.SetDefaultActiveCharacter()
 
         # Animation Property updates
-        export_definition_list = metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.ExportDefinition)
+        export_definition_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.ExportDefinition)
         for definition_node in export_definition_list:
-            curve_network_list = metadata.network_core.MetaNode.get_network_entries(definition_node, metadata.meta_properties.AnimCurveProperties)
+            curve_network_list = metadata.meta_network_utils.get_network_entries(definition_node, metadata.export_modify_properties.AnimCurveProperties)
             for curve_network in curve_network_list:
                 curve_network.refresh_names()
-                #anim_curves = HelixExporter.create_anim_curves(curve_network.node, metadata.meta_properties.attribute_changed, self.set_frame, self.get_frame)
+                #anim_curves = HelixExporter.create_anim_curves(curve_network.node, metadata.meta_property_utils.attribute_changed, self.set_frame, self.get_frame)
                 #definition.ExportProperties.Add(anim_curves)
         
         self.update_component_lookup()
@@ -1114,7 +1113,7 @@ class HelixRigger:
 
         joints_core = character_network.get_downstream(metadata.network_core.JointsCore)
         for joint in joints_core.get_connections():
-            prop_attachment_network = metadata.meta_properties.get_property(joint, metadata.meta_properties.PropAttachProperty)
+            prop_attachment_network = metadata.meta_property_utils.get_property(joint, metadata.joint_properties.PropAttachProperty)
             if prop_attachment_network:
                 attached_file = prop_attachment_network.get('attached_file')
                 new_c_prop = Freeform.Rigging.PropAttachment(str(joint.stripNamespace()), str(prop_attachment_network.node.longName()))
@@ -1125,7 +1124,7 @@ class HelixRigger:
                     else:
                         new_c_prop.AttachedProp = Freeform.Rigging.PropFile(attached_file)
                 new_c_prop.SwapAttachment = new_c_prop
-                new_c_prop.AttributeChangedHandler += metadata.meta_properties.attribute_changed
+                new_c_prop.AttributeChangedHandler += metadata.meta_property_utils.attribute_changed
                 new_c_prop.AddAttachmentHandler += self.add_attachment
                 new_c_prop.RemoveAttachmentHandler += self.remove_attachment
                 new_c_prop.AddAttachmentFromFileHandler += self.add_attachment_from_file
@@ -1181,7 +1180,7 @@ class HelixRigger:
         c_character = self.get_character_by_name(name)
         character_node = pm.PyNode(c_character.NodeName) if pm.objExists(c_character.NodeName) else None
         if character_node:
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
             self.update_character_regions(c_character, character_network)
 
     def update_active_character_regions(self):
@@ -1190,7 +1189,7 @@ class HelixRigger:
         '''
         character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName) if pm.objExists(self.vm.ActiveCharacter.NodeName) else None
         if character_node:
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
             self.update_character_regions(self.vm.ActiveCharacter, character_network)
 
 
@@ -1198,12 +1197,12 @@ class HelixRigger:
         '''
         Finds all CharacterCore objects in the scene that don't have valid information and remvoes their networks
         '''
-        for character_node in metadata.network_core.MetaNode.get_all_network_nodes(metadata.network_core.CharacterCore):
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        for character_node in metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore):
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
             joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
             rig_network = character_network.get_downstream(metadata.network_core.RigCore)
             if not joints_network or not rig_network:
-                metadata.network_core.MetaNode.delete_network(character_network.node)
+                metadata.meta_network_utils.delete_network(character_network.node)
 
 
     def check_settings(self, character_network, c_character):
@@ -1259,7 +1258,7 @@ class HelixRigger:
 
         new_c_component.SelectComponentHandler += self.select_component
         new_c_component.ToggleVisibilityComponentHandler += self.toggle_vis_component
-        new_c_component.AttributeChangedHandler += metadata.meta_properties.attribute_changed
+        new_c_component.AttributeChangedHandler += metadata.meta_property_utils.attribute_changed
         new_c_component.TransferAnimHandler += self.transfer_animation
 
         return new_c_component
@@ -1277,7 +1276,7 @@ class HelixRigger:
         sorted_control_list = self.sort_control_list(filtered_control_list)
 
         for i, control in enumerate(sorted_control_list):
-            control_property_network = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property_network = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
 
             new_button = Freeform.Rigging.ComponentSelectButton()
             new_button.Name = "component_view__component_control_select"
@@ -1320,7 +1319,7 @@ class HelixRigger:
             c_button (Rigging.RigBarButton): C# Button object to set the select control on
             control (PyNode): Scene control object
         '''
-        overdriven_control_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.OverDrivenControl)
+        overdriven_control_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.OverDrivenControl)
         if overdriven_control_network:
             overdriver_network = overdriven_control_network.get_upstream(metadata.network_core.AddonCore)
             overdriver_control_network = overdriver_network.get_downstream(metadata.network_core.AddonControls)
@@ -1365,7 +1364,7 @@ class HelixRigger:
         sorted_control_list = self.sort_control_list(filtered_control_list)
         
         for component_control, c_control_button in zip(sorted_control_list, c_component.ComponentButtonList):
-            control_property_network = metadata.meta_properties.get_property(component_control, metadata.meta_properties.ControlProperty)
+            control_property_network = metadata.meta_property_utils.get_property(component_control, metadata.meta_properties.ControlProperty)
             self.set_control_button_icon(control_property_network, c_control_button)
             self.set_control_button_control(control_property_network, c_control_button, component_control)
             self.set_control_button_enabled(control_property_network, c_control_button)
@@ -1379,7 +1378,7 @@ class HelixRigger:
 
         offset = 0
         for control in control_list:
-            control_property_network = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property_network = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
             control_type = control_property_network.get('control_type')
 
             if 'fk' in control_type or 'ribbon' in control_type:
@@ -1422,7 +1421,7 @@ class HelixRigger:
             vm (Rigging.RiggerVM): C# view model object sending the command
             event_args (UpdateCharacterEventArgs): Passes the character to update from the UI
         '''
-        character_network = metadata.network_core.MetaNode.create_from_node( pm.PyNode(event_args.character.NodeName) )
+        character_network = metadata.meta_network_utils.create_from_node( pm.PyNode(event_args.character.NodeName) )
         updater = versioning.character_version.CharacterUpdater(character_network)
         updater.update()
 
@@ -1525,7 +1524,7 @@ class HelixRigger:
         if result == 'OK':
             color_set_name = pm.promptDialog(query=True, text=True)
             character_node = pm.PyNode(event_args.character.NodeName)
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
             character_network.set('color_set', color_set_name)
 
     @csharp_error_catcher
@@ -1540,7 +1539,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): Passes the character to freeze from the UI
         '''
         character_node = pm.PyNode(event_args.character.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
         character_joint_list = joint_core_network.get_connections()
 
@@ -1559,7 +1558,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): Passes the character to freeze from the UI
         '''
         character_node = pm.PyNode(event_args.character.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         rigging.rig_tools.freeze_xform_rig(character_network)
 
     @csharp_error_catcher
@@ -1573,7 +1572,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): Passes the character to freeze from the UI
         '''
         character_node = pm.PyNode(event_args.character.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
         relative_path = v1_shared.file_path_utils.full_path_to_relative(event_args.filePath)
         character_network.set('root_path', relative_path)
 
@@ -1590,7 +1589,7 @@ class HelixRigger:
             vm (Rigging.RiggerVM): C# view model object sending the command
             event_args (CharacterEventArgs): Passes the character to delete from the UI
         '''
-        character_network = metadata.network_core.MetaNode.create_from_node( pm.PyNode(event_args.character.NodeName) )
+        character_network = metadata.meta_network_utils.create_from_node( pm.PyNode(event_args.character.NodeName) )
         rigging.rig_base.Component_Base.quick_fk_rig(character_network)
 
     @csharp_error_catcher
@@ -1604,7 +1603,7 @@ class HelixRigger:
             event_args (SelectEventArgs): Passes a boolean for whether to add to selection or replace it
         '''
         network_node = pm.PyNode(c_component.NodeName)
-        component_network = metadata.network_core.MetaNode.create_from_node(network_node)
+        component_network = metadata.meta_network_utils.create_from_node(network_node)
         if c_component.Enabled:
             if event_args.doAdd:
                 pm.select( rigging.rig_base.Component_Base.get_controls(component_network), add=True)
@@ -1637,7 +1636,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         network_node = pm.PyNode(c_component.NodeName)
-        component_network = metadata.network_core.MetaNode.create_from_node(network_node)
+        component_network = metadata.meta_network_utils.create_from_node(network_node)
         rigging.rig_base.Component_Base.hide_toggle_controls(component_network, event_args.doAdd)
 
     @csharp_error_catcher
@@ -1670,7 +1669,7 @@ class HelixRigger:
             vm (Rigging.Rigger): C# view model object sending the command
             event_args (CharacterEventArgs): Passes the character to zero from the UI
         '''
-        character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(event_args.character.NodeName))
+        character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
         rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
         rigging.rig_base.Component_Base.zero_all_rigging(character_network)
 
@@ -1685,7 +1684,7 @@ class HelixRigger:
             vm (Rigging.Rigger): C# view model object sending the command
             event_args (CharacterEventArgs): Passes the character to zero from the UI
         '''
-        character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(event_args.character.NodeName))
+        character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
         joint_list = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
         first_joint = get_first_or_default(joint_list)
         rigging.skeleton.zero_character(first_joint)
@@ -1716,7 +1715,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): Passes the character to swap to the new rig from the UI
         '''
         character_node = pm.PyNode(event_args.character.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
 
         path_list = character_network.get_character_path_list()
         rigging.usertools.character_picker.RigSwapper(path_list, character_node).show()
@@ -1738,7 +1737,7 @@ class HelixRigger:
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(network_node)
             rig_component.remove_animation()
 
-        character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(c_character.NodeName))
+        character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(c_character.NodeName))
         joint_list = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
         rigging.skeleton.remove_animation(joint_list)
 
@@ -1753,7 +1752,7 @@ class HelixRigger:
             event_args (SettingsEventArgs): Passes the character, settings preset, and whether or not to update the settings file
         '''
         if pm.objExists(event_args.character.NodeName):
-            character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(event_args.character.NodeName))
+            character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
             binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
 
             rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list)
@@ -1779,7 +1778,7 @@ class HelixRigger:
             event_args (None): Empty event args because this is coming from a procedurally generated menu item
         '''
         if pm.objExists(self.vm.ActiveCharacter.NodeName):
-            character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
+            character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
             binding_list = rigging.settings_binding.Binding_Sets[self.vm.SelectedPreset.upper()].value
 
             rigging.file_ops.load_settings_from_json(character_network.group, c_v1_menu_item.Data, binding_list)
@@ -1800,7 +1799,7 @@ class HelixRigger:
             event_args (SettingsEventArgs): Passes the character, settings preset, and whether or not to update the settings file
         '''
         if pm.objExists(event_args.character.NodeName):
-            character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(event_args.character.NodeName))
+            character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
             joint_list   = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
             first_joint  = get_first_or_default(joint_list)
             binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
@@ -1813,7 +1812,7 @@ class HelixRigger:
     def save_ue4_settings(self, vm, event_args):
         if pm.objExists(event_args.character.NodeName):
             character_node = pm.PyNode(event_args.character.NodeName)
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
             joint_list = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
             first_joint = get_first_or_default(joint_list)
 
@@ -1880,7 +1879,7 @@ class HelixRigger:
             skele_dict = rigging.skeleton.get_skeleton_dict( component_joint )
 
             character_node = pm.PyNode(event_args.character.NodeName)
-            character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
 
             joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
             first_joint = joint_core_network.get_first_connection()
@@ -1997,9 +1996,9 @@ class HelixRigger:
         '''
         if event_args:
             sel_list = pm.ls(selection=True)
-            component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.AddonCore) for x in sel_list]
+            component_network_list = [metadata.meta_network_utils.get_first_network_entry(x, metadata.network_core.AddonCore) for x in sel_list]
             if not get_first_or_default(component_network_list):
-                component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in sel_list]
+                component_network_list = [metadata.meta_network_utils.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in sel_list]
 
             component_network_list = list(set(component_network_list))
             component_network_list = [x for x in component_network_list if x]
@@ -2118,7 +2117,7 @@ class HelixRigger:
                 component_network.load_animation(sorted_joint_list)
 
             pm.delete(component_network.group)
-            metadata.network_core.MetaNode.delete_network(component_network.node)
+            metadata.meta_network_utils.delete_network(component_network.node)
 
         if character_category.bake_component:
             maya_utils.baking.Global_Bake_Queue().run_queue()
@@ -2138,7 +2137,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         sel_list = pm.ls(selection=True)
-        control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+        control_list = [x for x in sel_list if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
         warning_message = ""
         for control in control_list:
             component_network = rigging.skeleton.get_rig_network(control)
@@ -2168,7 +2167,7 @@ class HelixRigger:
         if len(sel_list) > 1:
             warning_message = ""
             space = get_first_or_default(sel_list)
-            control_list = [x for x in sel_list[1:] if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+            control_list = [x for x in sel_list[1:] if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
             for control in control_list:
                 component_network = rigging.skeleton.get_rig_network(control)
                 rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
@@ -2197,7 +2196,7 @@ class HelixRigger:
 
         sel_list = pm.ls(selection=True)
         if len(sel_list) > 1 or space_type._requires_space == False:
-            control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+            control_list = [x for x in sel_list if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
             if control_list:
                 control = control_list[-1]
                 space_list = [x for x in sel_list if x != control]
@@ -2249,7 +2248,7 @@ class HelixRigger:
         '''
 
         if pm.objExists(self.vm.ActiveCharacter.NodeName):
-            character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
+            character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
             rigging.skeleton.create_center_of_mass(character_network.get_downstream(metadata.network_core.JointsCore).root)
         else:
             selection_list = pm.ls(sl=True)
@@ -2269,7 +2268,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         sel_list = pm.ls(selection=True)
-        control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+        control_list = [x for x in sel_list if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
         for control in control_list:
             component_network = rigging.skeleton.get_rig_network(control)
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
@@ -2288,7 +2287,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         sel_list = pm.ls(selection=True)
-        control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+        control_list = [x for x in sel_list if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
         for control in control_list:
             component_network = rigging.skeleton.get_rig_network(control)
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
@@ -2306,7 +2305,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         sel_list = pm.ls(selection=True)
-        control_list = [x for x in sel_list if metadata.meta_properties.get_properties([x], metadata.meta_properties.ControlProperty)]
+        control_list = [x for x in sel_list if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
         other_list = [x for x in sel_list if x not in control_list]
         for control in control_list:
             maya_utils.node_utils.zero_node(control, ['constraint', 'animCurve', 'animLayer', 'animBlendNodeAdditiveDL', 
@@ -2325,7 +2324,7 @@ class HelixRigger:
         '''
         sel_list = pm.ls(selection=True)
         for obj in sel_list:
-            component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.RigComponent)
+            component_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.RigComponent)
             if component_network:
                 component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 meta_switch = component.switch_rigging()
@@ -2350,9 +2349,9 @@ class HelixRigger:
         if not sel_list:
             return
 
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(sel_list[0], metadata.network_core.AddonCore)
+        component_network = metadata.meta_network_utils.get_first_network_entry(sel_list[0], metadata.network_core.AddonCore)
         if not component_network:
-            component_network = metadata.network_core.MetaNode.get_first_network_entry(sel_list[0], metadata.network_core.ComponentCore)
+            component_network = metadata.meta_network_utils.get_first_network_entry(sel_list[0], metadata.network_core.ComponentCore)
 
         if component_network:
             component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
@@ -2414,29 +2413,29 @@ class HelixRigger:
         '''
         selection_list = pm.ls(sl=True)
         for obj in selection_list:
-            addon_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.AddonCore)
+            addon_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.AddonCore)
 
             control = obj
             if addon_network:
                 control = addon_network.get_downstream(metadata.network_core.OverDrivenControl).get_first_connection()
 
-            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
             if control_property:
                 lock_state = not control_property.get('locked', 'bool')
 
                 control_property.set('locked', lock_state, 'bool')
                 # If obj is the overdriver control, also set the locked state on the overdriver control property
                 if addon_network:
-                    metadata.meta_properties.get_property(obj, metadata.meta_properties.ControlProperty).set('locked', lock_state, 'bool')
+                    metadata.meta_property_utils.get_property(obj, metadata.meta_properties.ControlProperty).set('locked', lock_state, 'bool')
 
                 # Store the control info on the 'root' RigMarkupProperty of the joints so it can be restored on rig build
-                component_network = metadata.network_core.MetaNode.get_first_network_entry(control, metadata.network_core.ComponentCore)
+                component_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.ComponentCore)
                 joint_list = component_network.get_downstream(metadata.network_core.SkeletonJoints).get_connections()
                 joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
                 control_list = component_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
                 control_list = rigging.skeleton.sort_chain_by_hierarchy(control_list)
                 control_list.reverse()
-                root_markup_property_list = metadata.meta_properties.get_property_list(joint_list[-1], metadata.meta_properties.RigMarkupProperty)
+                root_markup_property_list = metadata.meta_property_utils.get_property_list(joint_list[-1], metadata.joint_properties.RigMarkupProperty)
                 root_markup_property = None
                 for root_markup in root_markup_property_list:
                     if root_markup.get('tag') == "root" and root_markup.get('side') == component_network.get('side') and root_markup.get('region') == component_network.get('region'):
@@ -2456,7 +2455,7 @@ class HelixRigger:
                 locked_shader = rigging.rig_base.Component_Base.create_material("LOCKED")
                 side_shader = rigging.rig_base.Component_Base.create_material(component_network.get('side'))
                 for set_control in control_list:
-                    set_property = metadata.meta_properties.get_property(set_control, metadata.meta_properties.ControlProperty)
+                    set_property = metadata.meta_property_utils.get_property(set_control, metadata.meta_properties.ControlProperty)
                     already_locked = set_property.get('locked', 'bool')
                     control_shader = locked_shader if already_locked else side_shader
                     if set_control not in selection_list and not already_locked:
@@ -2512,7 +2511,7 @@ class HelixRigger:
         '''
         obj = get_first_or_default(pm.ls(selection=True))
         if obj:
-            character_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.CharacterCore)
+            character_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.CharacterCore)
             rigging.rig_base.Component_Base.build_pickwalk_network(character_network)
 
     @csharp_error_catcher
@@ -2587,7 +2586,7 @@ class HelixRigger:
         sel_list = pm.ls(selection=True)
         obj_list = sel_list[:-1]
         new_parent = sel_list[-1]
-        component_network_list = [metadata.network_core.MetaNode.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in obj_list]
+        component_network_list = [metadata.meta_network_utils.get_first_network_entry(x, metadata.network_core.ComponentCore) for x in obj_list]
         component_network_list = list(set(component_network_list))
         for component_network in component_network_list:
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
@@ -2615,16 +2614,17 @@ class HelixRigger:
         bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
         user_bake_settings = bake_settings.force_bake_key_range()
 
-        component_type = getattr(sys.modules[event_args.rigType[0]], event_args.rigType[1])
+        component_type = rigging.component_registry.Component_Registry().get(event_args.rigTypeName)
+        # component_type = getattr(sys.modules[event_args.rigType[0]], event_args.rigType[1])
         root_joint = pm.PyNode(event_args.skeletonRegion.Root)
         end_joint = pm.PyNode(event_args.skeletonRegion.End)
         region_chain = rigging.skeleton.get_joint_chain(root_joint, end_joint)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         
-        freeform_utils.character_utils.remove_existing_rigging(component_type, region_chain)
+        freeform_utils.character_utils.remove_existing_rigging(component_type._hasattachment, region_chain)
         skeleton_dict = rigging.skeleton.get_skeleton_dict(root_joint)
-        character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(c_character.NodeName))
+        character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(c_character.NodeName))
         control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(character_network.group)
 
         component = component_type()
@@ -2632,8 +2632,8 @@ class HelixRigger:
         rig_success = component.rig(skeleton_dict, event_args.skeletonRegion.Side, event_args.skeletonRegion.Region, event_args.isWorldSpace, control_holder_list, additive = not character_category.remove_existing)
         if rig_success:
             component_node = component.network['component'].node
-            new_c_component = self._create_c_component(component_node.longName(), event_args.rigType[1], component_node.side.get(), component_node.region.get())
-            component_network = metadata.network_core.MetaNode.create_from_node(component_node)
+            new_c_component = self._create_c_component(component_node.longName(), event_args.rigTypeName, component_node.side.get(), component_node.region.get())
+            component_network = metadata.meta_network_utils.create_from_node(component_node)
             self.create_control_buttons(component_network, new_c_component)
             c_character.AddComponent(new_c_component)
             self.component_lookup[component_node] = (c_character, new_c_component)
@@ -2700,7 +2700,7 @@ class HelixRigger:
             event_args (FilePathEventArgs): Passes the selected full file path gathered from the UI
         '''
         if vm.ActiveCharacter:
-            character_network = metadata.network_core.MetaNode.create_from_node( pm.PyNode(vm.ActiveCharacter.NodeName) )
+            character_network = metadata.meta_network_utils.create_from_node( pm.PyNode(vm.ActiveCharacter.NodeName) )
             rigging.file_ops.save_to_json(character_network, event_args.filePath)
 
     @csharp_error_catcher
@@ -2715,7 +2715,7 @@ class HelixRigger:
             event_args (FilePathEventArgs): Passes the selected full file path gathered from the UI
         '''
         if self.vm.ActiveCharacter:
-            character_network = metadata.network_core.MetaNode.create_from_node( pm.PyNode(vm.ActiveCharacter.NodeName) )
+            character_network = metadata.meta_network_utils.create_from_node( pm.PyNode(vm.ActiveCharacter.NodeName) )
             rigging.file_ops.load_from_json(character_network, event_args.filePath)
 
     @csharp_error_catcher
@@ -2730,7 +2730,7 @@ class HelixRigger:
             event_args (None): Empty event args
         '''
         if self.vm.ActiveCharacter:
-            character_network = metadata.network_core.MetaNode.create_from_node( pm.PyNode(self.vm.ActiveCharacter.NodeName) )
+            character_network = metadata.meta_network_utils.create_from_node( pm.PyNode(self.vm.ActiveCharacter.NodeName) )
             rigging.file_ops.load_from_json(character_network, c_v1_menu_item.Data)
             self.run_fix_script(character_network, c_v1_menu_item.Data)
             self.vm.UpdateRiggerInPlace()
@@ -2766,7 +2766,7 @@ class HelixRigger:
         '''
         start_dir = os.path.expanduser("~")
         if vm.ActiveCharacter:
-            character_network = metadata.network_core.MetaNode.create_from_node(pm.PyNode(vm.ActiveCharacter.NodeName))
+            character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(vm.ActiveCharacter.NodeName))
             relative_path = rigging.rig_base.Component_Base.get_character_root_directory(character_network.group)
             start_dir = relative_path if os.path.exists(relative_path) else start_dir
         
@@ -2822,7 +2822,7 @@ class HelixRigger:
         frame_min, frame_max = (pm.playbackOptions(q=True, min=True), pm.playbackOptions(q=True, max=True))
 
         prop_node = pm.PyNode(c_prop.NodeName)
-        prop_network = metadata.network_core.MetaNode.create_from_node(prop_node)
+        prop_network = metadata.meta_network_utils.create_from_node(prop_node)
         attach_joint = prop_network.get_first_connection()
 
         file_path = prop_file.FilePath.replace('\\', '\\\\') 
@@ -2864,10 +2864,10 @@ class HelixRigger:
             c_prop (Rigging.PropAttachment): C# view model object sending the command
         '''
         prop_node = pm.PyNode(c_prop.NodeName)
-        prop_network = metadata.network_core.MetaNode.create_from_node(prop_node)
+        prop_network = metadata.meta_network_utils.create_from_node(prop_node)
 
         character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName)
-        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
 
         joints_core = character_network.get_downstream(metadata.network_core.JointsCore)
         joint_list = joints_core.get_connections()
@@ -2895,7 +2895,7 @@ class HelixRigger:
             event_args (Rigging.PropFileEventArgs): Stores the selected rig file from the UI
         '''
         prop_node = pm.PyNode(c_prop.NodeName)
-        prop_network = metadata.network_core.MetaNode.create_from_node(prop_node)
+        prop_network = metadata.meta_network_utils.create_from_node(prop_node)
 
         if len(prop_network.get_connections()) > 1:
             self.remove_prop(c_prop)

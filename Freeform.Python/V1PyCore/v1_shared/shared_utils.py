@@ -39,7 +39,7 @@ def get_class_info(class_string):
     Returns:
         (string, string).  Tuple of strings for (module, Type)
     '''
-    return class_string.split("'")[1].split(".")
+    return class_string.split("'")[1].rsplit(".", 1)
 
 
 def bake_vertex_color_data(source_vector_list, dest_vector_list, to_color = True):

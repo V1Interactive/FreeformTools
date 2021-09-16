@@ -23,6 +23,8 @@ import v1_core
 
 import metadata
 
+from v1_core.py_helpers import Freeform_Enum
+
 
 
 class MaterialSettings:
@@ -55,7 +57,7 @@ class MaterialSettings:
         material.translucence.set(self.translucence)
 
 
-class RigControlShaderEnum(v1_core.py_helpers.Freeform_Enum):
+class RigControlShaderEnum(Freeform_Enum):
     '''
     Enum for default rig shaders indexed by the name of the side for the rig component
     '''
@@ -122,7 +124,7 @@ def save_rigging_material_from_selection():
     obj_list = pm.ls(sl = True)
     if obj_list:
         obj = obj_list[0]
-        component_network = metadata.network_core.MetaNode.get_first_network_entry(obj, metadata.network_core.ComponentCore)
+        component_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.ComponentCore)
         side = component_network.get('side')
 
         material_list = self.get_material_list(obj)

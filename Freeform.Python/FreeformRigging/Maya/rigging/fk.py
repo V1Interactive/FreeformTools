@@ -41,6 +41,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 class FK(rig_base.Rig_Component):
+    _do_register = True
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
@@ -49,7 +50,6 @@ class FK(rig_base.Rig_Component):
     def __init__(self, *args, **kwargs):
         super(FK, self).__init__(*args, **kwargs)
         self.prefix = 'fk'
-
 
 
     def bake_controls(self, translate = True, rotate = True, scale = True):
@@ -390,7 +390,7 @@ class Aim_FK(FK):
                 pm.parentConstraint(control_chain[-1], aim_target, mo=True)
                 self.network['controls'].connect_node(aim_target)
 
-                control_property = metadata.meta_properties.add_property(aim_target, metadata.meta_properties.ControlProperty)
+                control_property = metadata.meta_property_utils.add_property(aim_target, metadata.meta_properties.ControlProperty)
                 self.network["component"].connect_node(control_property.node)
                 control_property.data = {'control_type' : 'locator', 'ordered_index' : 0, 'zero_translate' : aim_target.translate.get(), 
                                         'zero_rotate' : aim_target.rotate.get(), 'locked' : False}
@@ -423,7 +423,7 @@ class Aim_FK(FK):
         locator = None
         end_control = None
         for control in control_list:
-            control_property = metadata.meta_properties.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
             if control_property.get('control_type') == "locator":
                 locator = control
             elif control_property.get('control_type') == "fk" and control_property.get('ordered_index') == 0:
