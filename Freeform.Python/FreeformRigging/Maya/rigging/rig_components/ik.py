@@ -28,9 +28,9 @@ import scene_tools
 
 from rigging import skeleton
 from rigging import rig_base
-#from rigging import rig_tools
-#from rigging import overdriver
 from rigging import constraints
+from rigging.rig_base import Rig_Component
+from rigging.component_registry import Component_Registry
 
 import v1_core
 import v1_shared
@@ -41,7 +41,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class IK(rig_base.Rig_Component):
+class IK(Rig_Component):
     _do_register = True
     _inherittype = "component"
     _spacetype = "inherit"
@@ -298,7 +298,8 @@ class IK(rig_base.Rig_Component):
 
     @csharp_error_catcher
     def switch_to_fk(self, c_rig_button, event_args):
-        self.switch_component(rigging.fk.FK)
+        fk_type = Component_Registry().get('FK')
+        self.switch_component(fk_type)
 
     def get_rigger_methods(self):
         method_dict = {}

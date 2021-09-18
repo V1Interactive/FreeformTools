@@ -46,6 +46,11 @@ from rigging.usertools import character_picker
 from rigging.usertools import region_editor
 from rigging.usertools import rig_builder
 from rigging.usertools import control_color_set
+from rigging.rig_components.fk import FK
+from rigging.rig_components.ik import IK
+from rigging.rig_overdrivers.overdriver import Overdriver, Position_Overdriver, Rotation_Overdriver
+
+
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
 from maya_utils.decorators import undoable, project_only
@@ -2144,7 +2149,7 @@ class HelixRigger:
             rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
 
             if type(rig_component) in rigging.rig_base.Component_Base.get_rig_subclasses():
-                rig_component.switch_space( control, rigging.overdriver.Overdriver, None )
+                rig_component.switch_space( control, Overdriver, None )
             else:
                 warning_message += "{0}\n".format(control)
 
@@ -2172,7 +2177,7 @@ class HelixRigger:
                 component_network = rigging.skeleton.get_rig_network(control)
                 rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 if type(rig_component) in rigging.rig_base.Component_Base.get_rig_subclasses():
-                    rig_component.switch_space( control, rigging.overdriver.Overdriver, [space] )
+                    rig_component.switch_space( control, Overdriver, [space] )
                 else:
                     warning_message += "{0}\n".format(control)
             
@@ -2192,7 +2197,8 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         data = c_rig_button.Data if type(c_rig_button) != str else c_rig_button
-        space_type = getattr(rigging.overdriver, data)
+        space_type = rigging.component_registry.Addon_Registry().get(data)
+        # space_type = getattr(rigging.overdriver, data)
 
         sel_list = pm.ls(selection=True)
         if len(sel_list) > 1 or space_type._requires_space == False:
@@ -2329,9 +2335,9 @@ class HelixRigger:
                 component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
                 meta_switch = component.switch_rigging()
                 if not meta_switch:
-                    if type(component) == rigging.ik.IK:
+                    if type(component) == IK:
                         component.switch_to_fk()
-                    elif type(component) == rigging.fk.FK:
+                    elif type(component) == FK:
                         component.switch_to_ik()
                     
 
@@ -2484,7 +2490,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         selection = pm.ls(sl=True)
-        rigging.rig_tools.temporary_rig(selection[0], selection[-1], rigging.fk.FK)
+        rigging.rig_tools.temporary_rig(selection[0], selection[-1], FK)
 
     @csharp_error_catcher
     def temporary_ik(self, c_rig_button, event_args):
@@ -2497,7 +2503,7 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         selection = pm.ls(sl=True)
-        rigging.rig_tools.temporary_rig(selection[0], selection[-1], rigging.ik.IK)
+        rigging.rig_tools.temporary_rig(selection[0], selection[-1], IK)
 
     @csharp_error_catcher
     def build_pickwalking(self, c_rig_button, event_args):

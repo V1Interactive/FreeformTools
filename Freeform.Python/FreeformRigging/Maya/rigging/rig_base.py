@@ -663,7 +663,7 @@ class Component_Base(object, metaclass=Component_Meta):
 
         for side, region_dict in skeleton_dict.items():
             for region, jnt_dict in region_dict.items():
-                component = rigging.fk.FK()
+                component = FK()
                 rig_success = component.rig(skeleton_dict, side, region, False, control_holder_list)
 
         pm.delete([x for x in imported_nodes if pm.objExists(x)])
@@ -688,7 +688,7 @@ class Component_Base(object, metaclass=Component_Meta):
         '''
         Replacement for the __init__ for this class
         Note: Can't use __init__ for this because error in instantiating FK running the inheritance chain.
-        rigging.fk.FK()
+        FK()
         # Error: super(type, obj): obj must be an instance or subtype of type
         # Traceback (most recent call last):
         #   File "<maya console>", line 1, in <module>
@@ -2256,15 +2256,16 @@ class Rig_Component(Component_Base):
         joint_list = skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
         jnt = joint_list[control_index]
 
+        overdriver_type = Addon_Registry().get('Overdriver')
         for child_jnt in jnt.getChildren(type='joint'):
             if child_jnt in joint_list:
-                self.switch_space( control_list[control_index-1], rigging.overdriver.Overdriver, None )
+                self.switch_space( control_list[control_index-1], overdriver_type, None )
             else:
                 comp_network = skeleton.get_rig_network(child_jnt)
                 if comp_network and not comp_network.get_downstream(metadata.network_core.AddonCore):
                     pin_component = Rig_Component.create_from_network_node(comp_network.node)
                     pin_control = skeleton.sort_chain_by_hierarchy( pin_component.network['controls'].get_connections() )[-1]
-                    pin_component.switch_space( pin_control, rigging.overdriver.Overdriver, None )
+                    pin_component.switch_space( pin_control, overdriver_type, None )
 
         pm.select(control)
 
@@ -2463,44 +2464,48 @@ class Rig_Component(Component_Base):
 
         component_menu = pm.menuItem(label = "Change Component", subMenu=True, parent=parent_menu)
 
-        fk_method, fk_args, fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
-                                                                            rigging.fk.FK)
+        fk_type = Component_Registry().get('FK')
+        fk_method, fk_args, fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", fk_type)
         pm.menuItem(label="FK", parent=component_menu, command=lambda _: fk_method(*fk_args, **fk_kwargs))
 
-        aim_fk_method, aim_fk_args, aim_fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
-                                                                                        rigging.fk.Aim_FK)
+        aim_fk_type = Component_Registry().get('Aim_FK')
+        aim_fk_method, aim_fk_args, aim_fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", aim_fk_type)
         pm.menuItem(label="FK (Aimed)", parent=component_menu, command=lambda _: aim_fk_method(*aim_fk_args, **aim_fk_kwargs))
 
-        ik_method, ik_args, ik_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
-                                                                            rigging.ik.IK)
+        ik_type = Component_Registry().get('IK')
+        ik_method, ik_args, ik_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", ik_type)
         pm.menuItem(label="IK", parent=component_menu, command=lambda _: ik_method(*ik_args, **ik_kwargs))
 
-        ribbon_method, ribbon_args, ribbon_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", 
-                                                                                        rigging.ribbon.Ribbon)
+        ribbon_type = Component_Registry().get('Ribbon')
+        ribbon_method, ribbon_args, ribbon_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", ribbon_type)
         pm.menuItem(label="Ribbon", parent=component_menu, command=lambda _: ribbon_method(*ribbon_args, **ribbon_kwargs))
 
         pm.menuItem(divider=True, parent=parent_menu)
 
 
         space_menu = pm.menuItem(label = "Space Switching", subMenu=True, parent=parent_menu)
+        overdriver_type = Addon_Registry().get('Overdriver')
         od_method, od_args, od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
-                                                                           control, rigging.overdriver.Overdriver)
+                                                                           control, overdriver_type)
         pm.menuItem(label="Switch Space", parent=space_menu, command=lambda _: od_method(*od_args, **od_kwargs))
 
+        position_overdriver_type = Addon_Registry().get('Position_Overdriver')
         po_od_method, po_od_args, po_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
-                                                                                    control, rigging.overdriver.Position_Overdriver)
+                                                                                    control, position_overdriver_type)
         pm.menuItem(label="Switch Space - Position", parent=space_menu, command=lambda _: po_od_method(*po_od_args, **po_od_kwargs))
         
+        rotation_overdriver_type = Addon_Registry().get('Rotation_Overdriver')
         ro_od_method, ro_od_args, ro_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)",
-                                                                                    control, rigging.overdriver.Rotation_Overdriver)
+                                                                                    control, rotation_overdriver_type)
         pm.menuItem(label="Switch Space - Rotation", parent=space_menu, command=lambda _: ro_od_method(*ro_od_args, **ro_od_kwargs))
 
 
         pm.menuItem(divider=True, parent=parent_menu)
 
         dynamics_menu = pm.menuItem(label = "Dynamics", subMenu=True, parent=parent_menu)
+        aim_overdriver_type = Addon_Registry().get('Aim')
         aim_method, aim_args, aim_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
-                                                                              control, rigging.overdriver.Aim)
+                                                                              control, aim_overdriver_type)
         pm.menuItem(label="Dynamics - Aim", parent=dynamics_menu, command=lambda _: aim_method(*aim_args, **aim_kwargs))
 
 

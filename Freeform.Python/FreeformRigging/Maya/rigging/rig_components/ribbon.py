@@ -27,9 +27,8 @@ import scene_tools
 
 from rigging import skeleton
 from rigging import rig_base
-#from rigging import rig_tools
-#from rigging import overdriver
 from rigging import constraints
+from rigging.rig_base import Rig_Component
 
 import v1_core
 import v1_shared
@@ -40,7 +39,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class Ribbon(rig_base.Rig_Component):
+class Ribbon(Rig_Component):
     _do_register = True
     _inherittype = "component"
     _spacetype = "inherit"

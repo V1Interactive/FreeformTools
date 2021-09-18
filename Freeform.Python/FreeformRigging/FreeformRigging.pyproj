@@ -27,6 +27,8 @@
     <Folder Include="Maya\freeform_utils\" />
     <Folder Include="Maya\metadata\" />
     <Folder Include="Maya\rigging\" />
+    <Folder Include="Maya\rigging\rig_overdrivers\" />
+    <Folder Include="Maya\rigging\rig_components\" />
     <Folder Include="Maya\rigging\unit_tests\" />
     <Folder Include="Maya\rigging\usertools\" />
     <Folder Include="Maya\scene_tools\" />
@@ -69,17 +71,28 @@
     </Compile>
     <Compile Include="Maya\rigging\faces.py" />
     <Compile Include="Maya\rigging\file_ops.py" />
-    <Compile Include="Maya\rigging\fk.py" />
-    <Compile Include="Maya\rigging\ik.py" />
+    <Compile Include="Maya\rigging\rig_components\fk.py" />
+    <Compile Include="Maya\rigging\rig_components\ik.py" />
     <Compile Include="Maya\rigging\component_registry.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Maya\rigging\overdriver.py" />
-    <Compile Include="Maya\rigging\reverse_foot.py" />
-    <Compile Include="Maya\rigging\ribbon.py">
+    <Compile Include="Maya\rigging\rig_overdrivers\attribute_translator.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\rigging\rig_overdrivers\channel_overdriver.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\rigging\rig_overdrivers\dynamic_overdriver.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\rigging\rig_overdrivers\overdriver.py" />
+    <Compile Include="Maya\rigging\rig_components\reverse_foot.py" />
+    <Compile Include="Maya\rigging\rig_components\ribbon.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Maya\rigging\rig_base.py" />
+    <Compile Include="Maya\rigging\rig_components\__init__.py" />
+    <Compile Include="Maya\rigging\rig_overdrivers\__init__.py" />
     <Compile Include="Maya\rigging\rig_tools.py" />
     <Compile Include="Maya\rigging\settings_binding.py" />
     <Compile Include="Maya\rigging\skeleton.py" />

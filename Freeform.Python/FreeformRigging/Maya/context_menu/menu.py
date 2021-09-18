@@ -25,6 +25,8 @@ import v1_core
 import v1_shared
 
 import rigging
+from rigging.rig_components.fk import FK
+from rigging.rig_components.ik import IK
 import freeform_utils
 import metadata
 
@@ -159,10 +161,10 @@ class V1_Context_Menu(object, metaclass=Singleton):
                 quick_rig_menu = pm.menuItem(label='Load Last Preset', parent=self.menu, rp="E", command = lambda _: quick_rig_method(*quick_rig_args, **quick_rig_kwargs))
 
                 selection = pm.ls(sl=True)
-                tfk_rig_method, tfk_rig_args, tfk_rig_kwargs = v1_core.v1_logging.logging_wrapper(rigging.rig_tools.temporary_rig, "Context Menu", selection[0], selection[-1], rigging.fk.FK)
+                tfk_rig_method, tfk_rig_args, tfk_rig_kwargs = v1_core.v1_logging.logging_wrapper(rigging.rig_tools.temporary_rig, "Context Menu", selection[0], selection[-1], FK)
                 quick_rig_menu = pm.menuItem(label='Temporary FK', parent=self.menu, rp="NE", command = lambda _: tfk_rig_method(*tfk_rig_args, **tfk_rig_kwargs))
 
-                tik_rig_method, tik_rig_args, tik_rig_kwargs = v1_core.v1_logging.logging_wrapper(rigging.rig_tools.temporary_rig, "Context Menu", selection[0], selection[-1], rigging.ik.IK)
+                tik_rig_method, tik_rig_args, tik_rig_kwargs = v1_core.v1_logging.logging_wrapper(rigging.rig_tools.temporary_rig, "Context Menu", selection[0], selection[-1], IK)
                 quick_rig_menu = pm.menuItem(label='Temporary IK', parent=self.menu, rp="SE", command = lambda _: tik_rig_method(*tik_rig_args, **tik_rig_kwargs))
             elif type(self.node) == pm.nodetypes.Transform:
                 self.create_properties(ModelProperty, prop_menu, current_property_list)
