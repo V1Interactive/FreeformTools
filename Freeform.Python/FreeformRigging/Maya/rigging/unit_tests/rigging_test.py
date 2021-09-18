@@ -23,6 +23,12 @@ import unittest
 
 import rigging
 import rigging.usertools
+from rigging.rig_components.fk import FK, Aim_FK
+from rigging.rig_components.ik import IK
+from rigging.rig_components.ribbon import Ribbon
+from rigging.rig_components.reverse_foot import Reverse_Foot
+from rigging.rig_overdrivers.overdriver import Overdriver, Position_Overdriver, Rotation_Overdriver
+from rigging.rig_overdrivers.dynamic_overdriver import Aim
 
 
 class RiggingTest(unittest.TestCase):
@@ -41,21 +47,21 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		self.assertTrue( rigging.fk.FK().rig(skeleton_dict, 'left', 'arm') )
+		self.assertTrue( FK().rig(skeleton_dict, 'left', 'arm') )
 
 	def test_fk_retarget(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		self.assertTrue( rigging.fk.FK().rig(skeleton_dict, 'right', 'arm') )
+		self.assertTrue( FK().rig(skeleton_dict, 'right', 'arm') )
 
 	def test_fk_remove(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		fk_comp = rigging.fk.FK()
+		fk_comp = FK()
 		self.assertTrue( fk_comp.rig(skeleton_dict, 'left', 'arm') )
 		self.assertTrue( fk_comp.remove() )
 
@@ -64,7 +70,7 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		fk_comp = rigging.fk.FK()
+		fk_comp = FK()
 		self.assertTrue( fk_comp.rig(skeleton_dict, 'right', 'arm') )
 		self.assertTrue( fk_comp.bake_and_remove() )
 	#endregion
@@ -76,21 +82,21 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		self.assertTrue( rigging.ik.IK().rig(skeleton_dict, 'left', 'arm') )
+		self.assertTrue( IK().rig(skeleton_dict, 'left', 'arm') )
 
 	def test_ik_retarget(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		self.assertTrue( rigging.ik.IK().rig(skeleton_dict, 'right', 'arm') )
+		self.assertTrue( IK().rig(skeleton_dict, 'right', 'arm') )
 
 	def test_ik_remove(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		ik_comp = rigging.ik.IK()
+		ik_comp = IK()
 		self.assertTrue( ik_comp.rig(skeleton_dict, 'left', 'arm') )
 		self.assertTrue( ik_comp.remove() )
 
@@ -99,7 +105,7 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		ik_comp = rigging.ik.IK()
+		ik_comp = IK()
 		self.assertTrue( ik_comp.rig(skeleton_dict, 'right', 'arm') )
 		self.assertTrue( ik_comp.bake_and_remove() )
 	#endregion
@@ -111,14 +117,14 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		self.assertTrue( rigging.reverse_foot.ReverseFoot().rig(skeleton_dict, 'left', 'foot') )
+		self.assertTrue( ReverseFoot().rig(skeleton_dict, 'left', 'foot') )
 
 	def test_reverse_foot_remove(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		rf_comp = rigging.reverse_foot.ReverseFoot()
+		rf_comp = ReverseFoot()
 		self.assertTrue( rf_comp.rig(skeleton_dict, 'left', 'foot') )
 		self.assertTrue( rf_comp.remove() )
 
@@ -127,7 +133,7 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		rf_comp = rigging.reverse_foot.ReverseFoot()
+		rf_comp = ReverseFoot()
 		self.assertTrue( rf_comp.rig(skeleton_dict, 'right', 'foot') )
 		self.assertTrue( rf_comp.bake_and_remove() )
 	#endregion
@@ -139,40 +145,40 @@ class RiggingTest(unittest.TestCase):
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		comp = rigging.fk.FK()
+		comp = FK()
 		self.assertTrue( comp.rig(skeleton_dict, 'left', 'arm') )
 		control_list = comp.network['controls'].get_connections()
-		self.assertTrue( comp.switch_space(control_list[0], rigging.overdriver.Overdriver, None) )
+		self.assertTrue( comp.switch_space(control_list[0], Overdriver, None) )
 
 	def test_overdriver_translate(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		comp = rigging.fk.FK()
+		comp = FK()
 		self.assertTrue( comp.rig(skeleton_dict, 'left', 'arm') )
 		control_list = comp.network['controls'].get_connections()
-		self.assertTrue( comp.switch_space(control_list[0], rigging.overdriver.Position_Overdriver, None) )
+		self.assertTrue( comp.switch_space(control_list[0], Position_Overdriver, None) )
 
 	def test_overdriver_rotate(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		comp = rigging.fk.FK()
+		comp = FK()
 		self.assertTrue( comp.rig(skeleton_dict, 'left', 'arm') )
 		control_list = comp.network['controls'].get_connections()
-		self.assertTrue( comp.switch_space(control_list[0], rigging.overdriver.Rotation_Overdriver, None) )
+		self.assertTrue( comp.switch_space(control_list[0], Rotation_Overdriver, None) )
 
 	def test_dynamics_aim(self):
 		pm.openFile(r"C:\Users\micahz\Documents\rigging\rigging_test.ma", force=True)
 		jnt = pm.ls(type='joint')[0]
 		skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
-		comp = rigging.fk.FK()
+		comp = FK()
 		self.assertTrue( comp.rig(skeleton_dict, 'left', 'arm') )
 		control_list = comp.network['controls'].get_connections()
-		self.assertTrue( comp.switch_space(control_list[0], rigging.overdriver.Aim, None) )
+		self.assertTrue( comp.switch_space(control_list[0], Aim, None) )
 	#endregion
 
 

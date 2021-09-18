@@ -23,8 +23,9 @@ import sys
 
 from rigging import skeleton
 from rigging import rig_base
-from rigging import overdriver
 from rigging import constraints
+from rigging.rig_overdrivers.overdriver import Overdriver
+from rigging.rig_base import Rig_Component
 
 import v1_core
 import v1_shared
@@ -39,7 +40,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 
 
 
-class ReverseFoot(rig_base.Rig_Component):
+class ReverseFoot(Rig_Component):
     _do_register = True
     _inherittype = "component"
     _spacetype = "world"
@@ -363,7 +364,7 @@ class ReverseFoot(rig_base.Rig_Component):
                     od.remove()
 
             ik_handle = leg_ik_component.get_control('ik_handle')
-            leg_ik_component.switch_space(ik_handle, overdriver.Overdriver, [attachment_control])
+            leg_ik_component.switch_space(ik_handle, Overdriver, [attachment_control])
 
     def get_rigger_methods(self):
         method_dict = {}
