@@ -28,7 +28,7 @@ import metadata
 import scene_tools
 import rigging
 
-from metadata.network_core import AddonCore, AddonControls, CharacterCore, JointsCore, RigComponent, ControlJoints, OverDrivenControl, RegionsCore, RigCore
+from metadata.network_core import AddonCore, AddonControls, CharacterCore, ComponentCore, JointsCore, RigComponent, ControlJoints, OverDrivenControl, RegionsCore, RigCore
 from metadata.meta_properties import ControlProperty
 
 import maya_utils

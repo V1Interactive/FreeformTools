@@ -66,6 +66,9 @@ class Global_Bake_Queue(object, metaclass=Singleton):
     def add_pre_process(self, method, kwargs, priority):
         self.queue.add_pre_process(method, kwargs, priority)
 
+    def clear(self):
+        self.queue.clear()
+
     def run_queue(self):
         self.queue.run_queue()
 
@@ -208,9 +211,7 @@ class BakeQueue(object):
             v1_core.v1_logging.get_logger().info(exception_text)
         finally:
             pm.autoKeyframe(state=autokey_state)
-            self.queue = {}
-            self.pre_process_list = []
-            self.post_process_list = []
+            self.clear()
 
 
 def bake_objects(obj_list, translate, rotate, scale, use_settings = True, custom_attrs = None, bake_range = None, **kwargs):

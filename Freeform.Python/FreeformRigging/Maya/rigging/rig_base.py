@@ -1572,6 +1572,11 @@ class Rig_Component(Component_Base):
 
         v1_core.v1_logging.get_logger().debug("Rigging for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
 
+    def update_from_skeleton(self):
+        '''
+        Updates's the component in the case that the skeleton it's controlling has changed
+        '''
+        pass
 
     def update(self, component_dict):
         '''
