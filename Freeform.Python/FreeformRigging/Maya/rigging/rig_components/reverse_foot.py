@@ -220,6 +220,16 @@ class ReverseFoot(Rig_Component):
 
         return True
 
+    def update_from_skeleton(self):
+        '''
+        Updates's the component in the case that the skeleton it's controlling has changed
+        '''
+        attachment_network = self.network['attachment']
+        attachment_network.disconnect_node(attachment_network.group)
+
+        skeleton_chain = self.network['skeleton'].get_connections()
+        skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
+        attachment_network.connect_node(skeleton_chain[-1])
 
     def bind_chain_process(self, skeleton_chain, rigging_chain):
         # removing any existing rotate constraints from from the ankle joint

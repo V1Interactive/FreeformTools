@@ -30,10 +30,11 @@ import metadata
 import rigging
 import scene_tools
 
-from metadata.network_core import CharacterCore, JointsCore, RigCore, RegionsCore, SkeletonJoints
+from metadata.network_core import ComponentCore, CharacterCore, JointsCore, RigCore, RegionsCore, SkeletonJoints
 from metadata.meta_properties import PropertyNode
 
 import v1_core
+import v1_shared
 
 from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -127,8 +128,8 @@ class CharacterPicker(object):
             self.new_nodes[rig_file] = maya_utils.scene_utils.import_file_safe(rig_file, returnNewNodes = True, preserveReferences = True)
 
         character_core_module, character_core_name = v1_shared.shared_utils.get_class_info(str(CharacterCore))
-        new_network_list = pm.ls(self.new_nodes.values()[0], type='network')
-        character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() ) == character_core_name]
+        new_network_list = pm.ls(list(self.new_nodes.values())[0], type='network')
+        character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == character_core_name]
 
         if do_update:
             scene_tools.scene_manager.SceneManager().run_by_string('RiggerUI')
@@ -211,8 +212,8 @@ class RigSwapper(CharacterPicker):
         maya_utils.node_utils.set_playback(playback_values)
 
         character_core_module, character_core_name = v1_shared.shared_utils.get_class_info(str(CharacterCore))
-        new_network_list = pm.ls(self.new_nodes.values()[0], type='network')
-        character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() ) == character_core_name]
+        new_network_list = pm.ls(list(self.new_nodes.values())[0], type='network')
+        character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == character_core_name]
         if len(character_node_list) == 1:
             character_node = get_first_or_default(character_node_list)
         else:
@@ -259,6 +260,7 @@ class RigSwapper(CharacterPicker):
 
         source_joints_network = source_character_network.get_downstream(JointsCore)
         source_rig_network = source_character_network.get_downstream(RigCore)
+        component_network_list = source_rig_network.get_all_downstream(ComponentCore)
         source_region_network = source_character_network.get_downstream(RegionsCore)
         source_mesh_group_list = [x for x in source_character_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
         source_morph_group_list = [x for x in source_mesh_group_list if 'morph' in x.name().lower()]
@@ -308,11 +310,14 @@ class RigSwapper(CharacterPicker):
         source_joints_network.connect_node(new_root_joint, source_joints_network.node.root_joint)
         new_joints_network.node.root_joint.disconnect()
 
-        source_character_network.disconnect_node(source_region_network.node)
-        new_character_network.disconnect_node(new_region_network.node)
-        source_character_network.connect_node(new_region_network.node)
-        new_character_network.connect_node(source_region_network.node)
-        new_region_network.node.rename(new_region_network.node.name().replace(new_namespace, source_namespace))
+        if source_region_network:
+            source_character_network.disconnect_node(source_region_network.node)
+            new_character_network.disconnect_node(new_region_network.node)
+            source_character_network.connect_node(new_region_network.node)
+            new_character_network.connect_node(source_region_network.node)
+
+        if new_region_network:
+            new_region_network.node.rename(new_region_network.node.name().replace(new_namespace, source_namespace))
 
         # Update meshes into the current character namespace and connected to scene DisplayLayers
         mesh_layer_list = source_mesh_group.drawOverride.listConnections()
@@ -415,6 +420,10 @@ class RigSwapper(CharacterPicker):
                     all_connecting_list = source_attr.listConnections(s=True, d=False, p=True)
                     for plug in all_connecting_list:
                         plug >> new_attr
+
+        for component_network in component_network_list:
+            rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
+            rig_component.update_from_skeleton()
 
         needs_baking = list(set(needs_baking))
         if needs_baking:
