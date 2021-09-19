@@ -31,6 +31,9 @@ from rigging import file_ops
 from rigging import rig_base
 from rigging import skeleton
 
+from metadata.network_core import JointsCore, CharacterCore, SkeletonJoints
+from metadata.joint_properties import RigSwitchProperty, RigMarkupProperty
+
 import v1_core
 import v1_shared
 import maya_utils
@@ -69,7 +72,7 @@ def character_setup_from_ue4(jnt):
     else:
         file_ops.load_settings_from_json_with_dialog(character_network.group, rigging.settings_binding.Binding_Sets.ZERO_ORIENT_ALL.value)
 
-    #joint_list = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
+    #joint_list = character_network.get_downstream(JointsCore).get_connections()
     #first_joint = get_first_or_default(joint_list)
     #skeleton.zero_character(first_joint)
     #rigging.usertools.character_picker.RigSwapper(character_network.get_character_path_list(), character_network.node).show()
@@ -80,7 +83,7 @@ def freeze_xform_rig(character_network):
     Duplicates the skeleton, freezes all transforms, charactarizes the new skeleton and saves a temporary character json file
     with all of the zeroed joint values in it.
     '''
-    joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
+    joint_core_network = character_network.get_downstream(JointsCore)
     character_joint_list = joint_core_network.get_connections()
     root = skeleton.get_root_joint(get_first_or_default(character_joint_list))
 
@@ -130,15 +133,15 @@ def rig_region(skeleton_dict, side, region, character_network, component_type, r
 
 def switch_rigging(component_network):
     component_data = component_network.data
-    character_network = component_network.get_upstream(metadata.network_core.CharacterCore)
-    skeleton_network = component_network.get_downstream(metadata.network_core.SkeletonJoints)
+    character_network = component_network.get_upstream(CharacterCore)
+    skeleton_network = component_network.get_downstream(SkeletonJoints)
     joint_list = skeleton_network.get_connections()
     joint_list = skeleton.sort_chain_by_hierarchy(joint_list)
 
     component_root = joint_list[-1]
     skeleton_dict = skeleton.get_skeleton_dict(component_root)
 
-    switch_network_list = metadata.meta_property_utils.get_property_list(component_root, metadata.joint_properties.RigSwitchProperty)
+    switch_network_list = metadata.meta_property_utils.get_property_list(component_root, RigSwitchProperty)
     success = False
     for switch_network in switch_network_list:
         # We use a copy of component.data because the component node may get deleted before
@@ -164,7 +167,7 @@ def switch_rigging(component_network):
 
 
 def quick_rig_joint(jnt):
-    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, CharacterCore)
 
     file_path = v1_shared.file_path_utils.relative_path_to_content(character_network.get('rig_file_path'))
 
@@ -193,8 +196,8 @@ def temporary_rig(start_jnt, end_jnt, type):
         end_jnt = start_jnt
         start_jnt = temp_jnt
 
-    start_property = metadata.meta_property_utils.add_property(start_jnt, metadata.joint_properties.RigMarkupProperty)
-    end_property = metadata.meta_property_utils.add_property(end_jnt, metadata.joint_properties.RigMarkupProperty)
+    start_property = metadata.meta_property_utils.add_property(start_jnt, RigMarkupProperty)
+    end_property = metadata.meta_property_utils.add_property(end_jnt, RigMarkupProperty)
 
     side = skeleton.get_joint_side(start_jnt)
     region = "temp_{0}".format(start_jnt.stripNamespace())
@@ -211,7 +214,7 @@ def temporary_rig(start_jnt, end_jnt, type):
     end_property.set('group', 'Temporary')
     end_property.set('temporary', True)
 
-    character_network = metadata.meta_network_utils.get_first_network_entry(start_jnt, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(start_jnt, CharacterCore)
     skeleton_dict = skeleton.get_skeleton_dict(start_jnt)
     
     rig_region(skeleton_dict, side, region, character_network, type, reverse)

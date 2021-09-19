@@ -31,6 +31,8 @@ import metadata
 import rigging
 import scene_tools
 
+from metadata.network_core import CharacterCore, JointsCore
+
 import v1_core
 import v1_shared
 import v1_shared.usertools
@@ -87,7 +89,7 @@ class RigBuilder(object):
         character_network = self.active_character
 
         if not character_network:
-            character_node_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)
+            character_node_list = metadata.meta_network_utils.get_all_network_nodes(CharacterCore)
             if len(character_node_list) == 1:
                 character_node = get_first_or_default(character_node_list)
                 character_network = metadata.meta_network_utils.create_from_node(character_node)
@@ -97,14 +99,14 @@ class RigBuilder(object):
         if not character_network:
             if obj_list:
                 selected_obj = obj_list[0]
-                character_network = metadata.meta_network_utils.get_first_network_entry(selected_obj, metadata.network_core.CharacterCore)
+                character_network = metadata.meta_network_utils.get_first_network_entry(selected_obj, CharacterCore)
                 if not character_network:
                     pm.confirmDialog( title="Not Part of a Character", message="Select part of a character to build the template", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
             else:
                 pm.confirmDialog( title="Nothing Selected", message="Select part of a character to build the template", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
 
         if character_network:
-            joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
+            joints_network = character_network.get_downstream(JointsCore)
             skeleton_dict = rigging.skeleton.get_skeleton_dict(joints_network.get_first_connection())
 
             side_list = [x for x in event_args.SideList]

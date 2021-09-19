@@ -19,8 +19,11 @@ If not, see <https://www.gnu.org/licenses/>.
 
 import System
 import System.Diagnostics
+
 import metadata
 import rigging
+
+from metadata.network_core import ComponentCore
 
 import maya_utils.anim_attr_utils
 import maya_utils.scene_utils
@@ -149,7 +152,7 @@ class AnimAttributes(object):
         '''
         #if(self.root == None):
         #    core_network = metadata.meta_network_utils.create_from_node( metadata.meta_network_utils.get_network_core() )
-        #    comp_network = [x for x in core_network.get_all_downstream(metadata.network_core.ComponentCore) if x.node.region.get() == 'root']
+        #    comp_network = [x for x in core_network.get_all_downstream(ComponentCore) if x.node.region.get() == 'root']
         #    
         #    if(len(comp_network) > 0):
         #        root_network = get_first_or_default(comp_network)

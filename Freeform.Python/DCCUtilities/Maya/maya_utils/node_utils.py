@@ -23,6 +23,8 @@ import v1_core
 
 import metadata
 
+from metadata.meta_properties import ControlProperty
+
 import v1_shared
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
@@ -110,7 +112,7 @@ def zero_node(obj, connection_filter_list):
     locked_attrs = unlock_transforms(obj)
     
     tr_zero_value_list = [0,0,0,0,0,0]
-    control_property = metadata.meta_property_utils.get_property(obj, metadata.meta_properties.ControlProperty)
+    control_property = metadata.meta_property_utils.get_property(obj, ControlProperty)
     
     if control_property:
         zero_translate = control_property.get('zero_translate', 'double3')
@@ -230,7 +232,7 @@ def flip_if_world(control_obj, axis, flip_method):
         axis (str): String name for the axis to flip on, 'x', 'y', or 'z'
         flip_method (method): Should be either flip_attribute_keys or flip_transforms
     '''
-    control_property = metadata.meta_property_utils.get_property(control_obj, metadata.meta_properties.ControlProperty)
+    control_property = metadata.meta_property_utils.get_property(control_obj, metadataControlProperty)
     is_world = control_property.get('world_space', 'bool') if control_property else False
     if is_world:
         flip_method(control_obj, v1_shared.shared_utils.get_mirror_attributes(axis))

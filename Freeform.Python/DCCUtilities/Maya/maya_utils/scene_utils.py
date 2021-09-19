@@ -28,7 +28,7 @@ import v1_core
 from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
-import metadata
+from metadata import network_registry, meta_network_utils, meta_property_utils
 
 from maya_utils import node_utils
 from maya_utils import fbx_wrapper
@@ -212,20 +212,25 @@ def setup_exporter():
     '''
     Quick initial Exporter setup from scene objects.
     '''
-    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.ExportDefinition)
+    character_core_type = network_registry.Network_Registry().get('CharacterCore')
+    joints_core_type = network_registry.Network_Registry().get('JointsCore')
+    export_definition_type = network_registry.Network_Registry().get('ExportDefinition')
+    character_animation_asset_type = network_registry.Property_Registry().get('CharacterAnimationAsset')
+
+    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(export_definition_type)
     current_definition = metadata.meta_network_utils.create_from_node(export_definition_list[0]) if export_definition_list else None
-    export_definition = current_definition if current_definition else metadata.network_core.ExportDefinition()
+    export_definition = current_definition if current_definition else export_definition_type()
     export_definition.set('use_scene_name', True)
 
-    character_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)
+    character_list = metadata.meta_network_utils.get_all_network_nodes(character_core_type)
     for character_node in character_list:
         character_network = metadata.meta_network_utils.create_from_node(character_node)
-        joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
+        joints_network = character_network.get_downstream(joints_core_type)
         root_joint = node_utils.get_root_node(joints_network.get_first_connection(), 'joint')
         character_name = root_joint.namespace().strip(":").upper()
-    
-        existing_export_property = metadata.meta_property_utils.get_property(root_joint, metadata.exporter_properties.CharacterAnimationAsset)
-        export_property = existing_export_property if existing_export_property else metadata.exporter_properties.CharacterAnimationAsset()
+        
+        existing_export_property = metadata.meta_property_utils.get_property(root_joint, character_animation_asset_type)
+        export_property = existing_export_property if existing_export_property else character_animation_asset_type()
         export_property.set('asset_name', character_name)
     
         export_property.connect_node(root_joint)

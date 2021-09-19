@@ -26,6 +26,8 @@ import v1_core
 import v1_shared
 import metadata
 
+from metadata.meta_properties import ExportProperty
+
 from v1_core.py_helpers import Freeform_Enum
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
@@ -317,7 +319,7 @@ class Properties_Binding(Binding):
                 if do_continue:
                     continue
 
-            if property_class == metadata.meta_properties.ExportProperty and property_class in current_properties.keys():
+            if property_class == ExportProperty and property_class in current_properties.keys():
                 get_first_or_default(current_properties[property_class]).data = data
             else:
                 new_property = metadata.meta_property_utils.add_property(obj, property_class)

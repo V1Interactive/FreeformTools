@@ -22,6 +22,7 @@ import pymel.core as pm
 import v1_core
 
 import metadata
+from metadata.network_core import ComponentCore
 
 from v1_core.py_helpers import Freeform_Enum
 
@@ -124,7 +125,7 @@ def save_rigging_material_from_selection():
     obj_list = pm.ls(sl = True)
     if obj_list:
         obj = obj_list[0]
-        component_network = metadata.meta_network_utils.get_first_network_entry(obj, metadata.network_core.ComponentCore)
+        component_network = metadata.meta_network_utils.get_first_network_entry(obj, ComponentCore)
         side = component_network.get('side')
 
         material_list = self.get_material_list(obj)

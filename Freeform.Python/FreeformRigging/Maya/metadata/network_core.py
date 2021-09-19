@@ -465,64 +465,6 @@ class DependentNode(MetaNode):
             dependent_network.connect_node(self.node)
 
 
-#region Export Data
-class ExportCore(DependentNode):
-    '''
-    Core network object for ExportDefinitions.  Dependent node for all ExportDefinitions
-
-    Args:
-        node_name (str): Name of the network node
-        node (PyNode): Maya scene node to initialize the property from
-
-    Attributes:
-        node (PyNode): The scene network node that represents the property
-        dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
-    '''
-    _do_register = True
-    dependent_node = Core
-
-    def __init__(self, parent = None, node_name = 'v1_export_core', node = None, namespace = ""):
-        super(ExportCore, self).__init__(parent, node_name, node, namespace)
-
-class ExportDefinition(DependentNode):
-    '''
-    Network object for ExportDefinitions.
-
-    Args:
-        node_name (str): Name of the network node
-        node (PyNode): Maya scene node to initialize the property from
-
-    Attributes:
-        node (PyNode): The scene network node that represents the property
-        dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
-
-    Node Attributes:
-        guid (str): Unique identifier for this Export Definition
-        definition_name (str): Export Definition name
-        start_frame (int): Start frame for this export
-        end_frame (int): End frame for this export
-        frame_range (boolean): True to use the start and end frame, False to use maya timeslider range
-    '''
-    _do_register = True
-    dependent_node = ExportCore
-
-    def __init__(self, parent = None, node_name = 'v1_export_definition', node = None, namespace = ""):
-        super(ExportDefinition, self).__init__(parent, node_name, node, namespace, ui_index = (0, 'short'), definition_name = ("", 'string'), start_frame = (0, 'short'), 
-                                               end_frame = (0, 'short'), frame_range = (False, 'bool'), use_scene_name = (False, 'bool'), do_export = (True, 'bool'))
-        if not node:
-            self.node.definition_name.set("New_Export_Definition")
-
-    def set_time_range(self):
-        if self.node.frame_range.get():
-            pm.playbackOptions(ast = self.node.start_frame.get(), min = self.node.start_frame.get(), aet = self.node.end_frame.get(), max = self.node.end_frame.get())
-            return (self.node.start_frame.get(), self.node.end_frame.get())
-        else:
-            return (pm.playbackOptions(q = True, ast = True), pm.playbackOptions(q = True, aet = True))
-            
-
-#endregion
-
-
 class CharacterCore(DependentNode):
     '''
     Character Network object for the start of a Character graph.

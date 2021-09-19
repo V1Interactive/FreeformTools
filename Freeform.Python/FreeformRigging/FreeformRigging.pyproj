@@ -48,7 +48,7 @@
     <Compile Include="Maya\metadata\exporter_properties.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Maya\metadata\export_modify_propreties.py">
+    <Compile Include="Maya\metadata\export_modify_properties.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Maya\metadata\joint_properties.py">

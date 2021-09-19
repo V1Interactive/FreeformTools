@@ -29,6 +29,7 @@ import v1_core
 import v1_shared
 
 import metadata
+from metadata.network_core import AddonCore, CharacterCore, ComponentCore, JointsCore
 
 from rigging import rig_base
 from rigging import settings_binding
@@ -254,8 +255,8 @@ def load_settings_from_json(character_grp, file_path, binding_list = settings_bi
 
     load_data = v1_core.json_utils.read_json(file_path).get('skeleton')
 
-    character_network = metadata.meta_network_utils.get_first_network_entry(character_grp, metadata.network_core.CharacterCore)
-    joints_network = character_network.get_downstream(metadata.network_core.JointsCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(character_grp, CharacterCore)
+    joints_network = character_network.get_downstream(JointsCore)
     target_namespace = character_grp.namespace()
 
     # Create any missing joints, parented to world so we know to fill them in next
@@ -329,7 +330,7 @@ def save_to_json(character_network, file_path):
     '''
     rigging_data = {}
     addon_data = {}
-    component_network_list = character_network.get_all_downstream(metadata.network_core.ComponentCore)
+    component_network_list = character_network.get_all_downstream(ComponentCore)
 
     for component_network in component_network_list:
         component = rig_base.Rig_Component.create_from_network_node(component_network.node)
@@ -340,7 +341,7 @@ def save_to_json(character_network, file_path):
         rigging_data[side][region] = component.create_json_dictionary()
         addon_data[side][region] = {}
 
-        addon_network_list = component_network.get_all_downstream(metadata.network_core.AddonCore)
+        addon_network_list = component_network.get_all_downstream(AddonCore)
         for i, addon_network in enumerate(addon_network_list):
             addon_component = rig_base.Rig_Component.create_from_network_node(addon_network.node)
             addon_dict = addon_component.create_json_dictionary(component)
@@ -394,7 +395,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     rigging_data = load_data['rigging']
     addon_data = load_data['addons']
 
-    joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
+    joint_core_network = character_network.get_downstream(JointsCore)
     target_skeleton_dict = skeleton.get_skeleton_dict( get_first_or_default(joint_core_network.get_connections()) )
 
     control_holder_list, imported_nodes = rig_base.Component_Base.import_control_shapes(character_network.group)
