@@ -32,6 +32,8 @@ from rigging import usertools
 from rigging import constraints
 from rigging.rig_base import Addon_Component
 
+from metadata.meta_properties import ControlProperty
+
 import v1_core
 import v1_shared
 import maya_utils
@@ -154,7 +156,7 @@ class Overdriver(Addon_Component):
                 driver_control.getParent().rotate.set([0,0,0])
 
         maya_utils.node_utils.force_align(control, driver_control)
-        control_property = metadata.meta_property_utils.get_property(driver_control, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(driver_control, ControlProperty)
         zero_translate = control_property.set('zero_translate', driver_control.translate.get(), 'double3')
         zero_rotate = control_property.set('zero_rotate', driver_control.rotate.get(), 'double3')
 

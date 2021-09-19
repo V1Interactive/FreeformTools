@@ -79,31 +79,31 @@ class GlobalSettings(object):
         save_dict = settings_dict if settings_dict else self.settings
         json_utils.save_json(self.settings_file, save_dict)
 
-    def get_category(self, type, default = False):
+    def get_category(self, category_type, default = False):
         '''
         Get the data object for the provided category, either initialized from file or with default values
 
         Args:
-            type (SettingsCategory): Type of a SettingsCategory object
+            category_type (SettingsCategory): Type of a SettingsCategory object
             default (boolean): Whether or not to use the
 
         Returns:
             SettingsCategory. Object with values populated from the settings file or defaults
         '''
         settings_data = self.get_settings()
-        return_category = type(settings_data) if not default else type()
+        return_category = category_type(settings_data) if not default else category_type()
 
         return return_category
 
-    def save_category(self, type):
+    def save_category(self, category_type):
         '''
         Reads in the settings file, modifies the category, then saves the modified values to file
 
         Args:
-            type (SettingsCategory): Type of a SettingsCategory object
+            category_type (SettingsCategory): Type of a SettingsCategory object
         '''
         settings_data = self.get_settings()
-        settings_data[type.name] = type.get_data()
+        settings_data[category_type.name] = category_type.get_data()
 
         self.save_settings()
 

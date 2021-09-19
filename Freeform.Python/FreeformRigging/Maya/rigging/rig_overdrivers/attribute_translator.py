@@ -25,6 +25,7 @@ import metadata
 from rigging import skeleton
 from rigging import rig_base
 from rigging.rig_base import Addon_Component
+from metadata.network_core import ControlJoints
 
 import v1_core
 import v1_shared
@@ -188,7 +189,7 @@ class Attribute_Translator(Addon_Component):
         self.network['addon'].delete_all()
 
     def get_target_object(self):
-        control_joint = self.network['component'].get_downstream(metadata.network_core.ControlJoints).get_first_connection()
+        control_joint = self.network['component'].get_downstream(ControlJoints).get_first_connection()
 
         return control_joint
 

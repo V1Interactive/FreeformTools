@@ -29,6 +29,8 @@ import rigging
 import metadata
 import maya_utils
 
+from metadata.network_core import CharacterCore
+
 import v1_core
 import v1_shared
 import v1_shared.usertools
@@ -112,7 +114,7 @@ class Aim_Constraint_Dialogue(object):
             aim_space = pm.spaceLocator(n=target.name() + "_temp_aimspace_target")
             aim_space.localScale.set(10,10,10)
 
-            character_network = metadata.meta_network_utils.get_first_network_entry(target, metadata.network_core.CharacterCore)
+            character_network = metadata.meta_network_utils.get_first_network_entry(target, CharacterCore)
             if character_network:
                 scalar = character_network.get('scalar', 'float')
                 scalar = 1 if not scalar else scalar

@@ -77,6 +77,15 @@ class Freeform_Registry(object, metaclass=Singleton):
     '''
     Base Registry class for gathering components of the Freeform Tools
     '''
+    @property
+    def type_list(self):
+        return self.registry.values()
+
+    @property
+    def name_list(self):
+        return self.registry.keys()
+
+
     def __init__(self):
         self.registry = {}
         self.hidden_registry = {}

@@ -29,6 +29,8 @@ import maya_utils
 import metadata
 import rigging
 
+from metadata.network_core import ControlJoints, RiggingJoints
+
 import v1_core
 import v1_shared
 from v1_shared.decorators import csharp_error_catcher
@@ -110,7 +112,7 @@ class RigSwitcher(object):
         for space_network in component_network_list:
             weight_index = 0
             target_list = pm.orientConstraint(component_jnt, q=True, tl=True)
-            rigging_network = space_network.get_downstream(metadata.network_core.RiggingJoints)
+            rigging_network = space_network.get_downstream(RiggingJoints)
             for i, target in enumerate(target_list):
                 if target in rigging_network.get_connections():
                     self.index_rig_dict[i] = space_network
@@ -158,7 +160,7 @@ class RigSwitcher(object):
         '''
         component_jnt_list = self.component.network.get('skeleton').get_connections()
         component_network = rigging.skeleton.get_active_rig_networks(component_jnt_list[0])[event_args.Space]
-        pm.select(component_network.get_downstream(metadata.network_core.ControlJoints).get_connections())
+        pm.select(component_network.get_downstream(ControlJoints).get_connections())
 
     @undoable
     @csharp_error_catcher

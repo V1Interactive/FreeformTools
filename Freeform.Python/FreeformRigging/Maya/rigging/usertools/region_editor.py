@@ -30,6 +30,8 @@ import metadata
 import rigging
 import scene_tools
 
+from metadata.network_core import JointsCore
+
 import v1_core
 
 from v1_shared.decorators import csharp_error_catcher
@@ -60,7 +62,7 @@ class RegionEditor(object):
 
         # Find All Regions from character
         character_network = metadata.meta_network_utils.create_from_node(self.character_node)
-        jnt = character_network.get_downstream(metadata.network_core.JointsCore).get_first_connection('joint')
+        jnt = character_network.get_downstream(JointsCore).get_first_connection('joint')
         skeleton_dict = rigging.skeleton.get_skeleton_dict(jnt)
 
         for side, region_dict in skeleton_dict.items():

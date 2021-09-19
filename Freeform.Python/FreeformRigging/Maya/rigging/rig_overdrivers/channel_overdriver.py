@@ -25,6 +25,7 @@ import metadata
 from rigging import skeleton
 from rigging import rig_base
 from rigging.rig_base import Addon_Component
+from metadata.network_core import RigComponent
 
 import v1_core
 import v1_shared
@@ -55,10 +56,10 @@ class Channel_Overdriver(Addon_Component):
 
         target_type = get_first_or_default(addon_component_dict['target_type'].split(','))
 
-        network_entries = metadata.meta_network_utils.get_network_entries(control, metadata.network_core.RigComponent)
+        network_entries = metadata.meta_network_utils.get_network_entries(control, RigComponent)
         type_list = []
         if network_entries:
-            component_network = network_entries[0].get_upstream(metadata.network_core.RigComponent)
+            component_network = network_entries[0].get_upstream(RigComponent)
             component = rig_base.Component_Base.create_from_network_node(component_network.node)
             addon_list = component.is_in_addon()
             if addon_list:

@@ -33,6 +33,8 @@ from rigging.rig_overdrivers.dynamic_overdriver import Aim
 from rigging.rig_base import Rig_Component
 from rigging.component_registry import Component_Registry
 
+from metadata.meta_properties import ControlProperty
+
 import v1_core
 import v1_shared
 
@@ -393,7 +395,7 @@ class Aim_FK(FK):
                 pm.parentConstraint(control_chain[-1], aim_target, mo=True)
                 self.network['controls'].connect_node(aim_target)
 
-                control_property = metadata.meta_property_utils.add_property(aim_target, metadata.meta_properties.ControlProperty)
+                control_property = metadata.meta_property_utils.add_property(aim_target, ControlProperty)
                 self.network["component"].connect_node(control_property.node)
                 control_property.data = {'control_type' : 'locator', 'ordered_index' : 0, 'zero_translate' : aim_target.translate.get(), 
                                         'zero_rotate' : aim_target.rotate.get(), 'locked' : False}
@@ -426,7 +428,7 @@ class Aim_FK(FK):
         locator = None
         end_control = None
         for control in control_list:
-            control_property = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
             if control_property.get('control_type') == "locator":
                 locator = control
             elif control_property.get('control_type') == "fk" and control_property.get('ordered_index') == 0:

@@ -35,7 +35,9 @@ def get_network_core():
         (PyNode). Maya scene network node for the network Core
     '''
     core_type = Network_Registry().get("Core")
-    core_node = [x for x in pm.ls(type='network') if x.meta_type.get() == str(core_type)]
+    core_module, core_name = v1_shared.shared_utils.get_class_info( str(core_type) )
+
+    core_node = [x for x in pm.ls(type='network') if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == core_name]
     if not core_node:
         return core_type().node
     else:
@@ -139,8 +141,8 @@ def get_all_network_nodes(node_type):
     Returns:
         (list<MetaNode>). List of all MetaNodes in the scene of the requested type
     '''
-    class_info_string = str(node_type)
-    return [x for x in pm.ls(type='network') if x.meta_type.get() == class_info_string]
+    module_name, type_name = v1_shared.shared_utils.get_class_info( str(node_type) )
+    return [x for x in pm.ls(type='network') if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == type_name]
 
 
 def get_network_chain(network_node, delete_list):

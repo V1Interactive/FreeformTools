@@ -30,6 +30,9 @@ import metadata
 import rigging
 import scene_tools
 
+from metadata.network_core import CharacterCore, JointsCore, RigCore, RegionsCore, SkeletonJoints
+from metadata.meta_properties import PropertyNode
+
 import v1_core
 
 from v1_shared.decorators import csharp_error_catcher
@@ -123,7 +126,9 @@ class CharacterPicker(object):
             v1_core.v1_logging.get_logger().debug("Importing File - {0}".format(rig_file))
             self.new_nodes[rig_file] = maya_utils.scene_utils.import_file_safe(rig_file, returnNewNodes = True, preserveReferences = True)
 
-        character_node_list = [x for x in pm.ls(self.new_nodes.values()[0], type='network') if x.meta_type.get() == str(metadata.network_core.CharacterCore)]
+        character_core_module, character_core_name = v1_shared.shared_utils.get_class_info(str(CharacterCore))
+        new_network_list = pm.ls(self.new_nodes.values()[0], type='network')
+        character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() ) == character_core_name]
 
         if do_update:
             scene_tools.scene_manager.SceneManager().run_by_string('RiggerUI')
@@ -179,7 +184,7 @@ class RigSwapper(CharacterPicker):
         pm.autoKeyframe(state=False)
 
         source_network = metadata.meta_network_utils.create_from_node(self.source_node)
-        source_joint_core_network = source_network.get_downstream(metadata.network_core.JointsCore)
+        source_joint_core_network = source_network.get_downstream(JointsCore)
         source_joint = source_joint_core_network.get_first_connection()
         source_root_joint = rigging.skeleton.get_root_joint(source_joint)
         source_mesh_group_list = [x for x in source_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
@@ -205,13 +210,15 @@ class RigSwapper(CharacterPicker):
         super(RigSwapper, self).import_rigs(rig_path_list, do_update)
         maya_utils.node_utils.set_playback(playback_values)
 
-        character_node_list = [x for x in pm.ls(self.new_nodes.values()[0], type='network') if x.meta_type.get() == str(metadata.network_core.CharacterCore)]
+        character_core_module, character_core_name = v1_shared.shared_utils.get_class_info(str(CharacterCore))
+        new_network_list = pm.ls(self.new_nodes.values()[0], type='network')
+        character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() ) == character_core_name]
         if len(character_node_list) == 1:
             character_node = get_first_or_default(character_node_list)
         else:
             character_node = get_first_or_default([x for x in character_node_list if 'head' not in x.character_name.get().lower()])
         character_network = metadata.meta_network_utils.create_from_node(character_node)
-        joint_core_network = character_network.get_downstream(metadata.network_core.JointsCore)
+        joint_core_network = character_network.get_downstream(JointsCore)
         character_joint = joint_core_network.get_first_connection()
         character_root_joint = rigging.skeleton.get_root_joint(character_joint)
 
@@ -250,16 +257,16 @@ class RigSwapper(CharacterPicker):
         new_base_name = new_character_network.group.stripNamespace().rsplit('|', 1)[-1]
         source_character_network.group.rename(source_character_network.group.name().replace(source_base_name, new_base_name))
 
-        source_joints_network = source_character_network.get_downstream(metadata.network_core.JointsCore)
-        source_rig_network = source_character_network.get_downstream(metadata.network_core.RigCore)
-        source_region_network = source_character_network.get_downstream(metadata.network_core.RegionsCore)
+        source_joints_network = source_character_network.get_downstream(JointsCore)
+        source_rig_network = source_character_network.get_downstream(RigCore)
+        source_region_network = source_character_network.get_downstream(RegionsCore)
         source_mesh_group_list = [x for x in source_character_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
         source_morph_group_list = [x for x in source_mesh_group_list if 'morph' in x.name().lower()]
         source_mesh_group = get_first_or_default([x for x in source_mesh_group_list if 'morph' not in x.name().lower() and 'components' not in x.name().lower()])
 
-        new_joints_network = new_character_network.get_downstream(metadata.network_core.JointsCore)
-        new_rig_network = new_character_network.get_downstream(metadata.network_core.RigCore)
-        new_region_network = new_character_network.get_downstream(metadata.network_core.RegionsCore)
+        new_joints_network = new_character_network.get_downstream(JointsCore)
+        new_rig_network = new_character_network.get_downstream(RigCore)
+        new_region_network = new_character_network.get_downstream(RegionsCore)
         new_mesh_group_list = [x for x in new_character_network.group.listRelatives() if not x.listRelatives(ad=True, type='joint')]
         new_mesh_group_list = [x for x in new_mesh_group_list if 'morph' not in x.name().lower() and 'components' not in x.name().lower()]
         new_mesh_group = get_first_or_default(new_mesh_group_list)
@@ -325,7 +332,7 @@ class RigSwapper(CharacterPicker):
         root_connected_nodes = source_root_joint.affectedBy.listConnections(s=True, d=False)
         for node in root_connected_nodes:
             network = metadata.meta_network_utils.create_from_node(node)
-            if network and not isinstance(network, metadata.meta_properties.PropertyNode):
+            if network and not isinstance(network, PropertyNode):
                 network.node.rename(network.node.name().replace(new_namespace, source_namespace))
                 network.connect_node(new_root_joint)
 
@@ -365,7 +372,7 @@ class RigSwapper(CharacterPicker):
             if is_rigged or skeleton_constraint_list:
                 # If the joint is rigged connect it into the rigging network
                 if is_rigged:
-                    component_joint_network_list = metadata.meta_network_utils.get_network_entries(source_jnt, metadata.network_core.SkeletonJoints)
+                    component_joint_network_list = metadata.meta_network_utils.get_network_entries(source_jnt, SkeletonJoints)
                     for component_joint_network in component_joint_network_list:
                         component_joint_network.disconnect_node(source_jnt)
                         component_joint_network.connect_node(new_jnt)

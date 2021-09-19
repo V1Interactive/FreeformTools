@@ -28,6 +28,9 @@ import metadata
 import scene_tools
 import rigging
 
+from metadata.network_core import AddonCore, AddonControls, CharacterCore, JointsCore, RigComponent, ControlJoints, OverDrivenControl, RegionsCore, RigCore
+from metadata.meta_properties import ControlProperty
+
 import maya_utils
 
 import v1_core
@@ -53,7 +56,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     rigging.skeleton.clean_skeleton(jnt)
 
-    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, metadata.network_core.CharacterCore)
+    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, CharacterCore)
     if character_network:
         v1_shared.usertools.message_dialogue.open_dialogue("This Skeleton is already characterized -- {0}".format(character_network.character_name.get()), title="Already Characterized")
         return
@@ -81,7 +84,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     character_namespace = skeleton_root.namespace()
     root_parent = skeleton_root.getParent()
 
-    character_network = metadata.network_core.CharacterCore(node_name = name, namespace = character_namespace)
+    character_network = CharacterCore(node_name = name, namespace = character_namespace)
 
     root_folder = pm.sceneName().dirname()
     if config_manager.check_project():
@@ -90,9 +93,9 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     character_network.set('root_path', root_folder)
 
-    rig_core = metadata.network_core.RigCore(parent = character_network.node, namespace = character_namespace, character_group = character_network.group)
-    joints_core = metadata.network_core.JointsCore(parent = character_network.node, namespace = character_namespace, root_jnt = skeleton_root)
-    regions_core = metadata.network_core.RegionsCore(parent = character_network.node, namespace = character_namespace)
+    rig_core = RigCore(parent = character_network.node, namespace = character_namespace, character_group = character_network.group)
+    joints_core = JointsCore(parent = character_network.node, namespace = character_namespace, root_jnt = skeleton_root)
+    regions_core = RegionsCore(parent = character_network.node, namespace = character_namespace)
 
     if root_parent and rigging.skeleton.is_animated([root_parent], False):
         skeleton_root.setParent(None)
@@ -184,7 +187,7 @@ def remove_existing_rigging(has_attachment, joint_chain, force_remove = False):
 
 def transfer_ue_anim_to_character(character_node, ue4_animation_path):
     character_network = metadata.meta_network_utils.create_from_node(character_node)
-    character_skeleton = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
+    character_skeleton = character_network.get_downstream(JointsCore).get_connections()
 
     ue_settings_path = None
     for directory_path in character_network.character_folders:
@@ -210,7 +213,7 @@ def update_rig_file():
     Update a rig file from an FBX that the user is prompted to choose.  Keeps current rig settings and inserts the updated
     character skeleton/model from the chosen FBX file.
     '''
-    current_character_node = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)[0]
+    current_character_node = metadata.meta_network_utils.get_all_network_nodes(CharacterCore)[0]
     current_character_network = metadata.meta_network_utils.create_from_node(current_character_node)
     character_namespace = current_character_network.group.namespace()
     character_name = current_character_network.node.character_name.get()
@@ -260,7 +263,7 @@ def update_rig_file():
 
         # new_root might have been deleted by characterize_skeleton if it wasn't a joint, for safety we get the root
         # connected to the character network
-        new_root = updated_character_network.get_downstream(metadata.network_core.JointsCore).root
+        new_root = updated_character_network.get_downstream(JointsCore).root
         jnt_layer_list = new_root.drawOverride.listConnections()
         character_obj_list = [updated_character_network.group] + updated_character_network.group.listRelatives(ad=True)
 
@@ -316,19 +319,19 @@ def mirror_rig_animation(joint, mirror_key_dict = {'left' : 'right'}, axis = 'x'
 
 
 def mirror_center_region(region_network, axis):
-    region_control_list = region_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
+    region_control_list = region_network.get_downstream(ControlJoints).get_connections()
     for region_control in region_control_list:
         maya_utils.node_utils.flip_attribute_keys(region_control, v1_shared.shared_utils.get_mirror_attributes(axis))
 
 
 def mirror_center_pose(region_network, axis):
-    region_control_list = region_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
+    region_control_list = region_network.get_downstream(ControlJoints).get_connections()
     for region_control in region_control_list:
         maya_utils.node_utils.flip_transforms(region_control, v1_shared.shared_utils.get_mirror_attributes(axis))
 
 
 def get_mirror_network_from_control(control_obj, mirror_dict):
-    component_network = metadata.meta_network_utils.get_first_network_entry(control_obj, metadata.network_core.ComponentCore)
+    component_network = metadata.meta_network_utils.get_first_network_entry(control_obj, ComponentCore)
     mirror_network = get_matching_component(component_network, mirror_dict)
 
     return component_network, mirror_network
@@ -349,7 +352,7 @@ def mirror_pose_matching_regions(source_network, mirror_network, axis, single_di
     source_control_list, mirror_control_list = get_matching_region_controls(source_network, mirror_network)
 
     for source_control, mirror_control in zip(source_control_list, mirror_control_list):
-        control_property = metadata.meta_property_utils.get_property(source_control, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(source_control, ControlProperty)
         is_world = control_property.get('world_space', 'bool') if control_property else False
         if is_world:
             maya_utils.node_utils.world_space_mirror(source_control, mirror_control, axis, single_direction)
@@ -363,8 +366,8 @@ def get_matching_region_controls(source_network, mirror_network):
 
     source_control_list = mirror_control_list = []
     if source_component_type == mirror_component_type:
-        source_control_list = source_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
-        mirror_control_list = mirror_network.get_downstream(metadata.network_core.ControlJoints).get_connections()
+        source_control_list = source_network.get_downstream(ControlJoints).get_connections()
+        mirror_control_list = mirror_network.get_downstream(ControlJoints).get_connections()
                 
         source_control_list = rigging.skeleton.sort_chain_by_hierarchy(source_control_list)
         mirror_control_list = rigging.skeleton.sort_chain_by_hierarchy(mirror_control_list)
@@ -407,21 +410,21 @@ def get_matching_region_controls(source_network, mirror_network):
 
 def get_matching_control(control_obj, mirror_dict):
     found_match = False
-    overdriven_network_entry = metadata.meta_network_utils.get_first_network_entry(control_obj, metadata.network_core.AddonCore)
+    overdriven_network_entry = metadata.meta_network_utils.get_first_network_entry(control_obj, AddonCore)
 
-    control_property = metadata.meta_property_utils.get_property(control_obj, metadata.meta_properties.ControlProperty)
+    control_property = metadata.meta_property_utils.get_property(control_obj, ControlProperty)
     control_index = control_property.get('ordered_index')
-    component_network = metadata.meta_network_utils.get_first_network_entry(control_obj, metadata.network_core.ComponentCore)
+    component_network = metadata.meta_network_utils.get_first_network_entry(control_obj, ComponentCore)
 
     mirror_network = get_matching_component(component_network, mirror_dict)
 
     mirror_control = None
     if mirror_network:
-        mirror_control_network = mirror_network.get_downstream(metadata.network_core.ControlJoints)
+        mirror_control_network = mirror_network.get_downstream(ControlJoints)
         mirror_control_list = mirror_control_network.get_connections()
 
         for check_control in mirror_control_list:
-            mirror_property = metadata.meta_property_utils.get_property(check_control, metadata.meta_properties.ControlProperty)
+            mirror_property = metadata.meta_property_utils.get_property(check_control, ControlProperty)
             if mirror_property.get('ordered_index') == control_index:
                 mirror_control = check_control
                 found_match = True
@@ -450,12 +453,12 @@ def select_all_animated(character_network):
     '''
     Select all animated objects that are driving the character
     '''
-    component_network_list = character_network.get_all_downstream(metadata.network_core.ComponentCore)
+    component_network_list = character_network.get_all_downstream(ComponentCore)
     control_list = []
     for component_network in component_network_list:
         control_list.extend( rigging.rig_base.Component_Base.get_controls(component_network) )
     
-    skeleton = character_network.get_downstream(metadata.network_core.JointsCore).get_connections()
+    skeleton = character_network.get_downstream(JointsCore).get_connections()
     animated_skeleton = []
     for skeleton_joint in skeleton:
         if rigging.skeleton.has_animation(skeleton_joint):
@@ -468,15 +471,15 @@ def force_select_all(character_network):
     '''
     Select all objects that control the character
     '''
-    component_network_list = character_network.get_all_downstream(metadata.network_core.ComponentCore)
+    component_network_list = character_network.get_all_downstream(ComponentCore)
     control_list = []
     for component_network in component_network_list:
-        control_network = component_network.get_downstream(metadata.network_core.ControlJoints)
+        control_network = component_network.get_downstream(ControlJoints)
         control_list.extend( control_network.get_connections() )
 
-    component_network_list = character_network.get_all_downstream(metadata.network_core.AddonCore)
+    component_network_list = character_network.get_all_downstream(AddonCore)
     for component_network in component_network_list:
-        control_network = component_network.get_downstream(metadata.network_core.AddonControls)
+        control_network = component_network.get_downstream(AddonControls)
         control_list.extend( control_network.get_connections() )
 
     pm.select(control_list, r=True)
@@ -486,12 +489,12 @@ def get_addon_from_control(control_obj):
     '''
     Get the Addon control object from the give rig control object if it's overdriven
     '''
-    overdriven_network_entry = metadata.meta_network_utils.get_first_network_entry(control_obj, metadata.network_core.OverDrivenControl)
+    overdriven_network_entry = metadata.meta_network_utils.get_first_network_entry(control_obj, OverDrivenControl)
     addon_control = None
     if overdriven_network_entry:
-        addon_network = overdriven_network_entry.get_upstream(metadata.network_core.AddonCore)
+        addon_network = overdriven_network_entry.get_upstream(AddonCore)
         if addon_network:
-            addon_control_network = addon_network.get_downstream(metadata.network_core.AddonControls)
+            addon_control_network = addon_network.get_downstream(AddonControls)
             addon_control = addon_control_network.get_first_connection()
     
     return addon_control
@@ -501,7 +504,7 @@ def get_component_network_list(obj_list):
     '''
     Returns a list of all component network objects from a list of scene objects
     '''
-    control_list = [x for x in obj_list if metadata.meta_property_utils.get_properties([x], metadata.meta_properties.ControlProperty)]
+    control_list = [x for x in obj_list if metadata.meta_property_utils.get_properties([x], ControlProperty)]
     component_network_list = []
     for control in control_list:
         component_network_list.extend(rigging.skeleton.get_primary_rig_network(control))
@@ -520,9 +523,9 @@ def get_control_info(control):
     Returns:
         ControlInfo. ControlInfo storing all information from the control's ControlProperty, or None
     '''
-    control_property = metadata.meta_property_utils.get_property(control, metadata.meta_properties.ControlProperty)
+    control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
 
-    component_network = metadata.meta_network_utils.get_first_network_entry(control, metadata.network_core.RigComponent)
+    component_network = metadata.meta_network_utils.get_first_network_entry(control, RigComponent)
 
     if control_property:
         control_type = control_property.data.get('control_type')
@@ -541,12 +544,12 @@ def get_control_from_info(control_info, skeleton_dict):
 
     found_control = None
     region_root = skeleton_dict[control_info.side][control_info.region]['root']
-    component_core = metadata.meta_network_utils.get_first_network_entry(region_root, metadata.network_core.ComponentCore)
+    component_core = metadata.meta_network_utils.get_first_network_entry(region_root, ComponentCore)
     if component_core:
-        control_list = component_core.get_downstream(metadata.network_core.ControlJoints).get_connections()
+        control_list = component_core.get_downstream(ControlJoints).get_connections()
 
         for rig_control in control_list:
-            control_property = metadata.meta_property_utils.get_property(rig_control, metadata.meta_properties.ControlProperty)
+            control_property = metadata.meta_property_utils.get_property(rig_control, ControlProperty)
             if control_property.get('control_type') == control_info.control_type and control_property.get('ordered_index') == control_info.ordered_index:
                 found_control = rig_control
 
@@ -565,7 +568,7 @@ def get_control_vars_strings(rig_control):
             attr_name = attr.name().rsplit(".", 1)[-1]
             modified_dict[attr_name+".isLocked"] = True
 
-    control_property = metadata.meta_property_utils.get_property(rig_control, metadata.meta_properties.ControlProperty)
+    control_property = metadata.meta_property_utils.get_property(rig_control, ControlProperty)
     selection_lock = control_property.get("locked")
     if selection_lock:
         modified_dict["locked.selectionLock"] = True
@@ -621,8 +624,8 @@ def parse_control_vars(control_var_string):
 
 
 def get_matching_component(component_network, mirror_dict):
-    rig_network = component_network.get_upstream(metadata.network_core.RigCore)
-    component_list = rig_network.get_all_downstream(metadata.network_core.ComponentCore)
+    rig_network = component_network.get_upstream(RigCore)
+    component_list = rig_network.get_all_downstream(ComponentCore)
 
     side = component_network.get('side').lower()
     region = component_network.get('region').lower()
@@ -652,7 +655,7 @@ def get_rig_control_selection():
     selection = pm.ls(sl=True)
     control_list = []
     for obj in selection:
-        control_property = metadata.meta_property_utils.get_property(obj, metadata.meta_properties.ControlProperty)
+        control_property = metadata.meta_property_utils.get_property(obj, ControlProperty)
         if control_property:
             control_list.append(obj)
 
