@@ -199,7 +199,7 @@ class RegionEditor(object):
     def check_for_rigging(self, vm, event_args):
         root_jnt = pm.PyNode(event_args.Region.Root)
         end_jnt = pm.PyNode(event_args.Region.End)
-        component_list = rigging.skeleton.get_active_rig_networks(root_jnt) + rigging.skeleton.get_active_rig_networks(end_jnt)
+        component_list = rigging.skeleton.get_active_rig_network(root_jnt) + rigging.skeleton.get_active_rig_network(end_jnt)
         event_args.Success = False if component_list else True
 
     @csharp_error_catcher
