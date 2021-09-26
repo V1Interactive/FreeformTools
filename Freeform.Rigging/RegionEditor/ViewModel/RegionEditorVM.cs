@@ -315,7 +315,7 @@ namespace Freeform.Rigging.RegionEditor
                     _group = value;
                     if (SelectedRegionItem != null)
                     {
-                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "group", Value = value });
+                        RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "group_name", Value = value });
                         SelectedRegionItem.Group = value;
                     }
                     RaisePropertyChanged("Group");

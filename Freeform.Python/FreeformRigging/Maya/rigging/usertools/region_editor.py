@@ -201,7 +201,7 @@ class RegionEditor(object):
     def check_for_rigging(self, vm, event_args):
         root_jnt = pm.PyNode(event_args.Region.Root)
         end_jnt = pm.PyNode(event_args.Region.End)
-        component_list = rigging.skeleton.get_active_rig_networks(root_jnt) + rigging.skeleton.get_active_rig_networks(end_jnt)
+        component_list = rigging.skeleton.get_active_rig_network(root_jnt) + rigging.skeleton.get_active_rig_network(end_jnt)
         event_args.Success = False if component_list else True
 
     @csharp_error_catcher
@@ -275,11 +275,11 @@ class RegionEditor(object):
     def _update_rigging(self, c_region, attr, value):
         root_jnt = pm.PyNode(c_region.Root)
         end_jnt = pm.PyNode(c_region.End)
-        root_component = rigging.skeleton.get_rig_network(root_jnt)
-        end_component = rigging.skeleton.get_rig_network(end_jnt)
+        root_component_network = rigging.skeleton.get_rig_network(root_jnt)
+        end_component_network = rigging.skeleton.get_rig_network(end_jnt)
 
-        if root_component and end_component and root_component.node == end_component.node:
-            getattr(root_component.node, attr).set(value)
+        if root_component_network and end_component_network and root_component_network.node == end_component_network.node:
+            root_component_network.set(attr, value)
 
     @csharp_error_catcher
     def data_changed(self, vm, event_args):
