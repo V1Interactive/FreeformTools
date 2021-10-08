@@ -2,7 +2,7 @@
 - Beta Tutorials - https://www.youtube.com/channel/UCHXLfl9y2os_gvCzhR7UFlQ
 - User Documentation - https://sites.google.com/view/v1freeformtools/home
 
-For Maya 2020.x using Python 2.7
+For Maya 2018.x-2020.x using Python 2.7
 
 
 Home of an open source freeform rigging and animation toolset for Maya, made for games development.  These tools are built 
