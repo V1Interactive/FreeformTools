@@ -401,6 +401,9 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
     rigging.rig_base.Component_Base.zero_all_rigging(character_network)
 
+    # Make sure we have a clean queue incase something left items in it unrelated to this file load
+    maya_utils.baking.Global_Bake_Queue().clear()
+
     # Build Components
     set_control_var_dict = {}
     create_time = time.clock()
@@ -430,6 +433,9 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
     rigging.rig_base.Component_Base.zero_all_rigging(character_network)
 
+    # Make sure we have a clean queue incase something left items in it unrelated to this file load
+    maya_utils.baking.Global_Bake_Queue().clear()
+
     # Build Overdrivers
     addon_time = time.clock()
     side_addon_iteritems = [(x,y) for x,y in addon_data.iteritems() if x in side_filter] if side_filter else addon_data.iteritems()
@@ -438,7 +444,8 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
         for region, component_type_dict in region_addon_iteritems:
             for addon, addon_component_dict in component_type_dict.iteritems():
                 created_side = created_rigging.get(side)
-                component, did_exist = created_side.get(region) if created_side else (None, False)
+                created_region = created_side.get(region) if created_side else None
+                component, did_exist = created_region if created_region else (None, False)
                 target_data = rigging.rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                 # Continue if the overdriver is attached to a skeleton joint or scene object
                 # Otherwise make sure that the rig controls were created before trying to attach to them
