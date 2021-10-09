@@ -217,19 +217,19 @@ def setup_exporter():
     export_definition_type = network_registry.Network_Registry().get('ExportDefinition')
     character_animation_asset_type = network_registry.Property_Registry().get('CharacterAnimationAsset')
 
-    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(export_definition_type)
-    current_definition = metadata.meta_network_utils.create_from_node(export_definition_list[0]) if export_definition_list else None
+    export_definition_list = meta_network_utils.get_all_network_nodes(export_definition_type)
+    current_definition = meta_network_utils.create_from_node(export_definition_list[0]) if export_definition_list else None
     export_definition = current_definition if current_definition else export_definition_type()
     export_definition.set('use_scene_name', True)
 
-    character_list = metadata.meta_network_utils.get_all_network_nodes(character_core_type)
+    character_list = meta_network_utils.get_all_network_nodes(character_core_type)
     for character_node in character_list:
-        character_network = metadata.meta_network_utils.create_from_node(character_node)
+        character_network = meta_network_utils.create_from_node(character_node)
         joints_network = character_network.get_downstream(joints_core_type)
         root_joint = node_utils.get_root_node(joints_network.get_first_connection(), 'joint')
         character_name = root_joint.namespace().strip(":").upper()
         
-        existing_export_property = metadata.meta_property_utils.get_property(root_joint, character_animation_asset_type)
+        existing_export_property = meta_property_utils.get_property(root_joint, character_animation_asset_type)
         export_property = existing_export_property if existing_export_property else character_animation_asset_type()
         export_property.set('asset_name', character_name)
     

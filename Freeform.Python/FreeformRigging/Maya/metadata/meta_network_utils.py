@@ -57,7 +57,9 @@ def get_node_type(pynode):
     node_type = None
     if hasattr(pynode, 'meta_type'):
         module, type_name = v1_shared.shared_utils.get_class_info( pynode.meta_type.get() )
-        node_type = Network_Registry().get(type_name, True)
+        node_type = Network_Registry().get(type_name)
+        if not node_type:
+            node_type = Property_Registry().get(type_name)
         # node_type = getattr(sys.modules[module], type_name)
 
     return node_type

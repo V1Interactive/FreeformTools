@@ -280,7 +280,7 @@ def create_center_of_mass(obj):
 def get_com_weight_dictionary(obj):
     character_network = metadata.meta_network_utils.get_first_network_entry(obj, CharacterCore)
     joints_network = character_network.get_downstream(JointsCore)
-    skeleton_dict = rigging.skeleton.get_skeleton_dict(joints_network.root)
+    skeleton_dict = get_skeleton_dict(joints_network.root)
     regions_network = character_network.get_downstream(RegionsCore)
 
     com_weight_dict = {}
@@ -417,7 +417,7 @@ def get_control_joint(rig_control):
         control_index = control_property.get('ordered_index')
         component_network = metadata.meta_network_utils.get_first_network_entry(rig_control, ComponentCore)
         skeleton_network = component_network.get_downstream(SkeletonJoints)
-        sorted_chain = rigging.skeleton.sort_chain_by_hierarchy( skeleton_network.get_connections() )
+        sorted_chain = sort_chain_by_hierarchy( skeleton_network.get_connections() )
         skeleton_joint = sorted_chain[control_index]
 
     return skeleton_joint
@@ -1254,8 +1254,8 @@ def get_rig_network_from_region(skele_dict, side, region):
     root_joint = skele_dict.get(side).get(region).get('root')
     end_joint = skele_dict.get(side).get(region).get('end')
 
-    root_network_list = rigging.skeleton.get_all_rig_networks(root_joint)
-    end_network_list = rigging.skeleton.get_all_rig_networks(end_joint)
+    root_network_list = get_all_rig_networks(root_joint)
+    end_network_list = get_all_rig_networks(end_joint)
 
     component_network = [x for x in root_network_list if x in end_network_list]
 

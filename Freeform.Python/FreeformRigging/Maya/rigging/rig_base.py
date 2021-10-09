@@ -174,7 +174,9 @@ class Component_Base(object, metaclass=Component_Meta):
         # directly unpacking into variables causes unit test errors
         packed_info = v1_shared.shared_utils.get_class_info( network_node.component_type.get() )
         module_name, type_name = get_first_or_default(packed_info), get_index_or_default(packed_info, 1)
-        component_type = Component_Registry().get(type_name, True)
+        component_type = Component_Registry().get(type_name)
+        if not component_type:
+            component_type = Addon_Registry().get(type_name)
         # component_class = getattr(sys.modules[module_name], type_name)
         component = component_type()
         component.initialize_from_network_node(network_node)

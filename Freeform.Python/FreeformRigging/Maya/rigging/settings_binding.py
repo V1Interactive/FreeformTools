@@ -32,8 +32,25 @@ from v1_core.py_helpers import Freeform_Enum
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
+class Binding_Registry(v1_core.py_helpers.Freeform_Registry):
+    '''
+    Central registry for gathering all available network objects
+    '''
+    def __init__(self):
+        super(Binding_Registry, self).__init__()
 
-class Binding():
+class Binding_Meta(type):
+    def __new__(cls, cls_name, bases, attr_dct):
+        new_class = type.__new__(cls, cls_name, bases, attr_dct)
+        if new_class._do_register:
+            Binding_Registry().add(cls_name, new_class)
+        else:
+            Binding_Registry().add_hidden(cls_name, new_class)
+
+        return new_class
+
+
+class Binding(metaclass=Binding_Meta):
     '''
     Helper Structure to organize all information from a rig control object, reading and writting out to string
 
@@ -42,6 +59,11 @@ class Binding():
         attribute (str): Name to save the attribute under
         binding (list<str>): List of all attribute names that should be saved
     '''
+    _do_register = False
+
+    @property
+    def type_name(self):
+        return type(self).__name__
 
     def __init__(self):
         self.category = None
@@ -67,6 +89,8 @@ class XForm_Binding(Binding):
         attribute (str): Name to save the attribute under
         binding (list<str>): List of all attribute names that should be saved
     '''
+    _do_register = True
+
     @staticmethod
     def get_inherited_class_strings():
         '''
@@ -184,6 +208,8 @@ class BindPose_Binding(XForm_Binding):
         binding (list<str>): List of names to save attribute as
         sub_attr (list<str>): List of all sub attribute names that should be saved from attribute
     '''
+    _do_register = False
+
     def __init__(self):
         super(BindPose_Binding, self).__init__()
         self.category = 'bind_xform'
@@ -207,6 +233,8 @@ class Bind_Translate(BindPose_Binding):
     '''
     Binding to save or load the x, y, and z channels of the bind_translate attribute to json
     '''
+    _do_register = True
+
     def __init__(self):
         super(Bind_Translate, self).__init__()
         self.attribute = 'bind_translate'
@@ -217,6 +245,8 @@ class Bind_Rotate(BindPose_Binding):
     '''
     Binding to save or load the x, y, and z channels of the bind_rotate attribute to json
     '''
+    _do_register = True
+
     def __init__(self):
         super(Bind_Rotate, self).__init__()
         self.attribute = 'bind_rotate'
@@ -229,6 +259,8 @@ class Parent_Binding(Binding):
     '''
     Binding to save the parent transform of the object to json by name
     '''
+    _do_register = True
+
     def __init__(self):
         super(Parent_Binding, self).__init__()
 
@@ -259,6 +291,10 @@ class Parent_Binding(Binding):
 
 
 class Properties_Binding(Binding):
+    '''
+    '''
+    _do_register = True
+
     def __init__(self):
         super(Properties_Binding, self).__init__()
         self.category = 'properties'
