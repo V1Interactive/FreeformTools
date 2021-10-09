@@ -67,7 +67,8 @@ class RegionEditor(object):
             for region, joint_dict in region_dict.iteritems():
                 markup_properties = metadata.meta_properties.get_properties([pm.PyNode(joint_dict['root'].name())], metadata.meta_properties.RigMarkupProperty)
                 markup = get_first_or_default([x for x in markup_properties if x.data['side'] == side and x.data['region'] == region])
-                self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name(), markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
+                self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name(), 
+                                  markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
 
         self.vm.CharacterName = self.character_node.name()
 
@@ -189,10 +190,14 @@ class RegionEditor(object):
         if mirror_root and mirror_end:
             mirror_side = event_args.Region.Side.replace(event_args.Replace, event_args.ReplaceWith)
 
-            self._add_rigging_properties(mirror_root, mirror_side, event_args.Region.Name, "root", event_args.Region.Group)
-            self._add_rigging_properties(mirror_end, mirror_side, event_args.Region.Name, "end", event_args.Region.Group)
+            self._add_rigging_properties(mirror_root, mirror_side, event_args.Region.Name, "root", event_args.Region.Group, 
+                                         event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
+            self._add_rigging_properties(mirror_end, mirror_side, event_args.Region.Name, "end", event_args.Region.Group, 
+                                         event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
 
-            new_region = Freeform.Rigging.RegionEditor.Region(mirror_side, event_args.Region.Name, event_args.Region.Group, mirror_root_name, mirror_end_name, event_args.Region.ComObject, event_args.Region.ComRegion, event_args.Region.ComWeight)
+            new_region = Freeform.Rigging.RegionEditor.Region(mirror_side, event_args.Region.Name, event_args.Region.Group, 
+                                                              mirror_root_name, mirror_end_name, event_args.Region.ComObject, 
+                                                              event_args.Region.ComRegion, event_args.Region.ComWeight)
             event_args.NewRegion = new_region
 
     @csharp_error_catcher
@@ -238,7 +243,8 @@ class RegionEditor(object):
         end_joint = pm.PyNode(event_args.Region.End) if pm.objExists(event_args.Region.End) else None
 
         if not root_joint or not end_joint:
-            pm.confirmDialog( title="Can't Add Markup", message="Root or End Joint not found", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            pm.confirmDialog( title="Can't Add Markup", message="Root or End Joint not found", 
+                             button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
             return
 
         markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
@@ -246,14 +252,17 @@ class RegionEditor(object):
 
         valid_check = rigging.skeleton.is_joint_below_hierarchy(end_joint, root_joint)
         if valid_check and not markup_exists and root_joint and end_joint:
-            self._add_rigging_properties(root_joint, event_args.Region.Side, event_args.Region.Name, "root", event_args.Region.Group, event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
-            self._add_rigging_properties(end_joint, event_args.Region.Side, event_args.Region.Name, "end", event_args.Region.Group, event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
+            self._add_rigging_properties(root_joint, event_args.Region.Side, event_args.Region.Name, "root", event_args.Region.Group, 
+                                         event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
+            self._add_rigging_properties(end_joint, event_args.Region.Side, event_args.Region.Name, "end", event_args.Region.Group, 
+                                         event_args.Region.ComRegion, event_args.Region.ComObject, event_args.Region.ComWeight)
 
             event_args.Success = True
         else:
             dialog_message = "Markup Already Exists on joints." if markup_exists else "Can't find picked joints."
             dialog_message = dialog_message if valid_check else "Root and End cannot create a joint chain."
-            pm.confirmDialog( title="Can't Add Markup", message=dialog_message, button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            pm.confirmDialog( title="Can't Add Markup", message=dialog_message, 
+                             button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
 
         pm.select(selection, r=True)
 
@@ -268,7 +277,8 @@ class RegionEditor(object):
             tag (str): Whether we're adding a root or end property. Valid strings are 'root' and 'end'
         '''
         rig_prop = metadata.meta_properties.add_property(jnt, metadata.meta_properties.RigMarkupProperty)
-        rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group' : group, 'com_region' : com_region, 'com_object' : com_object, 'com_weight' : com_weight}
+        rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group' : group, 'com_region' : com_region, 
+                         'com_object' : com_object, 'com_weight' : com_weight}
 
     def _update_rigging(self, c_region, attr, value):
         root_jnt = pm.PyNode(c_region.Root)
@@ -322,7 +332,8 @@ class RegionEditor(object):
 
             event_args.Success = True
         else:
-            pm.confirmDialog( title="Can't Change Markup", message="Root and End cannot create a joint chain", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            pm.confirmDialog( title="Can't Change Markup", message="Root and End cannot create a joint chain", 
+                             button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
 
     @csharp_error_catcher
     def end_changed(self, vm, event_args):
@@ -349,7 +360,8 @@ class RegionEditor(object):
 
             event_args.Success = True
         else:
-            pm.confirmDialog( title="Can't Change Markup", message="Root and End cannot create a joint chain", button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+            pm.confirmDialog( title="Can't Change Markup", message="Root and End cannot create a joint chain", 
+                             button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
 
     def get_markup_to_edit(self, c_region):
         '''
