@@ -79,11 +79,11 @@ class Freeform_Registry(object, metaclass=Singleton):
     '''
     @property
     def type_list(self):
-        return self.registry.values()
+        return list(self.registry.values())
 
     @property
     def name_list(self):
-        return self.registry.keys()
+        return list(self.registry.keys())
 
 
     def __init__(self):

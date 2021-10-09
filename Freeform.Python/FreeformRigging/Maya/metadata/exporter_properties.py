@@ -17,6 +17,10 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+import os
+import sys
+import time
+
 import pymel.core as pm
 
 import rigging
@@ -25,9 +29,11 @@ import maya_utils
 
 import v1_core
 
-from metadata.meta_properties import PropertyNode, ExportStageEnum
+from metadata.meta_properties import PropertyNode, ExportStageEnum, ExportProperty
+from metadata.joint_properties import RemoveAnimationProperty
 from metadata.network_core import DependentNode, Core
 from metadata import meta_network_utils
+from metadata import meta_property_utils
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
@@ -167,7 +173,7 @@ class ExportAssetProperty(PropertyNode):
     def run_properties(self, c_asset, event_args, export_stage, scene_node_list, **kwargs):
         v1_core.v1_logging.get_logger().info("Exporter - run_properties acting on {0}".format(scene_node_list))
         for scene_node in scene_node_list:
-            property_dict = get_properties_dict(scene_node)
+            property_dict = meta_property_utils.get_properties_dict(scene_node)
             for prop_object_list in property_dict.values():
                 for prop_object in prop_object_list:
                     if prop_object.export_stage == export_stage:
@@ -176,7 +182,7 @@ class ExportAssetProperty(PropertyNode):
     def run_post_properties(self, c_asset, event_args, export_stage, scene_node_list, **kwargs):
         v1_core.v1_logging.get_logger().info("Exporter - run_post_properties acting on {0}".format(scene_node_list))
         for scene_node in scene_node_list:
-            property_dict = get_properties_dict(scene_node)
+            property_dict = meta_property_utils.get_properties_dict(scene_node)
             for prop_object_list in property_dict.values():
                 for prop_object in prop_object_list:
                     if prop_object.export_stage == export_stage:
@@ -323,7 +329,7 @@ class CharacterAsset(ExportAssetProperty):
 
         # remove non-export joints
         for export_joint in export_skeleton:
-            property_dict = get_properties_dict(export_joint)
+            property_dict = meta_property_utils.get_properties_dict(export_joint)
             export_property = property_dict.get(ExportProperty)
 
             for attr in ['translate', 'tx', 'ty', 'tz', 'rotate', 'rx', 'ry', 'rz', 'scale', 'sx', 'sy', 'sz']:
@@ -500,7 +506,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
                 anim_attr >> getattr(export_root, attr_name)
 
         for export_joint, orig_joint in zip(export_skele, joint_list):
-            export_property = get_property(export_joint, ExportProperty)
+            export_property = meta_property_utils.get_property(export_joint, ExportProperty)
             do_export = True
             if export_property:
                 do_export = export_property.act()
@@ -548,7 +554,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
         pm.delete( [x for x in delete_list if x not in export_skele] )
 
         for export_joint in export_skele:
-            remove_animation_property = get_property(export_joint, RemoveAnimationProperty)
+            remove_animation_property = meta_property_utils.get_property(export_joint, RemoveAnimationProperty)
             if remove_animation_property:
                 remove_animation_property.act()
                 

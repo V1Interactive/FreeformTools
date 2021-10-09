@@ -602,6 +602,7 @@ def get_constraint_info(constraint_obj, obj):
     if None not in driver_info_list:
         weight_list = [x.get() for x in constraint_obj.getWeightAliasList()]
         return_info = zip([str(x) for x in driver_info_list], weight_list)
+        return_info = list(return_info)
 
     return return_info
 

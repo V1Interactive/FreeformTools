@@ -32,9 +32,10 @@ import metadata
 from metadata.network_core import AddonCore, CharacterCore, ComponentCore, JointsCore
 
 from rigging import rig_base
-from rigging import settings_binding
 from rigging import skeleton
 from rigging import component_registry
+
+from rigging.settings_binding import Binding_Sets, Binding_Registry, Properties_Binding, XForm_Binding, Bind_Translate, Bind_Rotate
 
 import maya_utils
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -181,7 +182,7 @@ def get_skeleton_dict_from_settings(settings_file_path):
     return skeleton_dict
 
 
-def save_settings_to_json_with_dialog(jnt, binding_list = settings_binding.Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None):
+def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None):
     '''
     Save a character settings file out to json, prompting the user with a file dialog to pick the save path
 
@@ -197,7 +198,7 @@ def save_settings_to_json_with_dialog(jnt, binding_list = settings_binding.Bindi
     if load_path:
         save_settings_to_json(jnt, get_first_or_default(load_path), binding_list, update, subtype, varient)
 
-def save_settings_to_json(jnt, file_path, binding_list = settings_binding.Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None):
+def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None):
     '''
     Save a character settings file out to json
 
@@ -226,7 +227,7 @@ def save_settings_to_json(jnt, file_path, binding_list = settings_binding.Bindin
     v1_core.json_utils.save_json(file_path, save_data)
 
 
-def load_settings_from_json_with_dialog(character_grp, binding_list = settings_binding.Binding_Sets.ALL.value):
+def load_settings_from_json_with_dialog(character_grp, binding_list = Binding_Sets.ALL.value):
     '''
     Loads a character settings json file onto a character with a file picker dialog to choose the json file
 
@@ -241,7 +242,7 @@ def load_settings_from_json_with_dialog(character_grp, binding_list = settings_b
     if load_path:
         load_settings_from_json(character_grp, get_first_or_default(load_path), binding_list)
 
-def load_settings_from_json(character_grp, file_path, binding_list = settings_binding.Binding_Sets.ALL.value):
+def load_settings_from_json(character_grp, file_path, binding_list = Binding_Sets.ALL.value):
     '''
     Loads a character settings json file onto a character
 
@@ -260,7 +261,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = settings_bi
     target_namespace = character_grp.namespace()
 
     # Create any missing joints, parented to world so we know to fill them in next
-    if binding_list != settings_binding.Binding_Sets.PROPERTIES.value:
+    if binding_list != Binding_Sets.PROPERTIES.value:
         for jnt_name, data in load_data.items():
             if not pm.objExists( target_namespace + jnt_name ):
                 v1_core.v1_logging.get_logger().info("Creating Joint - {0}".format(jnt_name))
@@ -269,8 +270,8 @@ def load_settings_from_json(character_grp, file_path, binding_list = settings_bi
                 pm.addAttr(new_jnt, ln='bind_translate', dt='double3')
                 pm.addAttr(new_jnt, ln='bind_rotate', dt='double3')
 
-                settings_binding.Bind_Translate().load_data(data, new_jnt)
-                settings_binding.Bind_Rotate().load_data(data, new_jnt)
+                Bind_Translate().load_data(data, new_jnt)
+                Bind_Rotate().load_data(data, new_jnt)
 
                 joints_network.connect_node(new_jnt)
             else:
@@ -279,11 +280,11 @@ def load_settings_from_json(character_grp, file_path, binding_list = settings_bi
                 target_parent = pm.PyNode(target_parent_name) if pm.objExists(target_parent_name) else None
                 if jnt.getParent() != None and (jnt.getParent() == target_parent or jnt.getParent() == character_grp):
                     xform_binding_list = []
-                    for b in binding_list:
-                        if type(b).__name__ in settings_binding.XForm_Binding.get_inherited_class_strings():
-                            xform_binding_list.append(b)
-                    for binding in xform_binding_list:
-                        binding.load_data(data, jnt, target_namespace)
+                    for binding_object in binding_list:
+                        if binding_object.type_name in XForm_Binding.get_inherited_class_strings():
+                            xform_binding_list.append(binding_object)
+                    for xform_binding in xform_binding_list:
+                        xform_binding.load_data(data, jnt, target_namespace)
 
     load_property_jnt = None
     for jnt_name, data in load_data.items():
@@ -294,11 +295,12 @@ def load_settings_from_json(character_grp, file_path, binding_list = settings_bi
         if load_property_jnt:
             # Joints we just made above should be the only ones without a parent
             if load_property_jnt.getParent() == None:
-                for binding in settings_binding.Binding_Sets.NEW_JOINT.value:
-                    binding.load_data(data, load_property_jnt, target_namespace)
+                for joint_binding in Binding_Sets.NEW_JOINT.value:
+                    joint_binding.load_data(data, load_property_jnt, target_namespace)
 
-            if settings_binding.Properties_Binding in [type(x) for x in binding_list]:
-                settings_binding.Properties_Binding().load_data(data, load_property_jnt)
+            binding_type_list = [Binding_Registry().get(x.type_name) for x in binding_list]
+            if Properties_Binding in binding_type_list:
+                Properties_Binding().load_data(data, load_property_jnt)
 
     for load_jnt in joints_network.get_connections():
         skeleton.remove_invalid_rig_markup(load_jnt)
@@ -404,6 +406,9 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     rig_base.Component_Base.zero_all_overdrivers(character_network)
     rig_base.Component_Base.zero_all_rigging(character_network)
 
+    # Make sure we have a clean queue incase something left items in it unrelated to this file load
+    maya_utils.baking.Global_Bake_Queue().clear()
+
     # Build Components
     set_control_var_dict = {}
     create_time = time.clock()
@@ -434,6 +439,9 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     rig_base.Component_Base.zero_all_overdrivers(character_network)
     rig_base.Component_Base.zero_all_rigging(character_network)
 
+    # Make sure we have a clean queue incase something left items in it unrelated to this file load
+    maya_utils.baking.Global_Bake_Queue().clear()
+
     # Build Overdrivers
     addon_time = time.clock()
     side_addon_iteritems = [(x,y) for x,y in addon_data.items() if x in side_filter] if side_filter else addon_data.items()
@@ -442,7 +450,8 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
         for region, component_type_dict in region_addon_iteritems:
             for addon, addon_component_dict in component_type_dict.items():
                 created_side = created_rigging.get(side)
-                component, did_exist = created_side.get(region) if created_side else (None, False)
+                created_region = created_side.get(region) if created_side else None
+                component, did_exist = created_region if created_region else (None, False)
                 target_data = rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
                 # Continue if the overdriver is attached to a skeleton joint or scene object
                 # Otherwise make sure that the rig controls were created before trying to attach to them

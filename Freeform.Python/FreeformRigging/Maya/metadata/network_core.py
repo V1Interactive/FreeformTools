@@ -121,10 +121,11 @@ class MetaNode(object, metaclass=Network_Meta):
         if not hasattr(self.node, attr_name):
             self.add_attr(attr_name, value_type)
             if value_type == 'string': # Strings get initialized to None, make sure they get set to an empty string
-                self.set(attr_name, " ")
+                self.set(attr_name, " ") # Can't set to "" otherwise value stays None
 
         return_value = getattr(self.node, attr_name).get()
-        return_value = "" if return_value == " " and type(return_value) == str else return_value
+        if ((return_value == " " and type(return_value) == str) or (return_value == None)):
+            return_value = ""
         return return_value
 
     def set(self, attr_name, value, value_type='string'):
@@ -455,7 +456,7 @@ class DependentNode(MetaNode):
     def __init__(self, parent = None, node_name = 'dependent_node', node = None, namespace = "", **kwargs):
         super(DependentNode, self).__init__(node_name, node, namespace, **kwargs)
         if not node:
-            parent_node = parent if parent else self.get_network_core()
+            parent_node = parent if parent else meta_network_utils.get_network_core()
             parent_network = meta_network_utils.create_from_node(parent_node)
 
             dependent_network = parent_network.get_downstream(self.dependent_node)

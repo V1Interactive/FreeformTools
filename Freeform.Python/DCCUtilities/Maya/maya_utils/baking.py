@@ -54,6 +54,9 @@ class Global_Bake_Queue(object, metaclass=Singleton):
     def __init__(self, *args, **kwargs):
         self.queue = BakeQueue("Global Bake Queue")
 
+    def clear(self):
+        self.queue.clear()
+
     def add_bake_command(self, obj_list, kwargs):
         self.queue.add_bake_command(obj_list, kwargs)
 
