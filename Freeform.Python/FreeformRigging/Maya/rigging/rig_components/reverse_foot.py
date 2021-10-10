@@ -53,18 +53,18 @@ class ReverseFoot(Rig_Component):
         self.prefix = 'reverse'
 
 
-    def bake_non_attach_joints(self, translate = True, rotate = True, scale = True, use_global_queue = True):
+    def bake_non_attach_joints(self, translate = True, rotate = True, scale = True, baking_queue = maya_utils.baking.Global_Bake_Queue()):
         skele_list = self.network['skeleton'].get_connections()
         attach_list = self.network['attachment'].get_connections()
         joint_list = [x for x in skele_list if x not in attach_list]
 
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_bake_command(joint_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : False})
+        if baking_queue:
+            baking_queue.add_bake_command(joint_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : False})
         else:
             maya_utils.baking.bake_objects(joint_list, translate, rotate, scale)
 
-    def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = False, simulation = True):
-        super(ReverseFoot, self).queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation)
+    def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = False, simulation = True, baking_queue = maya_utils.baking.Global_Bake_Queue()):
+        super(ReverseFoot, self).queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation, baking_queue)
 
     def bake_controls(self, translate = True, rotate = True, scale = False, simulation = True):
         super(ReverseFoot, self).bake_controls(translate, rotate, scale, simulation)
@@ -79,7 +79,7 @@ class ReverseFoot(Rig_Component):
         return True
 
     @undoable
-    def bake_and_remove(self, use_global_queue = True, local_queue = None):
+    def bake_and_remove(self, baking_queue = None):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
@@ -93,10 +93,10 @@ class ReverseFoot(Rig_Component):
         if will_attach:
             self.bake_non_attach_joints()
         else:
-            self.bake_joints(use_global_queue = use_global_queue)
+            self.bake_joints(baking_queue = baking_queue)
 
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.remove, {})
+        if baking_queue:
+            baking_queue.add_post_process(self.remove, {})
         else:
             self.remove()
 
@@ -106,14 +106,15 @@ class ReverseFoot(Rig_Component):
 
 
     @undoable
-    def rig(self, skeleton_dict, side, region, world_space = True, control_holder_list = None, use_global_queue = False, additive = False, reverse = False, **kwargs):
+    def rig(self, skeleton_dict, side, region, world_space = True, control_holder_list = None, baking_queue = False, additive = False, reverse = False, **kwargs):
         if not self.valid_check(skeleton_dict, side, region):
             return False
 
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
-        super(ReverseFoot, self).rig(skeleton_dict, side, region, world_space, not use_global_queue, **kwargs)
+        do_zero_character = False if baking_queue else True
+        super(ReverseFoot, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
@@ -203,14 +204,14 @@ class ReverseFoot(Rig_Component):
         self.attach_component(True)
 
         if skeleton.is_animated(skeleton_chain):
-            self.attach_and_bake(self.skeleton_dict, use_global_queue)
-            if not use_global_queue:
+            self.attach_and_bake(self.skeleton_dict, baking_queue)
+            if not baking_queue:
                 skeleton.remove_animation(skeleton_chain)
 
-        if use_global_queue:
+        if baking_queue:
             if not additive:
-                maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'rigging_chain':rigging_chain})
+                baking_queue.add_post_process(self.save_animation, {})
+            baking_queue.add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'rigging_chain':rigging_chain})
         else:
             if not additive:
                 self.save_animation()

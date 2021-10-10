@@ -2099,12 +2099,13 @@ class HelixRigger:
         if not all_overdrivers:
             user_bake_settings = bake_settings.force_bake_key_range()
 
+        local_bake_queue = maya_utils.baking.BakeQueue("Helix Rigger Bake and Remove")
         for component_network in component_network_list:
             if pm.objExists(component_network.node):
                 rig_component = rigging.rig_base.Component_Base.create_from_network_node(component_network.node)
-                rig_component.bake_and_remove()
+                rig_component.bake_and_remove(local_bake_queue)
 
-        maya_utils.baking.Global_Bake_Queue().run_queue()
+        local_bake_queue.run_queue()
         maya_utils.scene_utils.set_current_frame()
 
         if not all_overdrivers:

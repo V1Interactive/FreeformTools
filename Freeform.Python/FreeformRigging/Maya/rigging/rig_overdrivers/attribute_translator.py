@@ -82,7 +82,7 @@ class Attribute_Translator(Addon_Component):
         self.prefix = "AttributeTranslator"
 
     @undoable
-    def rig(self, component_node, control, object_space_list, attribute_channel_dict, use_global_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space_list, attribute_channel_dict, default_space = None, baking_queue = None, **kwargs):
         '''
         Args:
             component_node (PyNode): The component network.node object
@@ -90,9 +90,9 @@ class Attribute_Translator(Addon_Component):
             object_space_list (list<PyNode>): The Maya scene objects that will be the object space for the addon component controls
         '''
         # Disable queue for this type
-        use_global_queue = False
+        baking_queue = None
 
-        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, use_global_queue = use_global_queue, **kwargs):
+        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, baking_queue = baking_queue, **kwargs):
             return False
 
         object_space = get_first_or_default(object_space_list)

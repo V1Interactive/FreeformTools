@@ -444,6 +444,7 @@ class DependentNode(MetaNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
+    _do_register = True
     dependent_node = None
 
     @property
@@ -483,7 +484,6 @@ class CharacterCore(DependentNode):
         character_name (str): Name of the character
         root_path (int): CONTENT_ROOT relative path to the folder for this character
     '''
-    _do_register = True
     dependent_node = Core
 
 
@@ -531,7 +531,6 @@ class SkeletonCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = CharacterCore
 
     def __init__(self, parent = None, node_name = 'skeleton_core', node = None, namespace = ""):
@@ -549,7 +548,6 @@ class JointsCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = SkeletonCore
 
     @property
@@ -591,7 +589,6 @@ class RegionsCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = CharacterCore
 
     def __init__(self, parent = None, node_name = 'regions_core', node = None, namespace = ""):
@@ -609,7 +606,6 @@ class RigCore(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = CharacterCore
 
     @property
@@ -648,7 +644,6 @@ class RigComponent(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = None
 
     def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = "", **kwargs):
@@ -747,7 +742,6 @@ class ControlJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'control_joints', node = None, namespace = ""):
@@ -765,7 +759,6 @@ class RiggingJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'rigging_joints', node = None, namespace = ""):
@@ -783,7 +776,6 @@ class AttachmentJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'attachment_joints', node = None, namespace = ""):
@@ -801,7 +793,6 @@ class SkeletonJoints(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'skeleton_joints', node = None, namespace = ""):
@@ -863,7 +854,6 @@ class AddonControls(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = AddonCore
 
     def __init__(self, parent = None, node_name = 'addon_controls', node = None, namespace = ""):
@@ -881,7 +871,6 @@ class OverDrivenControl(DependentNode):
         node (PyNode): The scene network node that represents the property
         dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
     '''
-    _do_register = True
     dependent_node = AddonCore
 
     def __init__(self, parent = None, node_name = 'overdriven_control', node = None, namespace = ""):

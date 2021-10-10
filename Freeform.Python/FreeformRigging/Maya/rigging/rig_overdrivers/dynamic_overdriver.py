@@ -54,13 +54,14 @@ class Dynamic_Driver(Overdriver):
         self.maintain_offset = False
 
     @undoable
-    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_global_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, baking_queue = None, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
-        bake_dynamics = not use_global_queue
-        use_global_queue = False
 
-        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_global_queue, **kwargs):
+        bake_dynamics = False if baking_queue else True
+        baking_queue = None
+
+        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, baking_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space)
@@ -144,10 +145,10 @@ class Pendulum(Aim):
         self.prefix = "PendulumDynamic"
         self.maintain_offset = False
 
-    def rig(self, component_node, control, bake_controls=False, default_space=None, use_global_queue=False, **kwargs):
+    def rig(self, component_node, control, bake_controls=False, default_space=None, baking_queue=None, **kwargs):
         # Create the dynamic pendulum to be used as the Aim space for the overdriver
         self.network = self.create_meta_network(component_node)
-        #self.zero_character(self.network['character'], use_global_queue)
+        #self.zero_character(self.network['character'], baking_queue)
 
         aim_up_group_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
         pre_dynamic_group = pm.group(empty=True, name=aim_up_group_name)
@@ -176,7 +177,7 @@ class Pendulum(Aim):
 
         self.reset_pendulum(object_space)
 
-        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_global_queue=use_global_queue, **kwargs):
+        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, baking_queue=baking_queue, **kwargs):
             return False
         
         driver_control = self.network['controls'].get_first_connection()

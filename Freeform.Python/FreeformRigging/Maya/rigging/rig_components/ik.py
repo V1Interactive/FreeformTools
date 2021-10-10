@@ -61,7 +61,7 @@ class IK(Rig_Component):
 
 
     @undoable
-    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, use_global_queue = False, additive = False, reverse = False, **kwargs):
+    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = False, additive = False, reverse = False, **kwargs):
         if not self.valid_check(skeleton_dict, side, region):
             return False
 
@@ -69,7 +69,8 @@ class IK(Rig_Component):
         pm.autoKeyframe(state=False)
 
         # Start Component Creation
-        super(IK, self).rig(skeleton_dict, side, region, world_space, not use_global_queue, **kwargs)
+        do_zero_character = False if baking_queue else True
+        super(IK, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
@@ -128,12 +129,12 @@ class IK(Rig_Component):
         self.attach_component(True)
 
         if skeleton.is_animated(skeleton_chain):
-            self.attach_and_bake(self.skeleton_dict, use_global_queue)
+            self.attach_and_bake(self.skeleton_dict, baking_queue)
         
-        if use_global_queue:
+        if baking_queue:
             if not additive:
-                maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.bind_chain_process, {'rigging_chain':rigging_chain, 'ik_solved_chain':ik_solved_chain, 'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
+                baking_queue.add_post_process(self.save_animation, {})
+            baking_queue.add_post_process(self.bind_chain_process, {'rigging_chain':rigging_chain, 'ik_solved_chain':ik_solved_chain, 'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
         else:
             if not additive:
                 self.save_animation()
