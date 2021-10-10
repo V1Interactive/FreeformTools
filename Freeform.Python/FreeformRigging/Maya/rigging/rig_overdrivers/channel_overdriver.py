@@ -94,11 +94,11 @@ class Channel_Overdriver(Addon_Component):
 
     @undoable
 
-    def rig(self, component_node, control, object_space, attribute_list, use_global_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space, attribute_list, baking_queue = False, **kwargs):
         # Disable queue for this type
-        use_global_queue = False
+        baking_queue = None
 
-        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, use_global_queue = use_global_queue, **kwargs):
+        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, baking_queue = baking_queue, **kwargs):
             return False
 
         object_space = get_last_or_default(object_space)

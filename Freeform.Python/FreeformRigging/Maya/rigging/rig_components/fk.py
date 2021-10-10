@@ -61,13 +61,14 @@ class FK(Rig_Component):
 
 
     @undoable
-    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, use_global_queue = False, additive = False, reverse = False, **kwargs):
+    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = False, additive = False, reverse = False, **kwargs):
         self.reverse = reverse
 
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
-        super(FK, self).rig(skeleton_dict, side, region, world_space, not use_global_queue, **kwargs)
+        do_zero_character = False if baking_queue else True
+        super(FK, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         control_chain = self.rig_setup(side, region, reverse, control_holder_list)
         for i, child_control in enumerate(control_chain[:-1]):
@@ -76,12 +77,12 @@ class FK(Rig_Component):
         skeleton_chain = self.network['skeleton'].get_connections()
         skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
         if skeleton.is_animated(skeleton_chain):
-            self.attach_and_bake(self.skeleton_dict, use_global_queue)
+            self.attach_and_bake(self.skeleton_dict, baking_queue)
 
-        if use_global_queue:
+        if baking_queue:
             if not additive:
-                maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
+                baking_queue.add_post_process(self.save_animation, {})
+            baking_queue.add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'control_chain':control_chain, 'additive':additive})
         else:
             if not additive:
                 self.save_animation()
@@ -260,16 +261,16 @@ class Point_FK(FK):
     def bake_controls(self, translate = False, rotate = True, scale = False, simulation = False):
         super(Point_FK, self).bake_controls(translate, rotate, scale)
 
-    def queue_bake_controls(self, post_process_kwargs, translate = False, rotate = True, scale = False, simulation = False):
-        super(Point_FK, self).queue_bake_controls(post_process_kwargs, translate, rotate, scale)
+    def queue_bake_controls(self, post_process_kwargs, translate = False, rotate = True, scale = False, simulation = False, baking_queue = maya_utils.baking.Global_Bake_Queue()):
+        super(Point_FK, self).queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation, baking_queue)
 
-    def bake_joints(self, translate = False, rotate = True, scale = False, simulation = False, use_global_queue = True, local_queue = None):
-        super(Point_FK, self).bake_joints(translate, rotate, scale, simulation, use_global_queue, local_queue)
+    def bake_joints(self, translate = False, rotate = True, scale = False, simulation = False, baking_queue = maya_utils.baking.Global_Bake_Queue()):
+        super(Point_FK, self).bake_joints(translate, rotate, scale, simulation, baking_queue)
 
     @undoable
-    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, use_global_queue = False, additive = False, reverse = False, **kwargs):
+    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = None, additive = False, reverse = False, **kwargs):
         if self.verify_component(skeleton_dict, side, region):
-            super(Point_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, use_global_queue, additive, reverse, **kwargs)
+            super(Point_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
         else:
             print("Can't Apply Point FK to more than 1 joint")
 
@@ -343,10 +344,10 @@ class Aim_FK(FK):
         control_list = self.network['controls'].get_connections()
         maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = True, simulation = simulation)
 
-    def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = True, simulation = False):
+    def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = True, simulation = False, baking_queue = maya_utils.baking.Global_Bake_Queue()):
         control_list = self.network['controls'].get_connections()
-        maya_utils.baking.Global_Bake_Queue().add_bake_command(control_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
-        maya_utils.baking.Global_Bake_Queue().add_post_process(self.attach_component, post_process_kwargs)
+        baking_queue.add_bake_command(control_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
+        baking_queue.add_post_process(self.attach_component, post_process_kwargs)
 
     def bind_chain_process(self, skeleton_chain, control_chain, additive):
         rigging_chain = self.network['rigging'].get_connections()
@@ -450,10 +451,10 @@ class Eye_FK(FK):
     def switch_to_ik(self):
         raise NotImplementedError
 
-    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, use_global_queue = False, additive = False, reverse = False, **kwargs):
+    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = None, additive = False, reverse = False, **kwargs):
         if not self.valid_check(skeleton_dict, side, region):
             return False
-        super(Eye_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, use_global_queue, additive, reverse, **kwargs)
+        super(Eye_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
 
     def rig_setup(self, side, region, reverse, control_holder_list):
         control_chain = super(Eye_FK, self).rig_setup(side, region, reverse, control_holder_list)

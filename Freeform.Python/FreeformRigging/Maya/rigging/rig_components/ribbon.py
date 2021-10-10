@@ -51,17 +51,18 @@ class Ribbon(Rig_Component):
         self.prefix = 'ribbon'
         self.up_axis = [0,1,0]
 
-    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = True, use_global_queue = True, local_queue = None):
-        super(Ribbon, self).bake_joints(translate, rotate, scale, simulation, use_global_queue, local_queue)
+    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = True, baking_queue = None):
+        super(Ribbon, self).bake_joints(translate, rotate, scale, simulation, baking_queue)
 
     @undoable
-    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, use_global_queue = False, additive = False, reverse = False, **kwargs):
+    def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = False, additive = False, reverse = False, **kwargs):
         self.reverse = reverse
 
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
-        super(Ribbon, self).rig(skeleton_dict, side, region, world_space, not use_global_queue, **kwargs)
+        do_zero_character = False if baking_queue else True
+        super(Ribbon, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         if kwargs.get("up_axis"):
             self.up_axis =kwargs.get("up_axis")
@@ -101,12 +102,12 @@ class Ribbon(Rig_Component):
 
         self.attach_component(True)
         if skeleton.is_animated(skeleton_chain):
-            self.attach_and_bake(self.skeleton_dict, use_global_queue)
+            self.attach_and_bake(self.skeleton_dict, baking_queue)
 
-        if use_global_queue:
+        if baking_queue:
             if not additive:
-                maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'follicle_list':follicle_list, 'additive':additive})
+                baking_queue.add_post_process(self.save_animation, {})
+            baking_queue.add_post_process(self.bind_chain_process, {'skeleton_chain':skeleton_chain, 'follicle_list':follicle_list, 'additive':additive})
         else:
             if not additive:
                 self.save_animation()

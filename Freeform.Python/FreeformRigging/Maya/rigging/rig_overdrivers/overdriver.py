@@ -72,7 +72,7 @@ class Overdriver(Addon_Component):
 
 
     @undoable
-    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_global_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, baking_queue = None, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
@@ -80,7 +80,7 @@ class Overdriver(Addon_Component):
         if bake_controls:
             bake_controls = not character_settings.no_bake_overdrivers
 
-        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, use_global_queue = use_global_queue, **kwargs):
+        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, baking_queue = baking_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space_list, bake_controls, default_space)
@@ -95,11 +95,11 @@ class Overdriver(Addon_Component):
             pm.delete(temp_constraint_list)
         else:
             if bake_controls:
-                self.run_bake(use_global_queue)
+                self.run_bake(baking_queue)
 
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.save_animation, {})
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.bind_controls, {})
+        if baking_queue:
+            baking_queue.add_post_process(self.save_animation, {})
+            baking_queue.add_post_process(self.bind_controls, {})
         else:
             self.save_animation()
             self.bind_controls()
@@ -168,11 +168,11 @@ class Overdriver(Addon_Component):
         temp_constraint = pm.parentConstraint(control, driver_control, mo=False)
         return [temp_constraint]
 
-    def run_bake(self, use_global_queue):
-        if use_global_queue:
+    def run_bake(self, baking_queue):
+        if baking_queue:
             control_list = self.network['controls'].get_connections()
-            maya_utils.baking.Global_Bake_Queue().add_pre_process(self.attach_to_component, {}, 1)
-            maya_utils.baking.Global_Bake_Queue().add_bake_command(control_list, {'translate' : self.translate, 'rotate' : self.rotate, 'scale' : True, 'simulation' : False})
+            baking_queue.add_pre_process(self.attach_to_component, {}, 1)
+            baking_queue.add_bake_command(control_list, {'translate' : self.translate, 'rotate' : self.rotate, 'scale' : True, 'simulation' : False})
         else:
             temp_constraint = self.attach_to_component()
             self.bake_controls(translate = self.translate, rotate = self.rotate)
@@ -410,13 +410,13 @@ class Dynamic_Driver(Overdriver):
         self.maintain_offset = False
 
     @undoable
-    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, use_global_queue = False, **kwargs):
+    def rig(self, component_node, control, object_space, bake_controls = False, default_space = None, baking_queue = None, **kwargs):
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
-        bake_dynamics = not use_global_queue
-        use_global_queue = False
+        bake_dynamics = False if baking_queue else True
+        baking_queue = None
 
-        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, use_global_queue, **kwargs):
+        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, baking_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space)
@@ -500,10 +500,10 @@ class Pendulum(Aim):
         self.prefix = "PendulumDynamic"
         self.maintain_offset = False
 
-    def rig(self, component_node, control, bake_controls=False, default_space=None, use_global_queue=False, **kwargs):
+    def rig(self, component_node, control, bake_controls=False, default_space=None, baking_queue=None, **kwargs):
         # Create the dynamic pendulum to be used as the Aim space for the overdriver
         self.network = self.create_meta_network(component_node)
-        #self.zero_character(self.network['character'], use_global_queue)
+        #self.zero_character(self.network['character'], baking_queue)
 
         aim_up_group_name = "{0}pre_dynamics_{1}_grp".format(self.namespace, self.prefix)
         pre_dynamic_group = pm.group(empty=True, name=aim_up_group_name)
@@ -532,7 +532,7 @@ class Pendulum(Aim):
 
         self.reset_pendulum(object_space)
 
-        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, use_global_queue=use_global_queue, **kwargs):
+        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, baking_queue=baking_queue, **kwargs):
             return False
         
         driver_control = self.network['controls'].get_first_connection()

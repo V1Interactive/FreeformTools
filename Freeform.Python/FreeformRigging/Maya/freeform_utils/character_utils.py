@@ -176,11 +176,11 @@ def remove_existing_rigging(has_attachment, joint_chain, force_remove = False):
     character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
     if character_category.remove_existing or force_remove:
         for region_joint in joint_chain[1:-1]:
-            rigging.rig_base.Component_Base.remove_rigging(region_joint, local_queue=local_bake_queue)
+            rigging.rig_base.Component_Base.remove_rigging(region_joint, baking_queue=local_bake_queue)
         if has_attachment != 'root':
-            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[-1], exclude = 'end', local_queue=local_bake_queue)
+            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[-1], exclude = 'end', baking_queue=local_bake_queue)
         if has_attachment != 'end':
-            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[0], exclude = 'root', local_queue=local_bake_queue)
+            removed_node_list = rigging.rig_base.Component_Base.remove_rigging(joint_chain[0], exclude = 'root', baking_queue=local_bake_queue)
 
         local_bake_queue.run_queue()
 

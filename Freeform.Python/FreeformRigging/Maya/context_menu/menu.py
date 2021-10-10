@@ -141,7 +141,7 @@ class V1_Context_Menu(object, metaclass=Singleton):
         rig_menu = pm.menuItem(label='Load File...', parent=self.menu, rp="W", command = lambda _: lj_method(*lj_args, **lj_kwargs))
 
         if type(component_network) == ComponentCore:
-            sa_method, sa_args, sa_kwargs = v1_core.v1_logging.logging_wrapper(component.bake_and_remove, "Context Menu", use_global_queue = False)
+            sa_method, sa_args, sa_kwargs = v1_core.v1_logging.logging_wrapper(component.bake_and_remove, "Context Menu", baking_queue = None)
             rig_menu = pm.menuItem(label='Bake And Remove', parent=self.menu, rp="E", command = lambda _: sa_method(*sa_args, **sa_kwargs))
 
     def build_property_menu(self):

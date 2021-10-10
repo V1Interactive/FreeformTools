@@ -323,7 +323,7 @@ class Component_Base(object, metaclass=Component_Meta):
             addon_component.zero_rigging()
 
     @staticmethod
-    def remove_rigging(jnt, exclude = None, local_queue = None):
+    def remove_rigging(jnt, exclude = None, baking_queue = None):
         '''
         Check for and remove the rig component connected to the provided joint
 
@@ -341,7 +341,7 @@ class Component_Base(object, metaclass=Component_Meta):
             current_component = Component_Base.create_from_network_node(component_network.node)
 
             if exclude == None or current_component._hasattachment != exclude:
-                current_component.bake_and_remove(False, local_queue)
+                current_component.bake_and_remove(baking_queue)
 
         return remove_node_list
 
@@ -357,7 +357,7 @@ class Component_Base(object, metaclass=Component_Meta):
         rig_component_list = character_network.get_all_downstream( ComponentCore )
         for component_network in rig_component_list:
             current_component = Component_Base.create_from_network_node(component_network.node)
-            current_component.bake_and_remove(False)
+            current_component.bake_and_remove(None)
 
     @staticmethod
     def get_character_root_directory(character_obj):
@@ -774,7 +774,7 @@ class Component_Base(object, metaclass=Component_Meta):
         for obj in control_list:
             pm.delete(obj.listRelatives(type='constraint'))
 
-    def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = True, simulation = False):
+    def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = True, simulation = False, baking_queue = maya_utils.baking.Global_Bake_Queue()):
         '''
         Wrapper for maya_utils.baking.Global_Bake_Queue(). Bake all controls for the rig component with default settings per component
 
@@ -785,9 +785,8 @@ class Component_Base(object, metaclass=Component_Meta):
             simulation (boolean): Whether or not to bake simulation
         '''
         control_list = self.network['controls'].get_connections()
-        maya_utils.baking.Global_Bake_Queue().add_bake_command(control_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale,
-                                                                      'simulation' : simulation})
-        maya_utils.baking.Global_Bake_Queue().add_post_process(self.attach_component, post_process_kwargs)
+        baking_queue.add_bake_command(control_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
+        baking_queue.add_post_process(self.attach_component, post_process_kwargs)
 
     def create_controls(self, control_list, side, region, control_type, control_holder_list, index_offset = 0):
         '''
@@ -1046,7 +1045,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
             object_space_list = [x for x in object_space_list if x]
             addon_component = cls()
             addon_component.data = addon_component_dict
-            addon_component.rig(component.network['component'].node, control, object_space_list, bake_overdriver, default_space_list, use_global_queue = True)
+            addon_component.rig(component.network['component'].node, control, object_space_list, bake_overdriver, default_space_list, baking_queue = maya_utils.baking.Global_Bake_Queue())
         
             return addon_component
         return None
@@ -1060,7 +1059,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         self.scale = False
 
     
-    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, use_global_queue = False):
+    def rig(self, component_node, control, object_space_list, bake_controls = True, default_space = None, baking_queue = None):
         '''
         Base funtionality necessary for any Addon Component to build.  Zero's the character to ensure
         rigs are applied in bind pose space, builds initial objects for the component, and sets up the
@@ -1101,7 +1100,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         character_network = self.network['character']
         self.namespace = character_network.group.namespace()
 
-        self.zero_character(character_network, use_global_queue)
+        self.zero_character(character_network, baking_queue)
 
         addon_network = self.network['addon']
         addon_network.set('target_weight', weight_string)
@@ -1206,16 +1205,16 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
 
     @undoable
-    def bake_and_remove(self, use_global_queue = True, local_queue = None):
+    def bake_and_remove(self, baking_queue = None):
         self.remove(True);
 
 
-    def zero_character(self, character_network, use_global_queue):
+    def zero_character(self, character_network, baking_queue):
         # Zero character before applying rigging, only zero joints that aren't rigged
         joints_core_network = character_network.get_downstream(JointsCore)
         skeleton.zero_character(get_first_or_default(joints_core_network.get_connections()))
 
-        if not use_global_queue:
+        if baking_queue != None:
             # If using the queue Zeroing the character should be done once before rigging is run from the queue
             Component_Base.zero_all_overdrivers(character_network)
             Component_Base.zero_all_rigging(character_network)
@@ -1468,7 +1467,8 @@ class Rig_Component(Component_Base):
                 kwargs_dict['up_axis'] = component_dict.get('up_axis')
             component = cls()
             component.data = component_dict
-            component.rig(target_skeleton_dict, side, region, component_dict['world_space'], control_holder_list, True, **kwargs_dict)
+
+            component.rig(target_skeleton_dict, side, region, component_dict['world_space'], control_holder_list, maya_utils.baking.Global_Bake_Queue(), **kwargs_dict)
             
             return_component = component
         elif (str(compare_info) == str(root_info) and str(compare_info) == str(end_info)):
@@ -1810,7 +1810,7 @@ class Rig_Component(Component_Base):
 
         return return_network_list
 
-    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = False, use_global_queue = True, local_queue = None):
+    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = False, baking_queue = None):
         '''
         Bake the animation from the control rig down to the joints
 
@@ -1832,10 +1832,8 @@ class Rig_Component(Component_Base):
 
 
         bake_list = [x for x in joint_list if x not in exclude_list]
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_bake_command(bake_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
-        elif local_queue:
-            local_queue.add_bake_command(bake_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
+        if baking_queue:
+            baking_queue.add_bake_command(bake_list, {'translate' : translate, 'rotate' : rotate, 'scale' : scale, 'simulation' : simulation})
         else:
             bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
             user_bake_settings = bake_settings.force_bake_key_range()
@@ -1843,14 +1841,13 @@ class Rig_Component(Component_Base):
             bake_settings.restore_bake_settings(user_bake_settings)
 
     @undoable
-    def bake_and_remove(self, use_global_queue = True, local_queue = None):
+    def bake_and_remove(self, baking_queue = None):
         '''
         bake_and_remove(self)
         Bake the rig animation down and then remove it
 
         Args:
-            use_global_queue (boolean): Whether to register the methods into the BakeQueue or run them immediately
-            local_queue (boolean): Whether to register the methods a provided BakeQueue or run them immediately
+            baking_queue (boolean): Whether to register the methods a provided BakeQueue or run them immediately
         Returns:
             boolean. Whether the method run successfully
         '''
@@ -1861,39 +1858,35 @@ class Rig_Component(Component_Base):
         component_network_list = skeleton.get_active_rig_network(component_jnt)
 
         if len(component_network_list) == 1:
-            self.bake_to_skeleton_and_remove(use_global_queue, local_queue)
+            self.bake_to_skeleton_and_remove(baking_queue)
         else:
-            self.bake_components_and_remove(component_network_list, use_global_queue, local_queue)
+            self.bake_components_and_remove(component_network_list, baking_queue)
 
         pm.autoKeyframe(state=autokey_state)
 
         return True
 
-    def bake_to_skeleton_and_remove(self, use_global_queue = True, local_queue = None):
+    def bake_to_skeleton_and_remove(self, baking_queue = None):
         '''
         Bake the rig animation down to the joints and then remove it
 
         Args:
-            use_global_queue (boolean): Whether to register the methods into the BakeQueue or run them immediately
-            local_queue (boolean): Whether to register the methods a provided BakeQueue or run them immediately
+            baking_queue (boolean): Whether to register the methods a provided BakeQueue or run them immediately
         '''
-        self.bake_joints(use_global_queue = use_global_queue, local_queue = local_queue)
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.remove, {})
-        elif local_queue:
-            local_queue.add_post_process(self.remove, {})
+        self.bake_joints(baking_queue = baking_queue)
+        if baking_queue:
+            baking_queue.add_post_process(self.remove, {})
         else:
             self.remove(use_settings = False)
             maya_utils.scene_utils.set_current_frame()
 
-    def bake_components_and_remove(self, component_network_list, use_global_queue = True, local_queue = None):
+    def bake_components_and_remove(self, component_network_list, baking_queue = None):
         '''
         Bake the rig animation over to the still existing components and then remove it
 
         Args:
             component_network_list (list): List of rig components to bake animation onto
-            use_global_queue (boolean): Whether to register the methods into the BakeQueue or run them immediately
-            local_queue (boolean): Whether to register the methods a provided BakeQueue or run them immediately
+            baking_queue (boolean): Whether to register the methods a provided BakeQueue or run them immediately
         '''
         pm.refresh(su=True)
 
@@ -1921,10 +1914,8 @@ class Rig_Component(Component_Base):
         finally:
             pm.refresh(su=False)
 
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_post_process(self.remove, {})
-        elif local_queue:
-            local_queue.add_post_process(self.remove, {})
+        if baking_queue:
+            baking_queue.add_post_process(self.remove, {})
         else:
             self.remove(use_settings = False)
 
@@ -1940,14 +1931,14 @@ class Rig_Component(Component_Base):
 
             maya_utils.scene_utils.set_current_frame()
 
-    def attach_and_bake(self, target_skeleton_dict, use_global_queue = False):
+    def attach_and_bake(self, target_skeleton_dict, baking_queue = None):
         '''
         Attach the rig controls to the provided skeleton by region markup, bake the animation onto the controls,
         and remove the animation from the skeleton
 
         Args:
             target_skeleton_dict (dictionary): The region dictionary for the skeleton this rig is attaching to
-            use_global_queue (boolean): Whether to register the methods into the BakeQueue or run them immediately
+            baking_queue (boolean): Whether to register the methods into the BakeQueue or run them immediately
 
         Returns:
             boolean. Whether the method run successfully
@@ -1960,9 +1951,9 @@ class Rig_Component(Component_Base):
                              button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
             return False
 
-        if use_global_queue:
-            maya_utils.baking.Global_Bake_Queue().add_pre_process(self.attach_to_skeleton, {'target_skeleton_dict' : target_skeleton_dict}, 0)
-            self.queue_bake_controls({})
+        if baking_queue:
+            baking_queue.add_pre_process(self.attach_to_skeleton, {'target_skeleton_dict' : target_skeleton_dict}, 0)
+            self.queue_bake_controls({}, baking_queue = baking_queue)
         else:
             constraint_list = self.attach_to_skeleton(target_skeleton_dict)
             self.bake_controls()
@@ -2199,7 +2190,7 @@ class Rig_Component(Component_Base):
             for markup_network in markup_network_list:
                 markup_network.set('temporary', False, 'bool')
 
-            self.bake_and_remove(use_global_queue=False)
+            self.bake_and_remove(None)
         
             control_holder_list, imported_nodes = Component_Base.import_control_shapes(self.character_world)
             component_type().rig(skele_dict, side, region, control_holder_list = control_holder_list)
