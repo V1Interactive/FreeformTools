@@ -91,10 +91,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                   SelectedValue="{Binding Data.SelectedPreset, Source={StaticResource dataContextProxy}, Mode=TwoWay}"/>
                         </MenuItem>
                         
-                        <MenuItem Header="_Save File..." 
+                        <MenuItem Header="_Save Settings..." 
                                   Command="{Binding Data.SaveSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
-                        <MenuItem Header="_Save UE4 File..." 
+                        <MenuItem Header="Save _UE4 File..." 
                                   Command="{Binding Data.SaveUE4SettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
                         
@@ -118,7 +118,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         </MenuItem>
                         <MenuItem Header="Rig Builder..." Command="{Binding Data.RigBuilderCommand, Source={StaticResource dataContextProxy}}"/>
                         <MenuItem Header="Color Sets..." Command="{Binding Data.ColorSetsCommand, Source={StaticResource dataContextProxy}}"/>
-                        <MenuItem Header="_Save" Command="{Binding Data.SaveRiggingCommand, Source={StaticResource dataContextProxy}}"/>
+                        <MenuItem Header="_Save Rigging..." Command="{Binding Data.SaveRiggingCommand, Source={StaticResource dataContextProxy}}"/>
                     </MenuItem>
 
                     <MenuItem Header="_Exporter" 
@@ -1125,6 +1125,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <Separator/>
                                                 <MenuItem Header="Re-Name" 
                                                           Command="{Binding Data.UpdateCharacterNameCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                                <MenuItem Header="Set Export Joints" 
+                                                          Command="{Binding Data.SetExportJointsCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <MenuItem Header="Set Namespace" 
                                                           Command="{Binding Data.UpdateCharacterNamespaceCommand, Source={StaticResource dataContextProxy}}" 

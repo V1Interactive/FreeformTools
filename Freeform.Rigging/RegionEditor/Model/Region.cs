@@ -167,10 +167,26 @@ namespace Freeform.Rigging.RegionEditor
             }
         }
 
+        bool _isValid;
+        public bool IsValid
+        {
+            get { return _isValid; }
+            set
+            {
+                if (_isValid != value)
+                {
+                    _isValid = value;
+                    Root = "Missing - Reload Region Editor";
+                    End = "Missing - Reload Region Editor";
+                    RaisePropertyChanged("IsValid");
+                }
+            }
+        }
 
         public Region(string side, string name, string group, string root, string end, string comObject, string comRegion, float comWeight)
         {
             GridStyle = "V1Grid";
+            IsValid = true;
 
             Side = side;
             Name = name;

@@ -70,6 +70,9 @@
     <Compile Include="Maya\rigging\usertools\control_color_set.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Maya\rigging\usertools\export_joint_list.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Maya\rigging\usertools\heel_fixer.py" />
     <Compile Include="Maya\rigging\usertools\helix_rigger.py" />
     <Compile Include="Maya\rigging\usertools\region_editor.py" />

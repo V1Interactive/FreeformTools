@@ -187,6 +187,8 @@ class RegionEditor(object):
         if pm.objExists(mirror_end_name):
             mirror_end = pm.PyNode(mirror_end_name)
 
+        print(mirror_root_name, mirror_end_name)
+        print(mirror_root, mirror_end)
         if mirror_root and mirror_end:
             mirror_side = event_args.Region.Side.replace(event_args.Replace, event_args.ReplaceWith)
 
@@ -202,10 +204,14 @@ class RegionEditor(object):
 
     @csharp_error_catcher
     def check_for_rigging(self, vm, event_args):
-        root_jnt = pm.PyNode(event_args.Region.Root)
-        end_jnt = pm.PyNode(event_args.Region.End)
-        component_list = rigging.skeleton.get_active_rig_network(root_jnt) + rigging.skeleton.get_active_rig_network(end_jnt)
-        event_args.Success = False if component_list else True
+        root_jnt = pm.PyNode(event_args.Region.Root) if pm.objExists(event_args.Region.Root) else None
+        end_jnt = pm.PyNode(event_args.Region.End) if pm.objExists(event_args.Region.End) else None
+        if not root_jnt or not end_jnt:
+            event_args.Valid = False
+            event_args.Success = False
+        else:
+            component_list = rigging.skeleton.get_active_rig_network(root_jnt) + rigging.skeleton.get_active_rig_network(end_jnt)
+            event_args.Success = False if component_list else True
 
     @csharp_error_catcher
     def remove_region(self, vm, event_args):
@@ -293,19 +299,19 @@ class RegionEditor(object):
     def data_changed(self, vm, event_args):
         '''
         data_changed(self, vm, event_args)
-        Updates the side property of the scene network node for the rig markup region
+        Updates the properties of the scene network node for the rig markup region
 
         Args:
             vm (RegionEditor.RegionEditorVM): C# view model object sending the command
             event_args (RegionEventArgs): Passes the selected region from the UI
         '''
         markup_to_change = self.get_markup_to_edit(event_args.Region)
-        value = event_args.Value if event_args.Value != None else ""
-        for markup in markup_to_change:
-            markup.data = {event_args.Data: value}
+        if markup_to_change:
+            value = event_args.Value if event_args.Value != None else ""
+            for markup in markup_to_change:
+                markup.data = {event_args.Data: value}
 
-        self._update_rigging(event_args.Region, event_args.Data, value)
-    
+            self._update_rigging(event_args.Region, event_args.Data, value)
 
     @csharp_error_catcher
     def root_changed(self, vm, event_args):
@@ -374,11 +380,13 @@ class RegionEditor(object):
         Returns:
             (list<RigMarkupProperty>). List of all RigMarkupProperty objects that match with the provided C# Region
         '''
+        markup_to_change = None
         root_joint = pm.PyNode(c_region.Root) if pm.objExists(c_region.Root) else None
         end_joint = pm.PyNode(c_region.End) if pm.objExists(c_region.End) else None
 
-        markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
-        markup_to_change = self.get_matching_markup(markup_properties, c_region)
+        if root_joint and end_joint:
+            markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
+            markup_to_change = self.get_matching_markup(markup_properties, c_region)
 
         return markup_to_change
 
