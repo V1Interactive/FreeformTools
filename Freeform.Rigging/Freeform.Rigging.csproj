@@ -61,8 +61,8 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="p4api.net">
       <HintPath>..\External\p4api.net\lib\p4api.net.dll</HintPath>
@@ -110,6 +110,11 @@
     <Compile Include="ControlColorSet\ViewModel\ControlColorSetVM.cs" />
     <Compile Include="ControlColorSet\View\ControlColorSet.xaml.cs">
       <DependentUpon>ControlColorSet.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ExportJointList\Model\ExportItem.cs" />
+    <Compile Include="ExportJointList\ViewModel\ExportJointListVM.cs" />
+    <Compile Include="ExportJointList\View\ExportJointList.xaml.cs">
+      <DependentUpon>ExportJointList.xaml</DependentUpon>
     </Compile>
     <Compile Include="FrameRangeDialogue\ViewModel\FrameRangeDialogueVM.cs" />
     <Compile Include="FrameRangeDialogue\View\FrameRangeDialogue.xaml.cs">
@@ -229,6 +234,10 @@
     <Page Include="DCCAssetExporter\View\DCCAssetExporter.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ExportJointList\View\ExportJointList.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="FrameRangeDialogue\View\FrameRangeDialogue.xaml">
       <SubType>Designer</SubType>

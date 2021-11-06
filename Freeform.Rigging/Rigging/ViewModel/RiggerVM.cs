@@ -55,6 +55,7 @@ namespace Freeform.Rigging
         public event EventHandler AddNewJointsHandler;
         public event EventHandler UpdateCharacterNamespaceHandler;
         public event EventHandler UpdateCharacterNameHandler;
+        public event EventHandler SetExportJointsHandler;
         public event EventHandler SetColorSetHandler;
         public event EventHandler SetBindCharacterHandler;
         public event EventHandler FreezeCharacterHandler;
@@ -91,6 +92,7 @@ namespace Freeform.Rigging
         public RelayCommand AddNewJointsCommand { get; set; }
         public RelayCommand UpdateCharacterNamespaceCommand { get; set; }
         public RelayCommand UpdateCharacterNameCommand { get; set; }
+        public RelayCommand SetExportJointsCommand { get; set; }
         public RelayCommand SetBindCharacterCommand { get; set; }
         public RelayCommand FreezeCharacterCommand { get; set; }
         public RelayCommand SetRigPathCommand { get; set; }
@@ -770,6 +772,7 @@ namespace Freeform.Rigging
             AddNewJointsCommand = new RelayCommand(AddNewJointsCall);
             UpdateCharacterNamespaceCommand = new RelayCommand(UpdateCharacterNamespaceCall);
             UpdateCharacterNameCommand = new RelayCommand(UpdateCharacterNameCall);
+            SetExportJointsCommand = new RelayCommand(SetExportJointsCall);
             SetBindCharacterCommand = new RelayCommand(SetBindCharacterCall);
             FreezeCharacterCommand = new RelayCommand(FreezeCharacterCall);
             SetRigPathCommand = new RelayCommand(SetRigPathCall);
@@ -1050,7 +1053,7 @@ namespace Freeform.Rigging
             string senderName = (string)sender;
             if (ActiveCharacter != null)
             {
-                ActiveCharacter.SelectGroup(ActiveCharacter.GetComponentGroup(senderName), false);
+                ActiveCharacter.SelectGroupCall(ActiveCharacter.GetComponentGroup(senderName), false);
             }   
         }
 
@@ -1191,6 +1194,15 @@ namespace Freeform.Rigging
                 character = (Character)sender
             };
             UpdateCharacterNameHandler?.Invoke(this, eventArgs);
+        }
+
+        public void SetExportJointsCall(object sender)
+        {
+            CharacterEventArgs eventArgs = new CharacterEventArgs()
+            {
+                character = (Character)sender
+            };
+            SetExportJointsHandler?.Invoke(this, eventArgs);
         }
 
         public void SetColorSetCall(object sender)

@@ -135,7 +135,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Replace:" 
+                        <TextBlock Text="Regions:" 
                                    Width="80" 
                                    Margin="4,4,0,4" 
                                    Grid.Column="0"/>
@@ -146,11 +146,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 <TextBlock Text="The string in the side of the region to search for" Style="{StaticResource HighlightTextBlock}"/>
                             </TextBox.ToolTip>
                         </TextBox>
-                        <TextBox Text="{Binding JointReplaceText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBox Text="{Binding MirrorReplaceWithText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="10,4" 
                                  Grid.Column="2">
                             <TextBox.ToolTip>
-                                <TextBlock Text="The string in the side of the region to replace with" Style="{StaticResource HighlightTextBlock}"/>
+                                <TextBlock Text="The string in the joint name to search for" Style="{StaticResource HighlightTextBlock}"/>
                             </TextBox.ToolTip>
                         </TextBox>
                     </Grid>
@@ -162,15 +162,15 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Replace With:" 
+                        <TextBlock Text="Joints:" 
                                    Width="80" 
                                    Margin="4,4,0,4" 
                                    Grid.Column="0"/>
-                        <TextBox Text="{Binding MirrorReplaceWithText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                        <TextBox Text="{Binding JointReplaceText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="0,4,4,4" 
                                  Grid.Column="1">
                             <TextBox.ToolTip>
-                                <TextBlock Text="The string in the joint name to search for" Style="{StaticResource HighlightTextBlock}"/>
+                                <TextBlock Text="The string in the side of the region to search for" Style="{StaticResource HighlightTextBlock}"/>
                             </TextBox.ToolTip>
                         </TextBox>
                         <TextBox Text="{Binding JointReplaceWithText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 

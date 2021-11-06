@@ -46,6 +46,7 @@ from rigging.usertools import character_picker
 from rigging.usertools import region_editor
 from rigging.usertools import rig_builder
 from rigging.usertools import control_color_set
+from rigging.usertools import export_joint_list
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
 from maya_utils.decorators import undoable, project_only
@@ -129,6 +130,7 @@ class HelixRigger:
         self.vm.AddNewJointsHandler += self.add_new_joints
         self.vm.UpdateCharacterNamespaceHandler += self.update_namespace
         self.vm.UpdateCharacterNameHandler += self.update_character_name
+        self.vm.SetExportJointsHandler += self.set_export_joints
         self.vm.SetColorSetHandler += self.set_color_set
         self.vm.SetBindCharacterHandler += self.set_bind_character
         self.vm.FreezeCharacterHandler += self.freeze_character
@@ -847,6 +849,16 @@ class HelixRigger:
 
     @csharp_error_catcher
     @undoable
+    def select_component_group(self, c_character, event_args):
+        '''
+        select_component_group(self, c_character, event_args)
+        Roundabout way to call SelectGroup encapsulated in a Maya undo block
+        SelectGroupCall() -> Character SelectGroupHandler() -> python select_component_group() -> Character SelectGroup()
+        '''
+        c_character.SelectGroup(event_args.Component, event_args.doAdd)
+
+    @csharp_error_catcher
+    @undoable
     def select_all(self, vm, event_args):
         '''
         Select all animated objects that are driving the character
@@ -1004,6 +1016,7 @@ class HelixRigger:
         new_c_char.DeselectHandler += self.deselect_all
         new_c_char.RemovePropAttachmentHandler += self.remove_prop_attachment
         new_c_char.SelectAllGroupsHandler += self.select_all_groups
+        new_c_char.SelectGroupHandler += self.select_component_group
 
         self.update_character_regions(new_c_char, character_network)
         self.update_character_props(new_c_char, character_network)
@@ -1518,9 +1531,22 @@ class HelixRigger:
             character_node.character_name.set(new_name)
             event_args.character.Name = new_name
 
+    @csharp_error_catcher
+    def set_export_joints(self, vm, event_args):
+        '''
+        set_export_joints(self, vm, event_args)
+        Opens the UI for setting character export joints
+        '''
+        character_node = pm.PyNode(event_args.character.NodeName)
+        character_network = metadata.network_core.MetaNode.create_from_node(character_node)
+        export_joint_list.ExportJointList(character_network).show()
 
     @csharp_error_catcher
     def set_color_set(self, vm, event_args):
+        '''
+        set_color_set(self, vm, event_args)
+        Opens the UI for setting up Control Color Sets
+        '''
         result = pm.promptDialog(title='New Color Set', message='Enter Color Set:', button=['OK', 'Cancel'], defaultButton='OK', cancelButton='Cancel', dismissString='Cancel')
         if result == 'OK':
             color_set_name = pm.promptDialog(query=True, text=True)
@@ -1984,8 +2010,8 @@ class HelixRigger:
             pm.delete(world_group)
             pm.currentTime(start_frame)
 
-
     @csharp_error_catcher
+    @undoable
     def bake_component(self, c_object, event_args):
         '''
         bake_component(self, c_object, event_args)

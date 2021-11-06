@@ -141,6 +141,22 @@ namespace Freeform.Rigging.RegionEditor
                 if (_selectedRegionItem != value)
                 {
                     _selectedRegionItem = value;
+
+                    if (value != null)
+                    {
+                        RegionEventArgs riggedCheckArgs = new RegionEventArgs() { Region = SelectedRegionItem, Success = false };
+                        CheckSelectionEventHandler?.Invoke(this, riggedCheckArgs);
+                        if (!riggedCheckArgs.Valid)
+                        {
+                            SelectedRegionItem.IsValid = false;
+                        }
+                        SelectionNotRigged = riggedCheckArgs.Success;
+                    }
+                    else
+                    {
+                        SelectionNotRigged = true;
+                    }
+
                     checkRootEndConnection = false;
                     if (SelectedRegionItem != null)
                     {
@@ -168,21 +184,11 @@ namespace Freeform.Rigging.RegionEditor
                         Root = "";
                         End = "";
                     }
+
                     checkRootEndConnection = true;
                     if(HighlightRegions == true)
                     {
                         SelectionChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Success = HighlightRegions });
-                    }
-
-                    if(value != null)
-                    {
-                        RegionEventArgs riggedCheckArgs = new RegionEventArgs() { Region = SelectedRegionItem, Success = false };
-                        CheckSelectionEventHandler?.Invoke(this, riggedCheckArgs);
-                        SelectionNotRigged = riggedCheckArgs.Success;
-                    }
-                    else
-                    {
-                        SelectionNotRigged = true;
                     }
                     
                     RaisePropertyChanged("SelectedRegionItem");
@@ -275,7 +281,7 @@ namespace Freeform.Rigging.RegionEditor
                 if (_side != value)
                 {
                     _side = value;
-                    if(SelectedRegionItem != null)
+                    if(SelectedRegionItem != null && SelectedRegionItem.IsValid)
                     {
                         RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "side", Value = value });
                         SelectedRegionItem.Side = value;
@@ -294,7 +300,7 @@ namespace Freeform.Rigging.RegionEditor
                 if (_region != value)
                 {
                     _region = value;
-                    if (SelectedRegionItem != null)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid)
                     {
                         RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "region", Value = value });
                         SelectedRegionItem.Name = value;
@@ -313,7 +319,7 @@ namespace Freeform.Rigging.RegionEditor
                 if (_group != value)
                 {
                     _group = value;
-                    if (SelectedRegionItem != null)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid)
                     {
                         RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "group_name", Value = value });
                         SelectedRegionItem.Group = value;
@@ -332,7 +338,7 @@ namespace Freeform.Rigging.RegionEditor
                 if (_comWeight != value)
                 {
                     _comWeight = value;
-                    if (SelectedRegionItem != null)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid)
                     {
                         RegionDataChangedEventHandler?.Invoke(this, new FloatRegionEventArgs() { Region = SelectedRegionItem, Data = "com_weight", Value = value });
                         SelectedRegionItem.ComWeight = value;
@@ -351,7 +357,7 @@ namespace Freeform.Rigging.RegionEditor
                 if (_comObject != value)
                 {
                     _comObject = value;
-                    if (SelectedRegionItem != null)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid)
                     {
                         RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "com_object", Value = value });
                         SelectedRegionItem.ComObject = value;
@@ -370,7 +376,7 @@ namespace Freeform.Rigging.RegionEditor
                 if (_comRegion != value)
                 {
                     _comRegion = value;
-                    if (SelectedRegionItem != null)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid)
                     {
                         RegionDataChangedEventHandler?.Invoke(this, new RegionEventArgs() { Region = SelectedRegionItem, Data = "com_region", Value = value });
                         SelectedRegionItem.ComRegion = value;
@@ -388,7 +394,7 @@ namespace Freeform.Rigging.RegionEditor
             {
                 if (_root != value)
                 {
-                    if (SelectedRegionItem != null && checkRootEndConnection == true)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid && checkRootEndConnection == true)
                     {
                         RegionEventArgs eventArgs = new RegionEventArgs() { Region = SelectedRegionItem, Value = value };
                         RootChangedEventHandler?.Invoke(this, eventArgs);
@@ -421,7 +427,7 @@ namespace Freeform.Rigging.RegionEditor
             {
                 if (_end != value)
                 {
-                    if (SelectedRegionItem != null && checkRootEndConnection == true)
+                    if (SelectedRegionItem != null && SelectedRegionItem.IsValid && checkRootEndConnection == true)
                     {
                         RegionEventArgs eventArgs = new RegionEventArgs() { Region = SelectedRegionItem, Value = value };
                         EndChangedEventHandler?.Invoke(this, eventArgs);
@@ -508,7 +514,6 @@ namespace Freeform.Rigging.RegionEditor
         }
 
 
-
         public void AddRegion(string side, string name, string group, string root, string end, string comObject, string comRegion, float comWeight)
         {
             RegionList.Add(new Region(side, name, group, root, end, comObject, comRegion, comWeight));
@@ -574,16 +579,26 @@ namespace Freeform.Rigging.RegionEditor
             List<Region> NewRegionList = new List<Region>();
             foreach(Region region in RegionListViewSource.View)
             {
-                if (region.Side.Contains(MirrorReplaceText))
+                if (region.Side.Contains(MirrorReplaceText) || region.Side.Contains(MirrorReplaceWithText))
                 {
-                    MirrorRegionEventArgs eventArgs = new MirrorRegionEventArgs()
+                    MirrorRegionEventArgs eventArgs = new MirrorRegionEventArgs();
+                    if (region.Side.Contains(MirrorReplaceText))
                     {
-                        Region = region,
-                        Replace = MirrorReplaceText,
-                        ReplaceWith = MirrorReplaceWithText,
-                        JointReplace = JointReplaceText,
-                        JointReplaceWith = JointReplaceWithText
-                    };
+                        eventArgs.Region = region;
+                        eventArgs.Replace = MirrorReplaceText;
+                        eventArgs.ReplaceWith = MirrorReplaceWithText;
+                        eventArgs.JointReplace = JointReplaceText;
+                        eventArgs.JointReplaceWith = JointReplaceWithText;
+                    }
+                    else
+                    {
+                        eventArgs.Region = region;
+                        eventArgs.Replace = MirrorReplaceWithText;
+                        eventArgs.ReplaceWith = MirrorReplaceText;
+                        eventArgs.JointReplace = JointReplaceWithText;
+                        eventArgs.JointReplaceWith = JointReplaceText;
+                    }
+
                     MirrorFilteredRegionsHandler?.Invoke(this, eventArgs);
 
                     if (eventArgs.NewRegion != null)
@@ -675,6 +690,7 @@ namespace Freeform.Rigging.RegionEditor
             public Region Region = null;
             public string Data = "";
             public bool Success = false;
+            public bool Valid = true;
             public string Value = "";
         }
 
