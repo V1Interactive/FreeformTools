@@ -213,6 +213,7 @@ class PropertyNode(metadata.network_core.MetaNode):
     '''
     __metaclass__ = ABCMeta
     multi_allowed = False
+    priority = 0
 
     @staticmethod
     def get_inherited_classes():
@@ -687,21 +688,37 @@ class ExportAssetProperty(PropertyNode):
 
     def run_properties(self, c_asset, event_args, export_stage, scene_node_list, **kwargs):
         v1_core.v1_logging.get_logger().info("Exporter - run_properties acting on {0}".format(scene_node_list))
+        prop_dict = {}
         for scene_node in scene_node_list:
             property_dict = get_properties_dict(scene_node)
             for prop_object_list in property_dict.itervalues():
                 for prop_object in prop_object_list:
                     if prop_object.export_stage == export_stage:
-                        prop_object.act(c_asset, event_args, **kwargs)
+                        prop_dict.setdefault(prop_object.priority, [])
+                        prop_dict[prop_object.priority].append(prop_object)
+
+        priority_list = prop_dict.keys()
+        priority_list.sort(reverse=True)
+        for priority in priority_list:
+            for prop_object in prop_dict.get(priority):
+                prop_object.act(c_asset, event_args, **kwargs)
 
     def run_post_properties(self, c_asset, event_args, export_stage, scene_node_list, **kwargs):
         v1_core.v1_logging.get_logger().info("Exporter - run_post_properties acting on {0}".format(scene_node_list))
+        prop_dict = {}
         for scene_node in scene_node_list:
             property_dict = get_properties_dict(scene_node)
             for prop_object_list in property_dict.itervalues():
                 for prop_object in prop_object_list:
                     if prop_object.export_stage == export_stage:
-                        prop_object.act_post(c_asset, event_args, **kwargs)
+                        prop_dict.setdefault(prop_object.priority, [])
+                        prop_dict[prop_object.priority].append(prop_object)
+
+        priority_list = prop_dict.keys()
+        priority_list.sort(reverse=True)
+        for priority in priority_list:
+            for prop_object in prop_dict.get(priority):
+                prop_object.act_post(c_asset, event_args, **kwargs)
 
     def export(self, c_asset, event_args):
         return NotImplemented
@@ -953,9 +970,9 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
                 export_start_time, export_end_time = self.set_export_frame_range(definition_node)
                 self.pre_export(asset_namespace, export_skele, export_start_time, export_namespace)
-
+                
                 self.run_properties(c_asset, event_args, ExportStageEnum.During, [asset_node, definition_node], export_asset_list = [export_root])
-
+                
                 export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), True)
                 self.fbx_export(export_path, export_root)
                 v1_core.v1_logging.get_logger().info("Exporter - File Exported to {0}".format(export_path))
@@ -1401,22 +1418,9 @@ class ZeroCharacterProperty(ExporterProperty):
         pm.keyframe(export_root.ty, r=True, vc=-export_root.ty.get())
         pm.keyframe(export_root.tz, r=True, vc=-export_root.tz.get())
 
-        export_root.jointOrient.set([0,0,0])
-
-        maya_utils.baking.bake_objects([export_root], True, True, True, use_settings = False, simulation=False)
-        export_root.setParent(None)
-
-    #    self.set("export_loc", zero_export_loc.longName(), 'string')
-
-    #def act_post(self, c_asset, event_args, **kwargs):
-    #    loc_name = self.get("export_loc", 'string')
-    #    v1_core.v1_logging.get_logger().info("ZeroCharacterProperty Post Process acting on {0}".format(loc_name))
-    #    zero_export_loc = pm.PyNode(loc_name)
-    #    pm.delete(zero_export_loc)
-
 class ZeroCharacterRotateProperty(ExporterProperty):
     '''
-    Export Property to handle baking out any initial transform on a character so the animation starts at 0 world space
+    Export Property to handle baking the export root to be rotated to 0 world
 
     Args:
         node_name (str): Name of the network node
@@ -1429,6 +1433,7 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         export_stage (ExportStageEnum): When this property should be run in the export process
     '''
     export_stage = ExportStageEnum.During
+    priority = -1
 
     def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterRotateProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
@@ -1439,19 +1444,19 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         export_root = get_first_or_default(export_asset_list)
         pm.currentTime(pm.playbackOptions(q=True, ast=True))
 
-        pm.keyframe(export_root.rx, r=True, vc=-export_root.rx.get())
-        pm.keyframe(export_root.ry, r=True, vc=-export_root.ry.get())
-        pm.keyframe(export_root.rz, r=True, vc=-export_root.rz.get())
+        baked_loc = pm.spaceLocator(name='helix_exporter_baked_root')
+        offset_loc = pm.spaceLocator(name='helix_exporter_root_rotate_offset')
+        baked_loc.setParent(offset_loc)
 
+        temp_const = pm.parentConstraint(export_root, baked_loc, mo=False)
+        maya_utils.baking.bake_objects([baked_loc], True, True, True, use_settings = False, simulation=False)
+        pm.delete(temp_const)
+
+        offset_loc.rotate.set(export_root.rotate.get() * -1)
+
+        temp_const = pm.parentConstraint(baked_loc, export_root, mo=False)
         maya_utils.baking.bake_objects([export_root], True, True, True, use_settings = False, simulation=False)
-        export_root.setParent(None)
-
-    #    self.set("export_loc", zero_export_loc.longName(), 'string')
-
-    #def act_post(self, c_asset, event_args, **kwargs):
-    #    loc_name = self.get("export_loc", 'string')
-    #    v1_core.v1_logging.get_logger().info("ZeroCharacterProperty Post Process acting on {0}".format(loc_name))
-    #    zero_export_loc = pm.PyNode(loc_name)
-    #    pm.delete(zero_export_loc)
+        pm.delete(temp_const)
+        pm.delete(offset_loc)
 
 #endregion

@@ -2132,22 +2132,31 @@ class HelixRigger:
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
         sel_list = pm.ls(selection=True)
-        component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+        full_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+
+        component_network_list = [x for x in full_network_list if isinstance(x, metadata.network_core.ComponentCore)]
+        addon_network_list = [x for x in full_network_list if isinstance(x, metadata.network_core.AddonCore)]
 
         for component_network in component_network_list:
             joints_network = component_network.get_downstream(metadata.network_core.SkeletonJoints)
-            joint_list = joints_network.get_connections()
-            if character_category.bake_component:
-                maya_utils.baking.Global_Bake_Queue().add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
-            elif character_category.revert_animation:
-                sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
-                component_network.load_animation(sorted_joint_list)
-
-            pm.delete(component_network.group)
-            metadata.network_core.MetaNode.delete_network(component_network.node)
+            if joints_network:
+                joint_list = joints_network.get_connections()
+                if character_category.bake_component:
+                    maya_utils.baking.Global_Bake_Queue().add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
+                elif character_category.revert_animation:
+                    sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
+                    component_network.load_animation(sorted_joint_list)
 
         if character_category.bake_component:
             maya_utils.baking.Global_Bake_Queue().run_queue()
+
+        for addon_network in addon_network_list:
+            pm.delete(addon_network.group)
+            metadata.network_core.MetaNode.delete_network(addon_network.node)
+
+        for component_network in component_network_list:
+            pm.delete(component_network.group)
+            metadata.network_core.MetaNode.delete_network(component_network.node)
 
         maya_utils.scene_utils.set_current_frame()
         self.vm.UpdateRiggerInPlace()
