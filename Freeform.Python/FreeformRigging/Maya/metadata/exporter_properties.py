@@ -171,22 +171,21 @@ class ExportAssetProperty(PropertyNode):
             pm.undoInfo(swf=True)
 
     def run_properties(self, c_asset, event_args, export_stage, scene_node_list, **kwargs):
-        v1_core.v1_logging.get_logger().info("Exporter - run_properties acting on {0}".format(scene_node_list))
+        v1_core.v1_logging.get_logger().info("Exporter - run_properties ExportStageEnum-{0} acting on {1}".format(export_stage, scene_node_list))
+        run_property_dict = {}
         for scene_node in scene_node_list:
             property_dict = meta_property_utils.get_properties_dict(scene_node)
             for prop_object_list in property_dict.values():
                 for prop_object in prop_object_list:
                     if prop_object.export_stage == export_stage:
-                        prop_object.act(c_asset, event_args, **kwargs)
+                        run_property_dict.setdefault(prop_object.priority, [])
+                        run_property_dict[prop_object.priority].append(prop_object)
 
-    def run_post_properties(self, c_asset, event_args, export_stage, scene_node_list, **kwargs):
-        v1_core.v1_logging.get_logger().info("Exporter - run_post_properties acting on {0}".format(scene_node_list))
-        for scene_node in scene_node_list:
-            property_dict = meta_property_utils.get_properties_dict(scene_node)
-            for prop_object_list in property_dict.values():
-                for prop_object in prop_object_list:
-                    if prop_object.export_stage == export_stage:
-                        prop_object.act_post(c_asset, event_args, **kwargs)
+        priority_list = list(run_property_dict.keys())
+        priority_list.sort(reverse=True)
+        for priority in priority_list:
+            for prop_object in run_property_dict.get(priority):
+                prop_object.act(c_asset, event_args, **kwargs)
 
     def export(self, c_asset, event_args):
         return NotImplemented
@@ -447,8 +446,6 @@ class CharacterAnimationAsset(ExportAssetProperty):
                 export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), True)
                 self.fbx_export(export_path, export_root)
                 v1_core.v1_logging.get_logger().info("Exporter - File Exported to {0}".format(export_path))
-
-                self.run_post_properties(c_asset, event_args, ExportStageEnum.During.value, [asset_node, definition_node], export_asset_list = [export_root])
 
         except Exception as e:
             exception_info = sys.exc_info()

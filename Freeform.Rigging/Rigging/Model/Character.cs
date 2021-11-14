@@ -33,6 +33,7 @@ namespace Freeform.Rigging
         public event EventHandler RigRegionEventHandler;
         public event EventHandler RemovePropAttachmentHandler;
         public event EventHandler SelectAllGroupsHandler;
+        public event EventHandler SelectGroupHandler;
         public event EventHandler DeselectHandler;
 
 
@@ -416,6 +417,19 @@ namespace Freeform.Rigging
             }
         }
 
+        public void SelectGroupCall(ComponentGroup componentGroup, bool forceAdd)
+        {
+            // Roundabout way to call SelectGroup encapsulated in a Maya undo block
+            // SelectGroupCall() -> Character SelectGroupHandler() -> python select_component_group() -> Character SelectGroup()
+            SelectComponentEventArgs eventArgs = new SelectComponentEventArgs()
+            {
+              Component = componentGroup,
+              doAdd = forceAdd
+            };
+
+            SelectGroupHandler?.Invoke(this, eventArgs);
+        }
+
         public void SelectGroup(ComponentGroup componentGroup, bool forceAdd)
         {
             if (Control.ModifierKeys != Keys.Shift && Control.ModifierKeys != Keys.Control && forceAdd != true)
@@ -479,6 +493,12 @@ namespace Freeform.Rigging
         public class SelectEventArgs : EventArgs
         {
             public bool doAdd = false;
+        }
+
+        public class SelectComponentEventArgs : EventArgs
+        {
+          public ComponentGroup Component = null;
+          public bool doAdd = false;
         }
 
         public class RigRegionEventArgs : EventArgs

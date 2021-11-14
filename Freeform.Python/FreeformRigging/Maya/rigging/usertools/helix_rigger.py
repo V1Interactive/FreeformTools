@@ -856,6 +856,16 @@ class HelixRigger:
 
     @csharp_error_catcher
     @undoable
+    def select_component_group(self, c_character, event_args):
+        '''
+        select_component_group(self, c_character, event_args)
+        Roundabout way to call SelectGroup encapsulated in a Maya undo block
+        SelectGroupCall() -> Character SelectGroupHandler() -> python select_component_group() -> Character SelectGroup()
+        '''
+        c_character.SelectGroup(event_args.Component, event_args.doAdd)
+
+    @csharp_error_catcher
+    @undoable
     def select_all(self, vm, event_args):
         '''
         Select all animated objects that are driving the character
@@ -1013,6 +1023,7 @@ class HelixRigger:
         new_c_char.DeselectHandler += self.deselect_all
         new_c_char.RemovePropAttachmentHandler += self.remove_prop_attachment
         new_c_char.SelectAllGroupsHandler += self.select_all_groups
+        new_c_char.SelectGroupHandler += self.select_component_group
 
         self.update_character_regions(new_c_char, character_network)
         self.update_character_props(new_c_char, character_network)
@@ -1993,8 +2004,8 @@ class HelixRigger:
             pm.delete(world_group)
             pm.currentTime(start_frame)
 
-
     @csharp_error_catcher
+    @undoable
     def bake_component(self, c_object, event_args):
         '''
         bake_component(self, c_object, event_args)
@@ -2116,22 +2127,33 @@ class HelixRigger:
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
         sel_list = pm.ls(selection=True)
-        component_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+        full_network_list = freeform_utils.character_utils.get_component_network_list(sel_list)
+
+        component_network_list = [x for x in full_network_list if isinstance(x,ComponentCore)]
+        addon_network_list = [x for x in full_network_list if isinstance(x, AddonCore)]
+
+        local_bake_queue = maya_utils.baking.BakeQueue("Force Remove Bake Queue")
 
         for component_network in component_network_list:
             joints_network = component_network.get_downstream(SkeletonJoints)
-            joint_list = joints_network.get_connections()
-            if character_category.bake_component:
-                maya_utils.baking.Global_Bake_Queue().add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
-            elif character_category.revert_animation:
-                sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
-                component_network.load_animation(sorted_joint_list)
-
-            pm.delete(component_network.group)
-            metadata.meta_network_utils.delete_network(component_network.node)
+            if joints_network:
+                joint_list = joints_network.get_connections()
+                if character_category.bake_component:
+                    local_bake_queue.add_bake_command(joint_list, {'translate' : True, 'rotate' : True, 'scale' : False, 'simulation' : False})
+                elif character_category.revert_animation:
+                    sorted_joint_list = rigging.skeleton.sort_chain_by_hierarchy(joint_list)
+                    component_network.load_animation(sorted_joint_list)
 
         if character_category.bake_component:
-            maya_utils.baking.Global_Bake_Queue().run_queue()
+            local_bake_queue.run_queue()
+
+        for addon_network in addon_network_list:
+            pm.delete(addon_network.group)
+            metadata.meta_network_utils.delete_network(addon_network.node)
+
+        for component_network in component_network_list:
+            pm.delete(component_network.group)
+            metadata.meta_network_utils.delete_network(component_network.node)
 
         maya_utils.scene_utils.set_current_frame()
         self.vm.UpdateRiggerInPlace()
