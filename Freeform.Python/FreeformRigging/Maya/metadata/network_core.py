@@ -716,7 +716,6 @@ class ComponentCore(RigComponent):
         region (str): Region this component was built on
         group_name (str): Group name that this rig component will sort into in the UI
     '''
-    _do_register = True
     dependent_node = RigCore
 
     def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):

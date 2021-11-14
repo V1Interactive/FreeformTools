@@ -1045,7 +1045,7 @@ namespace Freeform.Rigging
             string senderName = (string)sender;
             if (ActiveCharacter != null)
             {
-                ActiveCharacter.SelectGroup(ActiveCharacter.GetComponentGroup(senderName), false);
+                ActiveCharacter.SelectGroupCall(ActiveCharacter.GetComponentGroup(senderName), false);
             }   
         }
 

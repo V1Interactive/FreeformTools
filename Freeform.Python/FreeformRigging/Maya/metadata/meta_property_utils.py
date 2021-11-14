@@ -85,13 +85,18 @@ def get_all_properties(pynode):
 
 def validate_property_type(property_type):
     '''
-    Finds the object type from the Property_Registry.  Witout this validation the follow two calls to 
+    Finds the object type from the Property_Registry.  Without this validation the following two calls to 
     PropertyNode would return as not equivalent.  The Registry enforces that we're always using the same base type.
     import metadata; metadata.meta_properties.PropertyNode
     from metadata.meta_properties import PropertyNode; PropertyNode
     '''
-    valid_type = Property_Registry().get(property_type.__name__)
-    if valid_type == None:
+    valid_type = None
+    if property_type._do_register:
+        valid_type = Property_Registry().get(property_type.__name__)
+    else:
+        valid_type = Property_Registry().get_hidden(property_type.__name__)
+        
+    if valid_type is None:
         v1_core.v1_logging.get_logger().info("{0} does not exist in the Property Registry".format(property_type))
 
     return valid_type

@@ -65,6 +65,7 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
     '''
     _do_register = False
     multi_allowed = False
+    priority = 0
 
     @staticmethod
     def get_inherited_classes():
@@ -104,12 +105,6 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
     def act(self):
         '''
         Perform the action for the specific node
-        '''
-        return NotImplemented
-
-    def act_post(self, c_asset, event_args, **kwargs):
-        '''
-        Perform the post action for the specific node
         '''
         return NotImplemented
 

@@ -17,11 +17,18 @@ def validate_network_type(network_type):
     from metadata.network_core import MetaNode; MetaNode
     '''
     check_name = network_type.__name__
-    validate_type = Network_Registry().get(check_name)
-    if validate_type == None:
-        validate_type = Property_Registry().get(check_name)
+    validate_type = None
+    if network_type._do_register:
+        validate_type = Network_Registry().get(check_name)
+        if validate_type is None:
+            validate_type = Property_Registry().get(check_name)
+    else:
+        # If it's not found in public types, search the hidden types
+        validate_type = Network_Registry().get_hidden(check_name)
+        if validate_type is None:
+            validate_type = Property_Registry().get_hidden(check_name)
 
-    if validate_type == None:
+    if validate_type is None:
         v1_core.v1_logging.get_logger().info("{0} does not exist in Network_Registry or Property Registry".format(network_type))
 
     return validate_type

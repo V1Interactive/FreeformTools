@@ -124,100 +124,6 @@ class HelixExporter(object):
         return new_definition
 
     @staticmethod
-    def create_anim_curves(anim_curve_network, attribute_changed = None, set_frame = None, get_frame = None, pick_target = None, refresh_target = None):
-        '''
-        Creates a C# AnimCurveExportAsset from a scene definition network node.
-
-        Args:
-            curve_node (nt.Network): Network node that stores export property information in the scene
-
-        Returns:
-            (DCCAssetExporter.ExporterProperty). The created ExporterProperty
-        '''
-        #anim_curve_network.refresh_names()
-        anim_curves_property = DCCAssetExporter.AnimCurveExporterProperty(anim_curve_network.get('guid'), anim_curve_network.node.longName(), anim_curve_network.get('control_name'), 
-                                                                    anim_curve_network.get('target_name'), anim_curve_network.get('use_speed_curve'), anim_curve_network.get('from_zero'), 
-                                                                    anim_curve_network.get('start_frame', 'short'), anim_curve_network.get('end_frame', 'short'), 
-                                                                    anim_curve_network.get('frame_range', 'bool'))
-        if attribute_changed:
-            anim_curves_property.AttributeChangedHandler += attribute_changed
-        if set_frame:
-            anim_curves_property.SetFrameHandler += set_frame
-        if get_frame:
-            anim_curves_property.GetCurrentFrameHandler += get_frame
-
-        anim_curves_property.PickControlHandler += anim_curve_network.pick_control
-        anim_curves_property.RefreshNamesHandler += anim_curve_network.refresh_names
-
-        return anim_curves_property
-
-    @staticmethod
-    def create_rotation_curve(barrel_rotate_network, attribute_changed = None):
-        '''
-        Creates a C# AnimCurveExportAsset from a scene definition network node.
-
-        Args:
-            curve_node (nt.Network): Network node that stores export property information in the scene
-
-        Returns:
-            (DCCAssetExporter.ExporterProperty). The created ExporterProperty
-        '''
-        barrel_rotate_property = DCCAssetExporter.RotationExporterProperty(barrel_rotate_network.get('guid'), barrel_rotate_network.node.longName(), 
-                                                                            barrel_rotate_network.get('attribute_name'), barrel_rotate_network.get('target_name'), 
-                                                                            barrel_rotate_network.get('axis'), barrel_rotate_network.get('rotate_value', 'short'))
-        if attribute_changed:
-            barrel_rotate_property.AttributeChangedHandler += attribute_changed
-
-        barrel_rotate_property.PickControlHandler += barrel_rotate_network.pick_control
-
-        return barrel_rotate_property
-
-    @staticmethod
-    def create_remove_root_animation(remove_root_anim_network):
-        '''
-        Creates a C# RemoveRootAnimProperty from a scene network node.
-
-        Args:
-            remove_root_anim_network (nt.Network): Network node that stores export property information in the scene
-
-        Returns:
-            (DCCAssetExporter.ExporterProperty). The created ExporterProperty
-        '''
-        remove_root_anim_property = DCCAssetExporter.RemoveRootAnimProperty(remove_root_anim_network.get('guid'), remove_root_anim_network.node.longName())
-
-        return remove_root_anim_property
-
-    @staticmethod
-    def create_zero_character(zero_character_network):
-        '''
-        Creates a C# ZeroCharacterProperty from a scene network node.
-
-        Args:
-            zero_character_network (nt.Network): Network node that stores export property information in the scene
-
-        Returns:
-            (DCCAssetExporter.ExporterProperty). The created ExporterProperty
-        '''
-        zero_character_property = DCCAssetExporter.ZeroCharacterProperty(zero_character_network.get('guid'), zero_character_network.node.longName())
-
-        return zero_character_property
-
-    @staticmethod
-    def create_zero_character_rotate(zero_character_network):
-        '''
-        Creates a C# ZeroCharacterRotateProperty from a scene network node.
-
-        Args:
-            zero_character_network (nt.Network): Network node that stores export property information in the scene
-
-        Returns:
-            (DCCAssetExporter.ExporterProperty). The created ExporterProperty
-        '''
-        zero_character_property = DCCAssetExporter.ZeroCharacterRotateProperty(zero_character_network.get('guid'), zero_character_network.node.longName())
-
-        return zero_character_property
-
-    @staticmethod
     def create_asset(asset_node, attribute_changed = None, asset_export_toggle = None):
         '''
         Creates a C# ExportAsset from a scene asset network node.
@@ -383,20 +289,16 @@ class HelixExporter(object):
             self.create_export_properties(definition, definition_node)
 
     def create_export_properties(self, c_export_object, scene_node):
+        '''
+        Create the C# export property from the Maya scene export properties
+        '''
         export_property_list = metadata.meta_network_utils.get_network_entries(scene_node, ExporterProperty)
         for export_property_network in export_property_list:
-            c_export_propperty = None
-            if type(export_property_network) == RemoveRootAnimationProperty:
-                c_export_propperty = HelixExporter.create_remove_root_animation(export_property_network)
-            elif type(export_property_network) == ZeroCharacterProperty:
-                c_export_propperty = HelixExporter.create_zero_character(export_property_network)
-            elif type(export_property_network) == AnimCurveProperties:
-                c_export_propperty = HelixExporter.create_anim_curves(export_property_network, metadata.meta_property_utils.attribute_changed, self.set_frame, self.get_frame)
-            elif type(export_property_network) == RotationCurveProperties:
-                c_export_propperty = HelixExporter.create_rotation_curve(export_property_network, metadata.meta_property_utils.attribute_changed)
+            c_export_property = export_property_network.create_c_property(export_property_network, attribute_changed = metadata.meta_property_utils.attribute_changed,
+                                                                          set_frame = self.set_frame, get_frame = self.get_frame)
 
-            if c_export_propperty:
-                c_export_object.AddExportProperty(c_export_propperty)
+            if c_export_property:
+                c_export_object.AddExportProperty(c_export_property)
 
 
     def export_wrapper_start(self, vm, event_args):

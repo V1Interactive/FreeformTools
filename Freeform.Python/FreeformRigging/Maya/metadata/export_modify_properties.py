@@ -17,6 +17,8 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+import Freeform.Rigging.DCCAssetExporter as DCCAssetExporter
+
 import pymel.core as pm
 
 import rigging
@@ -38,6 +40,10 @@ class ExporterProperty(PropertyNode):
     
     '''
     export_stage = ExportStageEnum.Pre.value
+
+    @classmethod
+    def create_c_property(self, property_network, *args, **kwargs):
+        return None
 
     def __init__(self, node_name = 'property_node_temp', node = None, namespace = "", **kwargs):
         super(ExporterProperty, self).__init__(node_name, node, namespace, **kwargs)
@@ -63,6 +69,34 @@ class AnimCurveProperties(ExporterProperty):
     '''
     _do_register = True
     export_stage = ExportStageEnum.Pre.value
+
+    @classmethod
+    def create_c_property(self, property_network, *args, **kwargs):
+        '''
+        Creates a C# AnimCurveExportAsset from a scene definition network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.AnimCurveExporterProperty). The created ExporterProperty
+        '''
+        #property_network.refresh_names()
+        anim_curves_property = DCCAssetExporter.AnimCurveExporterProperty(property_network.get('guid'), property_network.node.longName(), property_network.get('control_name'), 
+                                                                        property_network.get('target_name'), property_network.get('use_speed_curve'), property_network.get('from_zero'), 
+                                                                        property_network.get('start_frame', 'short'), property_network.get('end_frame', 'short'), 
+                                                                        property_network.get('frame_range', 'bool'))
+        if 'attribute_changed' in kwargs:
+            anim_curves_property.AttributeChangedHandler += kwargs['attribute_changed']
+        if 'set_frame' in kwargs:
+            anim_curves_property.SetFrameHandler += kwargs['set_frame']
+        if 'get_frame' in kwargs:
+            anim_curves_property.GetCurrentFrameHandler += kwargs['get_frame']
+
+        anim_curves_property.PickControlHandler += property_network.pick_control
+        anim_curves_property.RefreshNamesHandler += property_network.refresh_names
+
+        return anim_curves_property
 
     def __init__(self, node_name = 'anim_curve_property', node = None, namespace = "", **kwargs):
         super(AnimCurveProperties, self).__init__(node_name, node, namespace, use_speed_curve = (False, 'bool'), joint_data = ("", 'string'), target_name = ("", 'string'), 
@@ -168,6 +202,27 @@ class RotationCurveProperties(ExporterProperty):
     _do_register = True
     export_stage = ExportStageEnum.During.value
 
+    @classmethod
+    def create_c_property(cls, property_network, *args, **kwargs):
+        '''
+        Creates a C# AnimCurveExportAsset from a scene definition network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.RotationExporterProperty). The created ExporterProperty
+        '''
+        barrel_rotate_property = DCCAssetExporter.RotationExporterProperty(property_network.get('guid'), property_network.node.longName(), 
+                                                                            property_network.get('attribute_name'), property_network.get('target_name'), 
+                                                                            property_network.get('axis'), property_network.get('rotate_value', 'short'))
+        if 'attribute_changed' in kwargs:
+            barrel_rotate_property.AttributeChangedHandler += kwargs['attribute_changed']
+
+        barrel_rotate_property.PickControlHandler += property_network.pick_control
+
+        return barrel_rotate_property
+
     def __init__(self, node_name = 'barrel_rotate_curve_property', node = None, namespace = "", **kwargs):
         super(RotationCurveProperties, self).__init__(node_name, node, namespace, attribute_name = ("BarrelRotationPercent", 'string'), 
                                                           target_name = ("", 'string'), axis = ("ry", 'string'), rotate_value = (90, 'short'), **kwargs)
@@ -244,6 +299,21 @@ class RemoveRootAnimationProperty(ExporterProperty):
     _do_register = True
     export_stage = ExportStageEnum.During.value
 
+    @classmethod
+    def create_c_property(cls, property_network, *args, **kwargs):
+        '''
+        Creates a C# RemoveRootAnimProperty from a scene network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.RemoveRootAnimProperty). The created ExporterProperty
+        '''
+        remove_root_anim_property = DCCAssetExporter.RemoveRootAnimProperty(property_network.get('guid'), property_network.node.longName())
+
+        return remove_root_anim_property
+
     def __init__(self, node_name = 'remove_root_anim_property', node = None, namespace = "", **kwargs):
         super(RemoveRootAnimationProperty, self).__init__(node_name, node, namespace, **kwargs)
 
@@ -276,6 +346,21 @@ class ZeroCharacterProperty(ExporterProperty):
     _do_register = True
     export_stage = ExportStageEnum.During.value
 
+    @classmethod
+    def create_c_property(self, property_network, *args, **kwargs):
+        '''
+        Creates a C# ZeroCharacterProperty from a scene network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.ZeroCharacterProperty). The created ExporterProperty
+        '''
+        zero_character_property = DCCAssetExporter.ZeroCharacterProperty(property_network.get('guid'), property_network.node.longName())
+
+        return zero_character_property
+
     def __init__(self, node_name = 'zero_character_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
 
@@ -289,22 +374,10 @@ class ZeroCharacterProperty(ExporterProperty):
         pm.keyframe(export_root.ty, r=True, vc=-export_root.ty.get())
         pm.keyframe(export_root.tz, r=True, vc=-export_root.tz.get())
 
-        export_root.jointOrient.set([0,0,0])
-
-        maya_utils.baking.bake_objects([export_root], True, True, True, use_settings = False, simulation=False)
-        export_root.setParent(None)
-
-    #    self.set("export_loc", zero_export_loc.longName(), 'string')
-
-    #def act_post(self, c_asset, event_args, **kwargs):
-    #    loc_name = self.get("export_loc", 'string')
-    #    v1_core.v1_logging.get_logger().info("ZeroCharacterProperty Post Process acting on {0}".format(loc_name))
-    #    zero_export_loc = pm.PyNode(loc_name)
-    #    pm.delete(zero_export_loc)
 
 class ZeroCharacterRotateProperty(ExporterProperty):
     '''
-    Export Property to handle baking out any initial transform on a character so the animation starts at 0 world space
+    Export Property to handle baking the export root to be rotated to 0 world
 
     Args:
         node_name (str): Name of the network node
@@ -314,10 +387,26 @@ class ZeroCharacterRotateProperty(ExporterProperty):
     Attributes:
         node (PyNode): The scene network node that represents the property
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
-        export_stage (meta_properties.ExportStageEnum): When this property should be run in the export process
+        export_stage (ExportStageEnum): When this property should be run in the export process
     '''
     _do_register = True
     export_stage = ExportStageEnum.During.value
+    priority = -1
+
+    @classmethod
+    def create_c_property(self, property_network, *args, **kwargs):
+        '''
+        Creates a C# ZeroCharacterRotateProperty from a scene network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.ZeroCharacterRotateProperty). The created ExporterProperty
+        '''
+        zero_character_property = DCCAssetExporter.ZeroCharacterRotateProperty(property_network.get('guid'), property_network.node.longName())
+
+        return zero_character_property
 
     def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterRotateProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
@@ -328,17 +417,17 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         export_root = get_first_or_default(export_asset_list)
         pm.currentTime(pm.playbackOptions(q=True, ast=True))
 
-        pm.keyframe(export_root.rx, r=True, vc=-export_root.rx.get())
-        pm.keyframe(export_root.ry, r=True, vc=-export_root.ry.get())
-        pm.keyframe(export_root.rz, r=True, vc=-export_root.rz.get())
+        baked_loc = pm.spaceLocator(name='helix_exporter_baked_root')
+        offset_loc = pm.spaceLocator(name='helix_exporter_root_rotate_offset')
+        baked_loc.setParent(offset_loc)
 
+        temp_const = pm.parentConstraint(export_root, baked_loc, mo=False)
+        maya_utils.baking.bake_objects([baked_loc], True, True, True, use_settings = False, simulation=False)
+        pm.delete(temp_const)
+
+        offset_loc.rotate.set(export_root.rotate.get() * -1)
+
+        temp_const = pm.parentConstraint(baked_loc, export_root, mo=False)
         maya_utils.baking.bake_objects([export_root], True, True, True, use_settings = False, simulation=False)
-        export_root.setParent(None)
-
-    #    self.set("export_loc", zero_export_loc.longName(), 'string')
-
-    #def act_post(self, c_asset, event_args, **kwargs):
-    #    loc_name = self.get("export_loc", 'string')
-    #    v1_core.v1_logging.get_logger().info("ZeroCharacterProperty Post Process acting on {0}".format(loc_name))
-    #    zero_export_loc = pm.PyNode(loc_name)
-    #    pm.delete(zero_export_loc)
+        pm.delete(temp_const)
+        pm.delete(offset_loc)
