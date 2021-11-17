@@ -2175,7 +2175,7 @@ class Rig_Component(Component_Base):
                 markup_network.set('temporary', False, 'bool')
 
             self.bake_and_remove(use_global_queue=False)
-        
+            
             control_holder_list, imported_nodes = rigging.rig_base.Component_Base.import_control_shapes(self.character_world)
             component_type().rig(skele_dict, side, region, control_holder_list = control_holder_list)
             pm.delete([x for x in imported_nodes if x.exists()])
