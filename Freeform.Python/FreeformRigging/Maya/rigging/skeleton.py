@@ -885,13 +885,13 @@ def zero_skeleton_joints(joint_list, offset_dict = None):
             jnt.translate.set(jnt.bind_translate.get(), force=True)
             if offset_dict and jnt in offset_dict.keys():
                 jnt.translate.set(jnt.translate.get() + offset_dict[jnt]['translate'], force=True)
-        # ignore twist joints, any joints with a unitConversion input on rotate x
-        if (pm.attributeQuery('bind_rotate', node=jnt, exists=True) 
-            and not 'unitConversion' in [x.type() for x in jnt.rx.listConnections(s=True, d=False)] 
-            and not maya_utils.node_utils.attribute_is_locked(jnt.rotate)):
+
+        if (pm.attributeQuery('bind_rotate', node=jnt, exists=True) and not maya_utils.node_utils.attribute_is_locked(jnt.rotate)):
             jnt.rotate.set(jnt.bind_rotate.get(), force=True)
             if offset_dict and jnt in offset_dict.keys():
                 jnt.rotate.set(jnt.rotate.get() + offset_dict[jnt]['rotate'], force=True)
+
+        jnt.scale.set([1,1,1])
 
 
 def zero_orient_joints(joint_list):

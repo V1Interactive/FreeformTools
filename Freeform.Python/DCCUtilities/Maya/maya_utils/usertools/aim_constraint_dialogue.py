@@ -144,13 +144,13 @@ class Aim_Constraint_Dialogue(object):
         up_object.setParent(roll_object)
         up_object.rename(target.name() + "_temp_aimspace_up_object")
 
+        pm.pointConstraint(target, roll_object, mo=False)
+
         bake_constraint_list = []
         bake_constraint_list.append(pm.parentConstraint(target, aim_space, mo=True))
         bake_constraint_list.append(pm.parentConstraint(target, up_object, mo=False))
         maya_utils.baking.bake_objects([aim_space, up_object], True, True, False)
         pm.delete(bake_constraint_list)
-
-        pm.pointConstraint(target, roll_object, mo=False)
 
         aim_constraint = rigging.constraints.aim_constraint(aim_space, target, up_object, roll_object=roll_object, mo=False)
 

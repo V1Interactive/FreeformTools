@@ -368,7 +368,7 @@ def get_bake_time_range(obj_list, settings):
         constraint_obj_list = []
         for obj in check_list:
             start_frame, end_frame = anim_attr_utils.get_key_range(obj, start_frame, end_frame)
-            start_frame, end_frame = check_constraints_for_key_range(obj, start_frame, end_frame)
+            start_frame, end_frame = check_constraints_for_key_range(obj, start_frame, end_frame, constraint_obj_list)
 
         scene_range = (pm.playbackOptions(q=True, ast=True), pm.playbackOptions(q=True, aet=True))
         if start_frame and scene_range[0] < start_frame:
@@ -393,7 +393,7 @@ def check_constraints_for_key_range(obj, start_frame, end_frame, checked_list = 
         constraint_list = list(set(pm.listConnections(obj, type='constraint', s=True, d=False)))
         for constraint in constraint_list:
             for constraint_obj in list(set(pm.listConnections(constraint.target, type='joint', s=True, d=False))):
-                first_frame, last_frame = anim_attr_utils.get_key_range(constraint_obj, start_frame, end_frame)
+                first_frame, last_frame = anim_attr_utils.get_key_range(constraint_obj, first_frame, last_frame)
                 # Only check hierarchy if we haven't found any keys
                 if first_frame == None and last_frame == None:
                     first_frame, last_frame = check_hierarchy_for_key_range(constraint_obj, first_frame, last_frame)
