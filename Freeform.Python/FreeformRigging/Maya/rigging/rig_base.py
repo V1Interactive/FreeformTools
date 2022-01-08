@@ -744,7 +744,7 @@ class Component_Base(object, metaclass=Component_Meta):
         maya_utils.node_utils.zero_node(control, ['constraint', 'animCurve', 'animLayer', 'animBlendNodeAdditiveDL',
                                                   'animBlendNodeAdditiveRotation', 'pairBlend'])
 
-    def bake_controls(self, translate = True, rotate = True, scale = False, simulation = False):
+    def bake_controls(self, translate = True, rotate = True, scale = False, simulation = True):
         '''
         Wrapper for maya_utils.baking.bake_objects(). Bake all controls for the rig component with default settings per component
 
@@ -979,7 +979,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
     _promoteselection = True
     _requires_space = True
     _uses_overrides = False
-    _simulated = False
+    _simulated = True
     _icon = "../../Resources/fk_icon_od.ico"
 
 
@@ -1449,14 +1449,21 @@ class Rig_Component(Component_Base):
         region_chain = skeleton.get_joint_chain(root_joint, end_joint)
         root_component_network = skeleton.get_rig_network(root_joint)
         end_component_network = skeleton.get_rig_network(end_joint)
-                
-        root_class_info = v1_shared.shared_utils.get_class_info(root_component_network.node.component_type.get()) if root_component_network else None
+        
+        # Always make sure to get the verified component type from the Component_Registry
+        root_node_class_info = v1_shared.shared_utils.get_class_info(root_component_network.node.component_type.get()) if root_component_network else None
+        root_type = Component_Registry().get(get_index_or_default(root_node_class_info, 1))
+        root_class_info = v1_shared.shared_utils.get_class_info(str(root_type)) if root_type else None
         root_info = ControlInfo(side, region, get_first_or_default(root_class_info), get_index_or_default(root_class_info,1)) if root_class_info else None
-
-        end_class_info = v1_shared.shared_utils.get_class_info(end_component_network.node.component_type.get()) if end_component_network else None
+        
+        end_node_class_info = v1_shared.shared_utils.get_class_info(end_component_network.node.component_type.get()) if end_component_network else None
+        end_type = Component_Registry().get(get_index_or_default(end_node_class_info, 1))
+        end_class_info = v1_shared.shared_utils.get_class_info(str(end_type)) if end_type else None
         end_info = ControlInfo(side, region, get_first_or_default(end_class_info), get_index_or_default(end_class_info, 1)) if end_class_info else None
 
-        compare_info = ControlInfo(side, region, component_dict['module'], component_dict['type'])
+        compare_type = Component_Registry().get(component_dict['type'])
+        compare_class_info = v1_shared.shared_utils.get_class_info(str(compare_type)) if compare_type else None
+        compare_info = ControlInfo(side, region, get_first_or_default(compare_class_info), get_index_or_default(compare_class_info, 1))
 
         # Check that either there is no component on the root and end, or that neither the component on the root or end are the same as this one
         if (not root_component_network or not end_component_network) or (str(compare_info) != str(root_info) and str(compare_info) != str(end_info)):
@@ -1810,7 +1817,7 @@ class Rig_Component(Component_Base):
 
         return return_network_list
 
-    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = False, baking_queue = None):
+    def bake_joints(self, translate = True, rotate = True, scale = True, simulation = True, baking_queue = None):
         '''
         Bake the animation from the control rig down to the joints
 

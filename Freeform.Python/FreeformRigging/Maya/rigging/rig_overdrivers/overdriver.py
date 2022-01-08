@@ -381,6 +381,7 @@ class Overdriver(Addon_Component):
 
 class Position_Overdriver(Overdriver):
     _uses_overrides = True
+    _save_channel_list = ['tx', 'ty', 'tz']
     
     def __init__(self, translate = True, rotate = False):
         super(Position_Overdriver, self).__init__(translate, rotate)
@@ -391,6 +392,7 @@ class Position_Overdriver(Overdriver):
 
 class Rotation_Overdriver(Overdriver):
     _uses_overrides = True
+    _save_channel_list = ['rx', 'ry', 'rz']
 
     def __init__(self, translate = False, rotate = True):
         super(Rotation_Overdriver, self).__init__(translate, rotate)

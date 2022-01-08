@@ -2364,9 +2364,9 @@ class HelixRigger:
                 meta_switch = component.switch_rigging()
                 if not meta_switch:
                     if type(component) == IK:
-                        component.switch_to_fk()
+                        component.switch_to_fk(None, None)
                     elif type(component) == FK:
-                        component.switch_to_ik()
+                        component.switch_to_ik(None, None)
                     
 
     @csharp_error_catcher

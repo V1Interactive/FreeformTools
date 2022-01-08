@@ -436,8 +436,8 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
                 export_skele = self.setup_export_skeleton(skele_root, export_namespace)
                 export_root = rigging.skeleton.get_root_joint( get_first_or_default(export_skele) )
-                self.bake_export_skeleton(export_skele, False)
-
+                self.bake_export_skeleton(export_skele, True)
+                
                 export_start_time, export_end_time = self.set_export_frame_range(definition_node)
                 self.pre_export(asset_namespace, export_skele, export_start_time, export_namespace)
 
@@ -464,7 +464,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
     def set_bake_frame_range(self, definition_node):
         '''
-
+        Set the bake time range from an export definition node
         '''
         definition_network = meta_network_utils.create_from_node(definition_node)
         bake_start_time, bake_end_time = definition_network.set_time_range()
@@ -473,7 +473,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
     def bake_export_skeleton(self, export_skele, bake_simulation):
         '''
-
+        Bake the export skeleton
         '''
         export_root = rigging.skeleton.get_root_joint( get_first_or_default(export_skele) )
         root_attributes = ['.' + x.name().split('.')[-1] for x in export_root.listAttr(ud=True, keyable=True, visible=True)]
@@ -483,7 +483,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
     def setup_export_skeleton(self, skele_root, export_namespace):
         '''
-
+        Duplicate the skeleton to create an export skeleton and bind it to the animated skeleton
         '''
         joint_list = [skele_root] + pm.listRelatives(skele_root, ad=True, type='joint')
         asset_namespace = skele_root.namespace()
@@ -532,7 +532,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
     def pre_export(self, asset_namespace, export_skele, export_start_time, export_namespace):
         '''
-
+        Process to run after the export skeleton is created but before it is exported
         '''
         export_root = rigging.skeleton.get_root_joint( get_first_or_default(export_skele) )
         delete_list = []
@@ -561,7 +561,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
                 
     def set_export_frame_range(self, definition_node):
         '''
-
+        Set the export frame range from an export definition node
         '''
         definition_network = meta_network_utils.create_from_node(definition_node)
         export_start_time, export_end_time = definition_network.set_time_range()
@@ -570,7 +570,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
     def fbx_export(self, export_path, export_root):
         '''
-
+        Run the FBX export
         '''
         export_directory = get_first_or_default(export_path.rsplit(os.sep, 1))
         if not os.path.exists(export_directory):
