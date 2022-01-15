@@ -1,5 +1,6 @@
 # freeform-tools
 - Beta Tutorials - https://www.youtube.com/channel/UCHXLfl9y2os_gvCzhR7UFlQ
+- Installation Instructions = https://sites.google.com/view/v1freeformtools/home
 - User Documentation - https://sites.google.com/view/v1freeformtools/home
 
 For Maya 2018.x-2020.x using Python 2.7
