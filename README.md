@@ -5,6 +5,7 @@
 - Discord - https://discord.gg/t3YKAcvYw3
 
 For Maya 2018.x-2020.x using Python 2.7
+For Maya 2022.x using Python 3.7 see Releases or the python3_update branch.
 
 
 Home of an open source freeform rigging and animation toolset for Maya, made for games development.  These tools are built 
