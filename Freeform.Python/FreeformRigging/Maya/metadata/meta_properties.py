@@ -1108,9 +1108,12 @@ class CharacterAnimationAsset(ExportAssetProperty):
         if not os.path.exists(export_directory):
             os.makedirs(export_directory)
 
+        config_manager = v1_core.global_settings.ConfigManager()
+        check_perforce = config_manager.get("Perforce").get("Enabled")
+
         freeform_utils.fbx_presets.FBXAnimation().load()
         pm.select(export_root, replace=True)
-        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = check_perforce, s = True)
 
 
 
