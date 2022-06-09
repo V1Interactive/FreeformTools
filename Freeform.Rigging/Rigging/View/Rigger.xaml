@@ -1112,6 +1112,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Transfer (Joints)" 
                                                           Command="{Binding Data.TransferAllJointsCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                                <MenuItem Header="Transfer (Regions)" 
+                                                          Command="{Binding Data.TransferAllRegionsCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <MenuItem Header="Import UE4 Animation" 
                                                           Command="{Binding Data.ImportUE4AnimationCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>

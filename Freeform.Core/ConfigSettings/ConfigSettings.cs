@@ -80,6 +80,16 @@ namespace Freeform.Core.ConfigSettings
         {
             return InitSettings.Project.GetContentRoot();
         }
+
+        public string GetProjectRoot()
+        {
+            return InitSettings.Project.GetProjectRoot();
+        }
+
+        public string GetEngineContentRoot()
+        {
+            return InitSettings.Project.GetEngineContentRoot();
+        }
     }
 
 
@@ -189,6 +199,8 @@ namespace Freeform.Core.ConfigSettings
             UseProject = copy.UseProject ? copy.UseProject : UseProject;
             ProjectDrive = copy.ProjectDrive ?? ProjectDrive;
             ProjectRootPath = copy.ProjectRootPath ?? ProjectRootPath;
+            ContentRootPath = copy.ContentRootPath ?? ContentRootPath;
+            EngineContentPath = copy.EngineContentPath ?? EngineContentPath;
             CharacterFolder = copy.CharacterFolder ?? CharacterFolder;
             RigSearchPathList = copy.RigSearchPathList ?? RigSearchPathList;
         }
@@ -202,13 +214,17 @@ namespace Freeform.Core.ConfigSettings
         {
             return Path.Combine(ProjectDrive, ProjectRootPath);
         }
+
+        public string GetEngineContentRoot()
+        {
+            return Path.Combine(ProjectDrive, ProjectRootPath, EngineContentPath);
+        }
     }
 
     public class ExporterConfig : ConfigGroup
     {
-        public bool MatchDirectory { get; set; }
-
         public string FileNamePattern { get; set; }
+        public string ExportDirectory { get;set; }
 
         string _exportPattern;
         public string ExportPattern {
@@ -220,9 +236,9 @@ namespace Freeform.Core.ConfigSettings
         {
             ExporterConfig copy = (ExporterConfig)copyGroup;
 
-            MatchDirectory = copy.MatchDirectory ? copy.MatchDirectory : MatchDirectory;
             FileNamePattern = copy.FileNamePattern ?? FileNamePattern;
             ExportPattern = copy.ExportPattern ?? ExportPattern;
+            ExportDirectory = copy.ExportDirectory ?? ExportDirectory;
         }
     }
 

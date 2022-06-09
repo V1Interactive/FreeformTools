@@ -151,6 +151,7 @@ class HelixRigger:
         self.vm.SaveSettingHandler += self.save_setting
         self.vm.SaveBakeRangeHandler += self.save_bake_range
         self.vm.TransferJointsHandler += self.transfer_anim_joints
+        self.vm.TransferRegionsHandler += self.transfer_anim_regions
         self.vm.ImportUE4AnimationHandler += self.import_ue4_animation
         self.vm.OpenCharacterImporterHandler += self.open_character_importer
         self.vm.LoadCharacterHandler += self.load_character_call
@@ -997,19 +998,13 @@ class HelixRigger:
 
         c_character.UpdateMessage = ""
         c_character.OutOfDate = False
-        updater = versioning.character_version.CharacterUpdater(character_network)
-        if not updater.is_updated:
-            update_message = "Errors Found:"
-            for message in updater.update_message_list:
-                update_message += "\n" + message
-            c_character.UpdateMessage = update_message
-            c_character.OutOfDate = True
-
         
         self.update_character_regions(c_character, character_network)
         self.update_character_props(c_character, character_network)
 
         self.update_character_components(c_character, character_network)
+
+        c_character.OutOfDate = self.check_settings(character_network, c_character)
 
     def load_character(self, character_network):
         '''
@@ -1029,27 +1024,10 @@ class HelixRigger:
         self.update_character_props(new_c_char, character_network)
 
         self.update_character_components(new_c_char, character_network)
-
-        updater = versioning.character_version.CharacterUpdater(character_network)
-        if not updater.is_updated:
-            update_message = "Errors Found:"
-            for message in updater.update_message_list:
-                update_message += "\n" + message
-            new_c_char.UpdateMessage = update_message
-            new_c_char.OutOfDate = True
                 
         self.vm.CharacterList.Add(new_c_char)
 
-        settings_file_path = ""
-        directory_path = ""
-        for folder_path in character_network.character_folders:
-            directory_path = folder_path
-            settings_list  = rigging.file_ops.get_settings_files(directory_path, "rig", character_network.get("varient"))
-            if settings_list:
-                settings_file_path = os.path.join(directory_path, get_first_or_default(settings_list)) if len(settings_list) == 1 else ""
-
-        if os.path.exists(settings_file_path):
-            new_c_char.OutOfDate = self.check_settings(character_network, new_c_char)
+        new_c_char.OutOfDate = self.check_settings(character_network, new_c_char)
         
         return new_c_char
 
@@ -1245,19 +1223,37 @@ class HelixRigger:
             settings_file_path = os.path.join(directory_path, first_settings_file) if first_settings_file else None
 
         if settings_file_path:
+            out_of_date = False
+            update_message = c_character.DefaultUpdateMessage
+            settings_data = v1_core.json_utils.read_json(settings_file_path)
             skeleton_match, missmatch_joint_list = rigging.skeleton.compare_skeleton_to_settings(character_network, settings_file_path)
-            update_message = c_character.UpdateMessage + "\n" if c_character.UpdateMessage != c_character.DefaultUpdateMessage else ""
-            update_message += "Missing Joints:"
-            for miss_matched_joint in missmatch_joint_list:
-                update_message += "\n" +  miss_matched_joint
+
+            character_version = character_network.get('version')
+            settings_version = settings_data.get('version') if settings_data.get('version') is not None else 1
+            if character_version != settings_version:
+                old_version_message = "Character version #{0} does not match Settings version #{1}".format(character_version, settings_version)
+                old_version_message += "\nLoad the character settings file to update"
+                if update_message != c_character.DefaultUpdateMessage:
+                    update_message = "{0}\n{1}".format(update_message, old_version_message)
+                else:
+                    update_message = old_version_message
+                out_of_date = True
 
             if missmatch_joint_list:
-                c_character.UpdateMessage = update_message
-                c_character.OutOfDate = True
-                return True
+                missing_joints_message += "Missing Joints:"
+                for miss_matched_joint in missmatch_joint_list:
+                    missing_joints_message += "\n" +  miss_matched_joint
 
-            c_character.UpdateMessage = c_character.DefaultUpdateMessage
-            return False
+                if update_message != c_character.DefaultUpdateMessage:
+                    update_message = "{0}\n{1}".format(update_message, missing_joints_message)
+                else:
+                    update_message = missing_joints_message
+                out_of_date = True
+                
+            c_character.UpdateMessage = update_message
+            c_character.OutOfDate = out_of_date
+
+            return out_of_date
 
 
     def _create_c_component(self, node_name, type_name, side, region):
@@ -1443,18 +1439,6 @@ class HelixRigger:
             event_args (UpdateCharacterEventArgs): Passes the character to update from the UI
         '''
         character_network = metadata.meta_network_utils.create_from_node( pm.PyNode(event_args.character.NodeName) )
-        updater = versioning.character_version.CharacterUpdater(character_network)
-        updater.update()
-
-        event_args.updated = updater.is_updated
-
-        if not updater.is_updated:
-            update_message = "Errors Found:"
-            for message in updater.update_message_list:
-                update_message += "\n" + message
-            event_args.character.UpdateMessage = update_message
-        else:
-            event_args.character.UpdateMessage = event_args.character.DefaultUpdateMessage
 
         self.vm.SettingsMenuItems.Clear();
         self.vm.RiggingMenuItems.Clear();
@@ -1917,11 +1901,25 @@ class HelixRigger:
 
     @csharp_error_catcher
     @undoable
+    def transfer_anim_regions(self, vm, event_args):
+        '''
+        transfer_anim_regions(self, vm, event_args)
+        Transfer animation from the source character loaded in the UI to the selected character.  This does a 
+        skeleton to skeleton transfer.
+
+        Args:
+            vm (Rigging.Rigger): C# view model object sending the command
+            event_args (TransferEventArgs): Passes the source and destination character to transfer animation on from the UI
+        '''
+        rigging.skeleton.region_transfer_animations(pm.PyNode(event_args.sourceCharacter.NodeName), pm.PyNode(event_args.destinationCharacter.NodeName))
+
+    @csharp_error_catcher
+    @undoable
     def transfer_anim_joints(self, vm, event_args):
         '''
         transfer_anim_joints(self, vm, event_args)
         Transfer animation from the source character loaded in the UI to the selected character.  This does a 
-        skeleton to skeleton transfer, it will bake and remove all rigging from the character
+        skeleton to skeleton transfer.
 
         Args:
             vm (Rigging.Rigger): C# view model object sending the command

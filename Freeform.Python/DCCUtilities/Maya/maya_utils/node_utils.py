@@ -412,6 +412,30 @@ def get_constraint_by_type(constraint_type):
         
     return return_method
 
+def get_constraint_by_name(constraint_name):
+    '''
+    From a string for a constraint get the pymel method that would create that constraint
+
+    Args:
+        constraint_type (NodeType): The pymel nodeType from a constraint scene node
+
+    Returns:
+        Method. The Pymel method that creates the given constraint type
+    '''
+    return_method = None
+    if 'parent' in constraint_name.lower():
+        return_method = pm.parentConstraint
+    elif 'orient' in constraint_name.lower():
+        return_method = pm.orientConstraint
+    elif 'point' in constraint_name.lower():
+        return_method = pm.pointConstraint
+    elif 'scale' in constraint_name.lower():
+        return_method = pm.scaleConstraint
+    elif 'aim' in constraint_name.lower():
+        return_method = pm.aimConstraint
+        
+    return return_method
+
 def get_constraint_driver(constraint):
     '''
     Get the driver object from a constraint node
