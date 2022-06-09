@@ -156,6 +156,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     </Button>
                     <TextBlock Style="{StaticResource HighlightTextBlock}"
                                Text="?"
+                               ToolTipService.InitialShowDelay="10"
                                FontSize="16"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
