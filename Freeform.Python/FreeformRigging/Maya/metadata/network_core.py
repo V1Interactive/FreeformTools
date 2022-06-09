@@ -84,10 +84,14 @@ class MetaNode(object, metaclass=Network_Meta):
                     if attr_type != type(value):
                         attr_match = self.type_match.get(attr_type)
                         if attr_match and type(value) not in attr_match:
+                            # Delete the old attr with bad type and replace with new
                             self.node.deleteAttr(attr_name)
+                            self.add_attr(attr_name, value_type)
+                            self.set(attr_name, value)
                 # Add any new attributes
                 else:
                     self.add_attr(attr_name, value_type)
+                    self.set(attr_name, value)
         else:
             self.node = pm.createNode('network', name = namespace + node_name.split(":")[-1])
             self.set('meta_type', str(self.__class__))
@@ -130,7 +134,7 @@ class MetaNode(object, metaclass=Network_Meta):
 
     def set(self, attr_name, value, value_type='string'):
         '''
-        Set attribute on self.node by name.  If the nttribute does not exist, add and set it
+        Set attribute on self.node by name.  If the attribute does not exist, add and set it
 
         Args:
             attr_name (string): Name of the attribute to set
@@ -498,10 +502,9 @@ class CharacterCore(DependentNode):
     
 
     def __init__(self, parent = None, node_name = 'v1_character', node = None, namespace = ""):
-        super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = ("", 'string'), character_name = ("", 'string'), root_path = ("", 'string'),
+        super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = (1, 'short'), character_name = ("", 'string'), root_path = ("", 'string'),
                                             sub_paths = ("", 'string'), rig_file_path = ("", 'string'), color_set = ("", 'string'), scalar = (1.0, 'float'))
         if not node:
-            self.set('version', v1_core.json_utils.get_version("CharacterSettings", "Maya"))
             self.set('character_name', node_name)
 
             char_grp = pm.group(empty=True, name= "{0}_Character".format(node_name))

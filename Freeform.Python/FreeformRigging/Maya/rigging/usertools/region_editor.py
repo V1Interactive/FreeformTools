@@ -384,7 +384,7 @@ class RegionEditor(object):
         end_joint = pm.PyNode(c_region.End) if pm.objExists(c_region.End) else None
 
         if root_joint and end_joint:
-            markup_properties = metadata.meta_properties.get_properties([root_joint, end_joint], metadata.meta_properties.RigMarkupProperty)
+            markup_properties = metadata.meta_property_utils.get_properties([root_joint, end_joint], metadata.joint_properties.RigMarkupProperty)
             markup_to_change = self.get_matching_markup(markup_properties, c_region)
 
         return markup_to_change

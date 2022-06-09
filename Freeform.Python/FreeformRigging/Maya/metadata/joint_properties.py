@@ -212,3 +212,30 @@ class PropAttachProperty(JointProperty):
             (boolean). True
         '''
         return True
+
+class JointRetargetProperty(JointProperty):
+    '''
+    Property that defines how the joint should be constrained when transfering animation to it. 
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+    '''
+    _do_register = True
+
+    def __init__(self, node_name = 'joint_retarget_property', node = None, namespace = "", **kwargs):
+        return super(JointRetargetProperty, self).__init__(node_name, node, namespace, constraint_type = (" ", 'string'))
+
+    def act(self):
+        '''
+        JointRetargetProperty defines how the joint should be constrained when transfering animation to it.
+
+        Returns:
+            (boolean). True
+        '''
+        return True

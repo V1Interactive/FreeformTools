@@ -98,7 +98,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <TextBlock Text="Export Path:" VerticalAlignment="Center" Margin="10,2,0,2" Grid.Column="0"/>
                         <TextBox Style="{StaticResource ForegroundTextBox}" 
                                  Text="{Binding SelectedAsset.ExportPath, UpdateSourceTrigger=PropertyChanged}" 
-                                 IsReadOnly="True" 
                                  IsEnabled="{Binding SelectedAsset.UseExportPath, Mode=OneWay}" 
                                  Margin="4,2" 
                                  Height="20" 

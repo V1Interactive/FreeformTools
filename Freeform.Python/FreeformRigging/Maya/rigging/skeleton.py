@@ -32,7 +32,7 @@ import metadata
 
 # from rigging import rig_tools
 from rigging import constraints
-from metadata.joint_properties import RigMarkupProperty
+from metadata.joint_properties import RigMarkupProperty, JointRetargetProperty
 from metadata.meta_properties import ExportProperty, ControlProperty
 from metadata.network_core import AttachmentJoints, AddonCore, AddonControls, CharacterCore, ComponentCore, ControlJoints, JointsCore, RegionsCore, SkeletonJoints
 
@@ -207,7 +207,7 @@ def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict,
                     new_rig_markup = metadata.joint_properties.RigMarkupProperty()
                     new_rig_markup.data = {'side':side, 'region':region, 'tag':data_name, 'group':data_dict.get('group')}
                     
-                    rig_markup_network_list = metadata.meta_property_utils.get_property_list(markup_jnt, metadata.joint_properties.RigMarkupProperty)
+                    rig_markup_network_list = metadata.meta_property_utils.get_property_list(markup_jnt, RigMarkupProperty)
                     matching_markup = []
                     for rig_markup_network in rig_markup_network_list:
                         markup_data = new_rig_markup.data
@@ -239,7 +239,7 @@ def remove_invalid_rig_markup(jnt):
         for region, tag_dict in region_dict.items():
             if len(tag_dict) == 1:
                 for tag_jnt in tag_dict.values():
-                    rig_markup_list = metadata.meta_property_utils.get_property_list(tag_jnt, metadata.joint_properties.RigMarkupProperty)
+                    rig_markup_list = metadata.meta_property_utils.get_property_list(tag_jnt, RigMarkupProperty)
                     for rig_markup in rig_markup_list:
                         if rig_markup.get('side') == side and rig_markup.get('region') == region:
                             pm.delete(rig_markup.node)
@@ -450,7 +450,7 @@ def get_joint_markup_details_recursive(jnt, ref_jnt):
     if jnt == None:
         return None
 
-    markup_property = metadata.meta_property_utils.get_property(jnt, metadata.joint_properties.RigMarkupProperty)
+    markup_property = metadata.meta_property_utils.get_property(jnt, RigMarkupProperty)
     if markup_property and markup_property.get('tag') != 'exclude':
         skeleton_dict = get_skeleton_dict(ref_jnt)
         side = markup_property.node.side.get()
@@ -724,7 +724,7 @@ def filter_component_networks(jnt, component_network_list):
 
     # If the joint is in a component but marked to be excluded from that component, don't include the component in the
     # returned list.
-    markup_list = metadata.meta_property_utils.get_properties([jnt], metadata.joint_properties.RigMarkupProperty)
+    markup_list = metadata.meta_property_utils.get_properties([jnt], RigMarkupProperty)
     exlude_property_list = [x for x in markup_list if x.get('tag') == 'exclude']
     remove_component_list = []
     for exclude_property in exlude_property_list:
@@ -928,6 +928,59 @@ def zero_character(jnt, offset_dict = None, ignore_rigged = True):
             offset_parent.rotate.set([0,0,0])
             offset_parent.scale.set([1,1,1])
 
+def region_transfer_animations(source_node, dest_node, keep_offset = True):
+    '''
+    Transfer animation between 2 skeletons via parent constraints between each joint.  Both skeleton's are zeroed before
+    transfer.  Matching joints are found by regions
+
+    Args:
+        source_node (PyNode): A joint in the skeleton of the driving animation
+        dest_node (PyNode): A joint in the skeleton of the chatacter animation will be transfered to
+        keep_offset (boolean): Whether or not to apply constraints with maintainOffset
+    '''
+    autokey_state = pm.autoKeyframe(q=True, state=True)
+    pm.autoKeyframe(state=False)
+
+    character_network = metadata.meta_network_utils.create_from_node(dest_node)
+    joint_core_network = character_network.get_downstream(JointsCore)
+    character_joint = joint_core_network.get_first_connection()
+    skeleton_dict = get_skeleton_dict(character_joint)
+
+    source_network = metadata.meta_network_utils.create_from_node(source_node)
+    source_joint_core_network = source_network.get_downstream(JointsCore)
+    source_joint = source_joint_core_network.get_first_connection()
+    source_skeleton_dict = get_skeleton_dict(source_joint)
+
+    delete_list = []
+    bake_list = []
+    for side, source_side_dict in source_skeleton_dict.items():
+        side_dict = skeleton_dict.get(side)
+        if side_dict is None:
+            continue
+        for region, source_region_dict in source_side_dict.items():
+            region_dict = side_dict.get(region)
+            if region_dict is None:
+                continue
+
+            source_chain = get_joint_chain(source_region_dict['root'], source_region_dict['end'])
+            chain = get_joint_chain(region_dict['root'], region_dict['end'])
+
+            for souce_jnt, target_jnt in zip(source_chain, chain):
+                if not 'unitConversion' in [x.type() for x in target_jnt.rx.listConnections(s=True, d=False)]:
+                    retarget_property = metadata.meta_property_utils.get_property(target_jnt, JointRetargetProperty)
+                    if retarget_property is not None:
+                        constraint_name = retarget_property.get('constraint_type')
+                        constraint_method = maya_utils.node_utils.get_constraint_by_name(constraint_name)
+                    else:
+                        constraint_method = pm.orientConstraint
+                    delete_list.append( constraint_method(souce_jnt, target_jnt, mo=keep_offset) )
+                    bake_list.append(target_jnt)
+
+    maya_utils.baking.bake_objects(bake_list, True, True, True, use_settings = True, simulation = False)
+    pm.delete(delete_list)
+
+    pm.autoKeyframe(state=autokey_state)
+
 def joint_transfer_animations(source_node, dest_node, keep_offset = True):
     '''
     Transfer animation between 2 skeletons via parent constraints between each joint.  Both skeleton's are zeroed before
@@ -949,10 +1002,6 @@ def joint_transfer_animations(source_node, dest_node, keep_offset = True):
     source_network = metadata.meta_network_utils.create_from_node(source_node)
     namespace = source_network.group.namespace()
 
-    first_joint = get_first_or_default(character_joint_list)
-    zero_character(first_joint)
-    zero_character(pm.PyNode(namespace + first_joint.name() if not character_namespace else first_joint.name().replace(character_namespace, namespace)))
-
     delete_list = []
     failed_joint_list = []
     no_bake_list = []
@@ -962,7 +1011,13 @@ def joint_transfer_animations(source_node, dest_node, keep_offset = True):
             new_node = pm.PyNode(new_name)
             # ignore twist joints, any joints with a unitConversion input on rotate x
             if not 'unitConversion' in [x.type() for x in jnt.rx.listConnections(s=True, d=False)]:
-                delete_list.append( pm.parentConstraint(new_node, jnt, mo=keep_offset) )
+                retarget_property = metadata.meta_property_utils.get_property(jnt, JointRetargetProperty)
+                if retarget_property is not None:
+                    constraint_name = retarget_property.get('constraint_type')
+                    constraint_method = maya_utils.node_utils.get_constraint_by_name(constraint_name)
+                else:
+                    constraint_method = pm.orientConstraint
+                delete_list.append( constraint_method(new_node, jnt, mo=keep_offset) )
             else:
                 no_bake_list.append(jnt)
         else:

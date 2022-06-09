@@ -32,6 +32,8 @@ import scene_tools
 
 from metadata.network_core import ComponentCore, CharacterCore, JointsCore, RigCore, RegionsCore, SkeletonJoints
 from metadata.meta_properties import PropertyNode
+from metadata.exporter_properties import CharacterAnimationAsset
+from metadata.network_registry import Property_Registry
 
 import v1_core
 import v1_shared
@@ -224,7 +226,8 @@ class RigSwapper(CharacterPicker):
         character_root_joint = rigging.skeleton.get_root_joint(character_joint)
 
         source_root_properties = metadata.meta_property_utils.get_properties_dict(source_root_joint)
-        animation_asset_list = source_root_properties.get(metadata.exporter_properties.CharacterAnimationAsset)
+        animation_asset_list = source_root_properties.get(Property_Registry().get(CharacterAnimationAsset.__name__))
+
         if animation_asset_list:
             for animation_asset in animation_asset_list:
                 animation_asset.disconnect_node(source_root_joint)

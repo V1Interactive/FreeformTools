@@ -87,7 +87,7 @@ def find_all_rig_files(rig_search_list = None):
         search_root = os.path.join(content_root, search_folder)
         for root, dirs, files in os.walk(search_root):
             # Skip folders that aren't within a folder with name rig_folder
-            if rig_folder and rig_folder not in root:
+            if rig_folder and rig_folder.lower() not in root.lower():
                 continue
 
             found_rig_list = glob.glob(root + os.sep + rig_file_pattern)
@@ -164,10 +164,11 @@ def get_settings_files(directory_path, type, varient = None):
 
 
 def get_skeleton_dict_from_settings(settings_file_path):
-    load_data = v1_core.json_utils.read_json(settings_file_path).get('skeleton')
+    load_settings_data = v1_core.json_utils.read_json(settings_file_path)
+    load_skeleton_dict = load_settings_data.get('skeleton')
 
     skeleton_dict = {}
-    for jnt_name, data_dict in load_data.items():
+    for jnt_name, data_dict in load_skeleton_dict.items():
         for property_data in data_dict.get('properties').values():
             if property_data['type'] == "RigMarkupProperty":
                 data = property_data.get('data')
@@ -208,14 +209,19 @@ def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value,
         binding_list (list<Binding>): List of all Binding objects to handle saving different settings
         update (boolean): whether or not to update the json file or create a new one
     '''
-    load_data = None
+    load_settings_data = None
+    if os.path.exists(file_path):
+        load_settings_data = v1_core.json_utils.read_json(file_path)
+
+    load_skeleton_dict = None
     if update:
-        load_data = v1_core.json_utils.read_json(file_path).get('skeleton')
+        load_skeleton_dict = v1_core.json_utils.read_json(file_path).get('skeleton')
 
     root_joint = skeleton.get_root_joint(jnt)
     joint_list = [root_joint] + pm.listRelatives(root_joint, ad=True, type='joint')
+    character_network = metadata.meta_network_utils.get_first_network_entry(root_joint, CharacterCore)
 
-    export_data = {} if not load_data else load_data
+    export_data = {} if not load_skeleton_dict else load_skeleton_dict
     for skeleton_joint in joint_list:
         skeleton_joint_name = skeleton_joint.name().replace(skeleton_joint.namespace(), '').split('|')[-1]
         export_data.setdefault(skeleton_joint_name, {})
@@ -223,7 +229,13 @@ def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value,
         for binding in binding_list:
             binding.save_data(export_data[skeleton_joint_name], skeleton_joint)
 
-    save_data = {'skeleton':export_data, 'filetype' : "settings", 'subtype' : subtype, 'varient' : varient}
+    version = 1
+    if load_settings_data is not None:
+        previous_version = load_settings_data.get('version')
+        version = previous_version + 1 if previous_version != None else 1
+    character_network.set('version', version)
+
+    save_data = {'skeleton':export_data, 'filetype' : "settings", 'subtype' : subtype, 'varient' : varient, 'version' : version}
     v1_core.json_utils.save_json(file_path, save_data)
 
 
@@ -254,15 +266,20 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
     autokey_state = pm.autoKeyframe(q=True, state=True)
     pm.autoKeyframe(state=False)
 
-    load_data = v1_core.json_utils.read_json(file_path).get('skeleton')
+    load_settings_data = v1_core.json_utils.read_json(file_path)
+    load_skeleton_dict = load_settings_data.get('skeleton')
 
     character_network = metadata.meta_network_utils.get_first_network_entry(character_grp, CharacterCore)
+    settings_version = load_settings_data.get('version')
+    version = settings_version if settings_version is not None else 1
+    character_network.set('version', version)
+
     joints_network = character_network.get_downstream(JointsCore)
     target_namespace = character_grp.namespace()
 
     # Create any missing joints, parented to world so we know to fill them in next
     if binding_list != Binding_Sets.PROPERTIES.value:
-        for jnt_name, data in load_data.items():
+        for jnt_name, data in load_skeleton_dict.items():
             if not pm.objExists( target_namespace + jnt_name ):
                 v1_core.v1_logging.get_logger().info("Creating Joint - {0}".format(jnt_name))
                 pm.select(None) # Clear selection before making joints so no auto-parenting happens
@@ -287,7 +304,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
                         xform_binding.load_data(data, jnt, target_namespace)
 
     load_property_jnt = None
-    for jnt_name, data in load_data.items():
+    for jnt_name, data in load_skeleton_dict.items():
         load_property_jnt = pm.PyNode(target_namespace + jnt_name) if pm.objExists(target_namespace + jnt_name) else None
         joint_list = pm.ls(target_namespace + jnt_name, type='joint')
         load_property_jnt = get_first_or_default(joint_list, default = load_property_jnt)
@@ -392,10 +409,10 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
 
     start_time = time.clock()
 
-    load_data = v1_core.json_utils.read_json(file_path)
+    load_settings_data = v1_core.json_utils.read_json(file_path)
 
-    rigging_data = load_data['rigging']
-    addon_data = load_data['addons']
+    rigging_data = load_settings_data['rigging']
+    addon_data = load_settings_data['addons']
 
     joint_core_network = character_network.get_downstream(JointsCore)
     target_skeleton_dict = skeleton.get_skeleton_dict( get_first_or_default(joint_core_network.get_connections()) )

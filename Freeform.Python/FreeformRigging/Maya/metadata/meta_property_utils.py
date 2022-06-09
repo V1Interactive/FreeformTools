@@ -186,8 +186,7 @@ def add_property_by_name(pynode, module_type_name):
     '''
     module_name = get_first_or_default(module_type_name)
     type_name = get_index_or_default(module_type_name, 1)
-    node_type = Property_Registry(type_name)
-    # node_class = getattr(sys.modules[module_name], type_name)
+    node_type = Property_Registry().get(type_name)
 
     if node_type.multi_allowed or not get_properties_dict(pynode).get(node_type):
         py_namespace = pynode.namespace()

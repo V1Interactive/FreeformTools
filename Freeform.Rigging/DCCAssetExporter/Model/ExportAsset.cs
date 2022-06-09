@@ -257,9 +257,9 @@ namespace Freeform.Rigging.DCCAssetExporter
             ExporterConfig exporterConfig = (ExporterConfig)new ConfigManager().GetCategory(SettingsCategories.EXPORTER);
             ProjectConfig projectConfig = (ProjectConfig)new ConfigManager().GetCategory(SettingsCategories.PROJECT);
             string exportPattern = exporterConfig.ExportPattern;
+            char sep_char = Path.DirectorySeparatorChar;
 
-            string returnDirectory = "";
-
+            string returnDirectory;
             if (UseExportPath && ExportPath != string.Empty)
             {
                 returnDirectory = ExportPath;
@@ -268,73 +268,101 @@ namespace Freeform.Rigging.DCCAssetExporter
                     returnDirectory = returnDirectory.Replace("..", projectConfig.GetContentRoot());
                 }
             }
-            else if (exportPattern.Contains("<CONTENT_ROOT>"))
-            {
-                returnDirectory = exportPattern.Replace("<CONTENT_ROOT>", projectConfig.GetContentRoot());
-            }
-            else if (exportPattern.Contains("<PROJECT_ROOT>"))
-            {
-                returnDirectory = exportPattern.Replace("<PROJECT_ROOT>", projectConfig.GetProjectRoot());
-            }
             else
             {
-                string sceneDirectory = Path.GetDirectoryName(scenePath);
+                // Start the export path as the scene file path
                 returnDirectory = Path.GetDirectoryName(scenePath);
+                string sceneDirectory = Path.GetDirectoryName(scenePath);
 
                 int nextIndex = 0;
-                List<string> splitPattern = new List<string>(exportPattern.Split(Path.DirectorySeparatorChar));
+                List<string> splitPattern = new List<string>(exportPattern.Split(sep_char));
+                bool skipNext = false;
                 foreach (string pattern in splitPattern)
                 {
                     nextIndex += 1;
-                    if(pattern == "..") // Remove 1 directory from the path
+                    if (skipNext == true)
                     {
-                        int splitIndex = returnDirectory.LastIndexOf(Path.DirectorySeparatorChar);
+                        skipNext = false;
+                        continue;
+                    }
+
+                    // Start the export path with the Content Root path
+                    if (pattern == "<>")
+                    {
+                        returnDirectory = "";
+                    }
+                    // Start the export path with the Project Root path
+                    else if (pattern == "<PROJECT_ROOT>")
+                    {
+                        returnDirectory = projectConfig.GetProjectRoot();
+                    }
+                    // Start the export path with the Project Root path
+                    else if (pattern == "<CONTENT_ROOT>")
+                    {
+                        returnDirectory = projectConfig.GetContentRoot();
+                    }
+                    // Start the export path as an empty string
+                    else if (pattern == "<ENGINE_CONTENT_ROOT>")
+                    {
+                        returnDirectory = projectConfig.GetEngineContentRoot();
+                    }
+                    // Remove 1 directory from the path
+                    else if (pattern == "..")
+                    {
+                        int splitIndex = returnDirectory.LastIndexOf(sep_char);
                         returnDirectory = returnDirectory.Substring(0, splitIndex);
                     }
-                    else if(pattern == "...") // Search back until we find the directory name that matches the next pattern
+                    // Search back until we find the directory name that matches the next pattern, removing all directories above
+                    else if (pattern == "...")
                     {
                         string nextPattern = nextIndex < splitPattern.Count ? splitPattern[nextIndex] : string.Empty;
-                        if(nextPattern != string.Empty && returnDirectory.Contains(nextPattern))
+                        if (nextPattern != string.Empty && returnDirectory.Contains(nextPattern))
                         {
-                            List<string> splitReturnDirectory = new List<string>(returnDirectory.Split(Path.DirectorySeparatorChar));
-
-                            string driveLetter = string.Empty;
-                            if (splitReturnDirectory[0].Contains(":"))
-                            {
-                                driveLetter = splitReturnDirectory[0];
-                                splitReturnDirectory.RemoveAt(0);
-                            }
+                            List<string> splitReturnDirectory = new List<string>(returnDirectory.Split(sep_char));
 
                             int patternIndex = splitReturnDirectory.IndexOf(nextPattern);
                             returnDirectory = Path.Combine(splitReturnDirectory.GetRange(0, patternIndex).ToArray());
-
-                            if (driveLetter != string.Empty) { returnDirectory = driveLetter + Path.DirectorySeparatorChar + returnDirectory; }
+                            skipNext = true;
                         }
                     }
-                    else // Add the pattern to the path as a new directory
+                    // Search the sceneDirectory for the next pattern and append all directories including the pattern to the path
+                    else if (pattern == ">...>" || pattern == "<...<")
+                    {
+                        string nextPattern = nextIndex < splitPattern.Count ? splitPattern[nextIndex] : string.Empty;
+                        if (nextPattern != string.Empty && sceneDirectory.Contains(nextPattern))
+                        {
+                            List<string> splitSceneDirectory = new List<string>(sceneDirectory.Split(sep_char));
+
+                            int patternIndex = splitSceneDirectory.IndexOf(nextPattern);
+                            string matchingDirectory = "";
+                            if (pattern == ">...>")
+                            {
+                                matchingDirectory = Path.Combine(splitSceneDirectory.GetRange(patternIndex, splitSceneDirectory.Count - patternIndex).ToArray());
+                            }
+                            else if (pattern == "<...<")
+                            {
+                                matchingDirectory = Path.Combine(splitSceneDirectory.GetRange(0, patternIndex).ToArray());
+                            }
+
+                            returnDirectory = Path.Combine(returnDirectory, matchingDirectory);
+                            skipNext = true;
+                        }
+                    }
+                    // Add the pattern to the path as a new directory
+                    else
                     {
                         returnDirectory = Path.Combine(returnDirectory, pattern);
                     }
                 }
-
-                if(exporterConfig.MatchDirectory == true && returnDirectory.Length < sceneDirectory.Length)
-                {
-                    string removedDirectory = sceneDirectory.Remove(0, returnDirectory.Length + 1); // + 1 accounts for 0 based index and 1 based length count
-                    removedDirectory = removedDirectory.TrimStart(Path.DirectorySeparatorChar);
-                    List<string> removedList = new List<string>(removedDirectory.Split(Path.DirectorySeparatorChar));
-                    string[] addList = removedList.GetRange(1, removedList.Count - 1).ToArray();
-                    foreach(string addDirectory in addList)
-                    {
-                        returnDirectory = Path.Combine(returnDirectory, addDirectory);
-                    }
-                }
             }
+            // Add the ExportDirectory to the end
+            returnDirectory = Path.Combine(returnDirectory, exporterConfig.ExportDirectory);
 
             string fileNamePattern = exporterConfig.FileNamePattern;
             string animationExportName = fileNamePattern.Replace("<Asset>", Name).Replace("<Definition>", definitionName);
             string exportName = is_animation ? (animationExportName + ".fbx") : (Name + ".fbx");
 
-            return Path.Combine(returnDirectory, exportName).ToString().Replace("/", Path.DirectorySeparatorChar.ToString());
+            return Path.Combine(returnDirectory, exportName).ToString().Replace("/", sep_char.ToString());
         }
 
         public void SetExportPathCall(object sender)

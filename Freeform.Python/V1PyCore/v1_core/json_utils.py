@@ -97,26 +97,3 @@ def read_json_tool_file(file_path):
         tool_list.append(dict)
 
     return tool_list
-
-
-def get_version(name, program = None):
-    '''
-    Reads the Versions .json file for the passed program
-
-    Args:
-        name (string): Name of the version to read in the json file
-        program (string): Which program to read the json file for
-
-    Returns:
-        string. String name for the version of the request
-    '''
-    program = "Maya" if not program else program
-    versions_file_path = os.path.join(os.environ['V1TOOLSROOT'], 'V1.Python', r"{0}\resources\Versions.json".format(program))
-    data = {}
-    if os.path.exists(versions_file_path):
-        data = read_json(versions_file_path)
-    else:
-        data.setdefault(name, {})
-        data[name]['version'] = "v1"
-
-    return data[name]['version']
