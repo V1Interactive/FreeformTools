@@ -17,6 +17,6 @@ def sl1():
 
 def main():
 	import maya_startup.user_setup
-	maya_startup.freeform_user_setup.setup()
+	maya_startup.user_setup.setup()
 
 pm.evalDeferred("main()")
