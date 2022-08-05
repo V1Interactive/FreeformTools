@@ -16,7 +16,7 @@ def sl1():
 #endregion
 
 def main():
-    from maya_startup import freeform_user_setup
-	freeform_user_setup.setup()
+	import maya_startup.user_setup
+	maya_startup.user_setup.setup()
 
 pm.evalDeferred("main()")
