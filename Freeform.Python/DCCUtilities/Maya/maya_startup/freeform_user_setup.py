@@ -23,7 +23,6 @@ import maya.mel as mel
 
 import os
 import sys
-import Queue
 
 
 # In V1 studio tools the Freeform Rigging tools project is nested in a 'FreeformTools' folder since this file evaluates first
@@ -31,13 +30,9 @@ import Queue
 
 if os.path.exists(os.path.join(os.environ['V1TOOLSROOT'], 'Freeform.Python', 'Freeform.Rigging', 'Maya')):
     sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'Freeform.Python', 'Freeform.Rigging', 'Maya'))
-else:
-    sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'FreeformTools', 'Freeform.Python', 'Freeform.Rigging', 'Maya'))
 
 if os.path.exists(os.path.join(os.environ['V1TOOLSROOT'], 'Freeform.Python', 'V1PyCore')):
     sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'Freeform.Python', 'V1PyCore'))
-else:
-    sys.path.append(os.path.join(os.environ['V1TOOLSROOT'], 'FreeformTools', 'Freeform.Python', 'V1PyCore'))
 
 
 import smtplib
