@@ -1478,9 +1478,12 @@ class Rig_Component(Component_Base):
             component.rig(target_skeleton_dict, side, region, component_dict['world_space'], control_holder_list, maya_utils.baking.Global_Bake_Queue(), **kwargs_dict)
             
             return_component = component
-        elif (str(compare_info) == str(root_info) and str(compare_info) == str(end_info)):
+        elif (str(compare_info) == str(root_info) or str(compare_info) == str(end_info)):
             # If the rigging trying to be applied is already there, return the existing component, and upadte if necessary
-            return_component = Component_Base.create_from_network_node(root_component_network.node)
+            if str(compare_info) == str(root_info):
+                return_component = Component_Base.create_from_network_node(root_component_network.node)
+            else:
+                return_component = Component_Base.create_from_network_node(end_component_network.node)
             return_component.update(component_dict)
             exists = True
 

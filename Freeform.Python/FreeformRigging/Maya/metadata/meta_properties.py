@@ -208,6 +208,27 @@ class ExportProperty(CommonProperty):
         #    pm.delete(self.node)
             
         return self.data['export']
+
+class HIKProperty(CommonProperty):
+    '''
+    Property that connects a Character to an HIK Characterization and Holds retargetting options for the HIK
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+
+    Node Attributes:
+        export (boolean): Whether or not to export the connected object
+    '''
+    _do_register = True
+
+    def __init__(self, node_name = 'hik_property', node = None, namespace = ""):
+        super(HIKProperty, self).__init__(node_name, node, namespace)
 #endregion
 
 #region Rig Properties
