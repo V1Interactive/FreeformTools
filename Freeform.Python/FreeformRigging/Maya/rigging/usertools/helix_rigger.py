@@ -53,7 +53,7 @@ from rigging.rig_overdrivers.overdriver import Overdriver, Position_Overdriver, 
 from metadata.network_core import AddonCore, AddonControls, CharacterCore, ComponentCore, ControlJoints, JointsCore, RigCore, RigComponent, OverDrivenControl, SkeletonJoints
 from metadata.exporter_properties import ExportDefinition
 from metadata.export_modify_properties import AnimCurveProperties
-from metadata.meta_properties import ControlProperty
+from metadata.meta_properties import ControlProperty, HIKProperty
 
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -141,6 +141,7 @@ class HelixRigger:
         self.vm.SetColorSetHandler += self.set_color_set
         self.vm.SetBindCharacterHandler += self.set_bind_character
         self.vm.FreezeCharacterHandler += self.freeze_character
+        self.vm.HIKCharacterizeHandler += self.hik_characterize
         self.vm.SetRigPathHandler += self.set_rig_path
         self.vm.DeleteCharacterHandler += self.delete_character
         self.vm.QuickFKCharacterHandler += self.quick_fk_rig
@@ -152,6 +153,7 @@ class HelixRigger:
         self.vm.SaveBakeRangeHandler += self.save_bake_range
         self.vm.TransferJointsHandler += self.transfer_anim_joints
         self.vm.TransferRegionsHandler += self.transfer_anim_regions
+        self.vm.TransferHIKHandler += self.transfer_anim_hik
         self.vm.ImportUE4AnimationHandler += self.import_ue4_animation
         self.vm.OpenCharacterImporterHandler += self.open_character_importer
         self.vm.LoadCharacterHandler += self.load_character_call
@@ -211,6 +213,7 @@ class HelixRigger:
         self.vm.SetColorSetHandler -= self.set_color_set
         self.vm.SetBindCharacterHandler -= self.set_bind_character
         self.vm.FreezeCharacterHandler -= self.freeze_character
+        self.vm.HIKCharacterizeHandler -= self.hik_characterize
         self.vm.SetRigPathHandler -= self.set_rig_path
         self.vm.DeleteCharacterHandler -= self.delete_character
         self.vm.QuickFKCharacterHandler -= self.quick_fk_rig
@@ -221,6 +224,7 @@ class HelixRigger:
         self.vm.SaveSettingHandler -= self.save_setting
         self.vm.SaveBakeRangeHandler -= self.save_bake_range
         self.vm.TransferJointsHandler -= self.transfer_anim_joints
+        self.vm.TransferHIKHandler -= self.transfer_anim_hik
         self.vm.ImportUE4AnimationHandler -= self.import_ue4_animation
         self.vm.OpenCharacterImporterHandler -= self.open_character_importer
         self.vm.LoadCharacterHandler -= self.load_character_call
@@ -1567,6 +1571,43 @@ class HelixRigger:
         rigging.rig_tools.freeze_xform_rig(character_network)
 
     @csharp_error_catcher
+    def hik_characterize(self, vm, event_args):
+        '''
+        hik_characterize(self, vm, event_args)
+        Creates the HIK Characterization for the character in the current stance pose
+
+        Args:
+            vm (Rigging.RiggerVM): C# view model object sending the command
+            event_args (CharacterEventArgs): Passes the character to freeze from the UI
+        '''
+        autokey_state = pm.autoKeyframe(q=True, state=True)
+        pm.autoKeyframe(state=False)
+
+        character_node = pm.PyNode(event_args.character.NodeName)
+        character_network = metadata.meta_network_utils.create_from_node(character_node)
+        character_name = character_network.get("character_name")
+
+        joint_core_network = character_network.get_downstream(JointsCore)
+        character_joint_list = joint_core_network.get_connections()
+
+        first_joint = get_first_or_default(character_joint_list)
+        skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
+
+        rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
+        rigging.rig_base.Component_Base.zero_all_rigging(character_network)
+        rigging.skeleton.zero_character(first_joint)
+
+        hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty)
+
+        hik_name = '{0}_HIK'.format(character_name)
+        rigging.skeleton.create_hik_definition(hik_name, skeleton_dict)
+        
+        hik_property.connect_node(pm.PyNode(hik_name))
+
+        maya_utils.scene_utils.set_current_frame()
+        pm.autoKeyframe(state=autokey_state)
+
+    @csharp_error_catcher
     def set_rig_path(self, vm, event_args):
         '''
         set_rig_path(self, vm, event_args)
@@ -1926,6 +1967,19 @@ class HelixRigger:
             event_args (TransferEventArgs): Passes the source and destination character to transfer animation on from the UI
         '''
         rigging.skeleton.joint_transfer_animations(pm.PyNode(event_args.sourceCharacter.NodeName), pm.PyNode(event_args.destinationCharacter.NodeName))
+
+    @csharp_error_catcher
+    @undoable
+    def transfer_anim_hik(self, vm, event_args):
+        '''
+        transfer_anim_hik(self, vm, event_args)
+        Transfer animation from the source character loaded in the UI to the selected character using their HIK setup
+
+        Args:
+            vm (Rigging.Rigger): C# view model object sending the command
+            event_args (TransferEventArgs): Passes the source and destination character to transfer animation on from the UI
+        '''
+        rigging.skeleton.hik_transfer_animations(pm.PyNode(event_args.sourceCharacter.NodeName), pm.PyNode(event_args.destinationCharacter.NodeName))
 
     @csharp_error_catcher
     def import_ue4_animation(self, vm, event_args):

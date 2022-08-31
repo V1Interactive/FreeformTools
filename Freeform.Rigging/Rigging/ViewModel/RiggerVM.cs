@@ -52,6 +52,7 @@ namespace Freeform.Rigging
         public event EventHandler RemoveAnimationHandler;
         public event EventHandler SelectAllHandler;
         public event EventHandler UpdateCharacterHandler;
+        public event EventHandler HIKCharacterizeHandler;
         public event EventHandler AddNewJointsHandler;
         public event EventHandler UpdateCharacterNamespaceHandler;
         public event EventHandler UpdateCharacterNameHandler;
@@ -67,6 +68,7 @@ namespace Freeform.Rigging
         public event EventHandler SwapCharacterHandler;
         public event EventHandler TransferRegionsHandler;
         public event EventHandler TransferJointsHandler;
+        public event EventHandler TransferHIKHandler;
         public event EventHandler ImportUE4AnimationHandler;
         public event EventHandler SaveBakeRangeHandler;
         public event EventHandler SaveSettingHandler;
@@ -90,6 +92,7 @@ namespace Freeform.Rigging
         public RelayCommand SetCharacterCommand { get; set; }
         public RelayCommand SetTargetCharacterCommand { get; set; }
         public RelayCommand AddNewJointsCommand { get; set; }
+        public RelayCommand HIKCharacterizeCommand { get; set; }
         public RelayCommand UpdateCharacterNamespaceCommand { get; set; }
         public RelayCommand UpdateCharacterNameCommand { get; set; }
         public RelayCommand SetBindCharacterCommand { get; set; }
@@ -105,6 +108,7 @@ namespace Freeform.Rigging
         //public RelayCommand TransferAllAnimCommand { get; set; }
         public RelayCommand TransferAllRegionsCommand{ get; set; }
         public RelayCommand TransferAllJointsCommand { get; set; }
+        public RelayCommand TransferAllHIKCommand { get; set; }
         public RelayCommand ImportUE4AnimationCommand { get; set; }
         public RelayCommand RemoveAnimationCommand { get; set; }
         public RelayCommand SelectAllAnimatedCommand { get; set; }
@@ -766,6 +770,7 @@ namespace Freeform.Rigging
             SetCharacterCommand = new RelayCommand(SetActiveCharacterCall);
             SetTargetCharacterCommand = new RelayCommand(SetTargetCharacterCall);
             AddNewJointsCommand = new RelayCommand(AddNewJointsCall);
+            HIKCharacterizeCommand = new RelayCommand(HIKCharacterizeCall);
             UpdateCharacterNamespaceCommand = new RelayCommand(UpdateCharacterNamespaceCall);
             UpdateCharacterNameCommand = new RelayCommand(UpdateCharacterNameCall);
             SetBindCharacterCommand = new RelayCommand(SetBindCharacterCall);
@@ -790,6 +795,7 @@ namespace Freeform.Rigging
             //TransferAllAnimCommand = new RelayCommand(TransferAllAnimCall);
             TransferAllRegionsCommand = new RelayCommand(TransferAllRegionsCall);
             TransferAllJointsCommand = new RelayCommand(TransferAllJointsCall);
+            TransferAllHIKCommand = new RelayCommand(TransferAllHIKCall);
             ImportUE4AnimationCommand = new RelayCommand(ImportUE4AnimationCall);
 
             UpdateCharacterCommand = new RelayCommand(UpdateCharacterEventCall);
@@ -1034,6 +1040,20 @@ namespace Freeform.Rigging
             }
         }
 
+        public void TransferAllHIKCall(object sender)
+        {
+            if (TargetCharacter != null)
+            {
+                Character character = (Character)sender;
+                TransferEventArgs eventArgs = new TransferEventArgs()
+                {
+                    sourceCharacter = TargetCharacter,
+                    destinationCharacter = character
+                };
+                TransferHIKHandler?.Invoke(this, eventArgs);
+            }
+        }
+
         public void ImportUE4AnimationCall(object sender)
         {
             Character character = (Character)sender;
@@ -1185,6 +1205,15 @@ namespace Freeform.Rigging
                 character = (Character)sender
             };
             AddNewJointsHandler?.Invoke(this, eventArgs);
+        }
+
+        public void HIKCharacterizeCall(object sender)
+        {
+            CharacterEventArgs eventArgs = new CharacterEventArgs()
+            {
+              character = (Character)sender
+            };
+            HIKCharacterizeHandler?.Invoke(this, eventArgs);
         }
 
         public void UpdateCharacterNamespaceCall(object sender)

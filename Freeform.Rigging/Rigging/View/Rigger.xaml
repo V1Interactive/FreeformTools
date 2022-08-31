@@ -1115,6 +1115,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Transfer (Regions)" 
                                                           Command="{Binding Data.TransferAllRegionsCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                                <MenuItem Header="Transfer (HIK)" 
+                                                          Command="{Binding Data.TransferAllHIKCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <MenuItem Header="Import UE4 Animation" 
                                                           Command="{Binding Data.ImportUE4AnimationCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
@@ -1149,6 +1152,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                         <TextBlock Style="{StaticResource LightTextBlock}" Text="Not Undoable"/>
                                                     </MenuItem.ToolTip>
                                                 </MenuItem>
+                                                <MenuItem Header="HIK Characterization" 
+                                                          Command="{Binding Data.HIKCharacterizeCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <MenuItem Header="Update Skeleton" 
                                                           Command="{Binding Data.AddNewJointsCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>

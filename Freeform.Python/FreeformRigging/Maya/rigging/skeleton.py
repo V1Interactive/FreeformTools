@@ -18,6 +18,7 @@ If not, see <https://www.gnu.org/licenses/>.
 '''
 
 import pymel.core as pm
+import maya.mel as mel
 
 import inspect
 import math
@@ -33,7 +34,7 @@ import metadata
 # from rigging import rig_tools
 from rigging import constraints
 from metadata.joint_properties import RigMarkupProperty, JointRetargetProperty
-from metadata.meta_properties import ExportProperty, ControlProperty
+from metadata.meta_properties import ExportProperty, ControlProperty, HIKProperty
 from metadata.network_core import AttachmentJoints, AddonCore, AddonControls, CharacterCore, ComponentCore, ControlJoints, JointsCore, RegionsCore, SkeletonJoints
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -1315,3 +1316,122 @@ def get_rig_network_from_region(skele_dict, side, region):
     component_network = [x for x in root_network_list if x in end_network_list]
 
     return get_first_or_default(component_network)
+
+
+def hik_transfer_animations(source_node, dest_node):
+    '''
+    Transfer animation between 2 characters via HIK.  Both skeleton's are zeroed before
+    transfer.
+
+    Args:
+        source_node (PyNode): A joint in the skeleton of the driving animation
+        dest_node (PyNode): A joint in the skeleton of the chatacter animation will be transfered to
+    '''
+    v1_core.v1_logging.get_logger().info("Animation Retarget with HIK - {0} -> {1}".format(source_node.name(), dest_node.name()))
+    autokey_state = pm.autoKeyframe(q=True, state=True)
+    pm.autoKeyframe(state=False)
+
+    source_network = metadata.meta_network_utils.create_from_node(source_node)
+    source_hik_property = metadata.meta_property_utils.get_property(source_node, HIKProperty)
+
+    character_network = metadata.meta_network_utils.create_from_node(dest_node)
+    character_hik_property = metadata.meta_property_utils.get_property(dest_node, HIKProperty)
+
+    if source_hik_property and character_hik_property:
+        source_hik_node = source_hik_property.get_first_connection(node_type=pm.nt.HIKCharacterNode)
+        character_hik_node = character_hik_property.get_first_connection(node_type=pm.nt.HIKCharacterNode)
+
+        mel.eval("HIKCharacterControlsTool;")
+
+        mel.eval('hikSetCurrentCharacter("{0}");'.format(character_hik_node.name()))
+        mel.eval('hikSetCurrentSourceFromCharacter("{0}");'.format(character_hik_node.name()))
+        mel.eval('refreshAllCharacterLists();')
+
+        mel.eval("HIKCharacterControlsTool;")
+        mel.eval('hikSetCharacterInput("{0}", "{1}");'.format(character_hik_node.name(), source_hik_node.name()))
+        mel.eval('hikUpdateSourceList();')
+        mel.eval('hikUpdateDefinitionUI;')
+        mel.eval('hikBakeCharacter(0);')
+
+    pm.autoKeyframe(state=autokey_state)
+
+def create_hik_definition(character_name, skeleton_dict, hik_map = None):
+    '''
+    0 = root
+    1 = pelvis
+    2 = left thigh
+    3 = left calf
+    4 = left foot
+    5 = right thigh
+    6 = right calf
+    7 = right foot
+    8 = spine
+    23-31 = extra spines
+    9 = left upperarm
+    10 = left lowerarm
+    11 = left hand
+    12 = right upperarm
+    13 = right lowerarm
+    14 = right hand
+    15 = head
+    16 = left toe base
+    17 = right toe base
+    18 = left shoulder
+    19 = right shoulder
+    20 = neck
+    32-40 = extra necks
+    21 = left finger base
+    22 = right finger base
+    
+    50-53 = left thumb
+    54-57 = left index
+    58-61 = left middle
+    62-65 = left ring
+    66-69 = left pinky
+    70-73 = left 6th finger
+
+    74-77 = right thumb
+    78-81 = right index
+    82-85 = right middle
+    86-89 = right ring
+    90-93 = right pinky
+    94-97 = right 6th finger
+
+    98-101 is 6th left foot toe
+    102-121 are left foot toes
+    122-125 is 6th right foot toe
+    126-145 are right foot toes
+    146 is left hand thumb 0
+    '''
+    if hik_map is None:
+        config_manager = v1_core.global_settings.ConfigManager()
+        hik_map = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("HIKDefinition")
+
+    if hik_map is not None:
+        # Source the following scripts. If the code fails, then you'll have to load them and run them:
+        MAYA_LOCATION = os.environ['MAYA_LOCATION']
+        mel.eval('source "'+MAYA_LOCATION+'/scripts/others/hikGlobalUtils.mel"')
+        mel.eval('source "'+MAYA_LOCATION+'/scripts/others/hikCharacterControlsUI.mel"')
+        mel.eval('source "'+MAYA_LOCATION+'/scripts/others/hikDefinitionOperations.mel"')
+
+        mel.eval("HIKCharacterControlsTool;")
+
+        mel.eval('hikCreateCharacter("{0}");'.format(character_name))
+        mel.eval('hikUpdateCharacterList();')
+        mel.eval('hikSelectDefinitionTab();')
+
+        for map_key, map_value in hik_map.items():
+            side, region, index_list = hik_map.get(map_key).split(';')
+            index_list = eval(index_list)
+    
+            side_dict = skeleton_dict.get(side)
+            region_dict = side_dict.get(region)
+            skeleton_chain = get_joint_chain(region_dict.get('root'), region_dict.get('end'))
+            ordered_chain = sort_chain_by_hierarchy(skeleton_chain)
+            ordered_chain.reverse()
+            for i, hik_index in enumerate(index_list):
+                if hik_index != -1:
+                    mel.eval('setCharacterObject("{0}", "{1}",{2},0);'.format(ordered_chain[i].name(), character_name, hik_index))
+
+        mel.eval('hikUpdateDefinitionUI;')
+        mel.eval('hikToggleLockDefinition();')

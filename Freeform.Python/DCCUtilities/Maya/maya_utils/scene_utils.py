@@ -321,6 +321,8 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
         **kwargs (kwargs): keyword args to pass along to pm.importFile
     '''
     scene_time_tuple = get_scene_times()
+    current_time = pm.currentTime()
+    current_fps = pm.currentUnit(q=True, t=True)
 
     import_return = None
     pre_import_list = pm.ls(assemblies = True)
@@ -342,7 +344,9 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2]) 
     finally:
         fbx_wrapper.FBXImportMode(v = current_import_mode)
+        pm.currentUnit(t=current_fps)
         set_scene_times(scene_time_tuple)
+        pm.currentTime(current_time)
 
     if not import_return and kwargs['returnNewNodes'] == True:
         post_import_list = pm.ls(assemblies = True)
