@@ -1338,8 +1338,8 @@ def hik_transfer_animations(source_node, dest_node):
     character_hik_property = metadata.meta_property_utils.get_property(dest_node, HIKProperty)
 
     if source_hik_property and character_hik_property:
-        source_hik_node = source_hik_property.get_first_connection(node_type=pm.nt.HIKCharacterNode)
-        character_hik_node = character_hik_property.get_first_connection(node_type=pm.nt.HIKCharacterNode)
+        source_hik_node = source_hik_property.get_hik_node()
+        character_hik_node = character_hik_property.get_hik_node()
 
         mel.eval("HIKCharacterControlsTool;")
 
@@ -1432,18 +1432,28 @@ def create_hik_definition(character_name, skeleton_dict, hik_map = None):
         mel.eval('hikUpdateCharacterList();')
         mel.eval('hikSelectDefinitionTab();')
 
+        missing_markup = []
         for map_value in hik_map.values():
             side, region, index_list = map_value.split(';')
             index_list = eval(index_list) # eval the string into a list
     
             side_dict = skeleton_dict.get(side)
-            region_dict = side_dict.get(region)
-            skeleton_chain = get_joint_chain(region_dict.get('root'), region_dict.get('end'))
-            ordered_chain = sort_chain_by_hierarchy(skeleton_chain)
-            ordered_chain.reverse()
-            for i, hik_index in enumerate(index_list):
-                if hik_index != -1:
-                    mel.eval('setCharacterObject("{0}", "{1}",{2},0);'.format(ordered_chain[i].name(), character_name, hik_index))
+            if side_dict:
+                region_dict = side_dict.get(region)
+                if region_dict:
+                    skeleton_chain = get_joint_chain(region_dict.get('root'), region_dict.get('end'))
+                    ordered_chain = sort_chain_by_hierarchy(skeleton_chain)
+                    ordered_chain.reverse()
+                    for i, hik_index in enumerate(index_list):
+                        if hik_index != -1:
+                            mel.eval('setCharacterObject("{0}", "{1}",{2},0);'.format(ordered_chain[i].name(), character_name, hik_index))
+                else:
+                    missing_markup.append((side,region))
+            else:
+                missing_markup.append((side,region))
 
+        if missing_markup:
+            missing_str = '\n'.join([str(x) for x in missing_markup])
+            v1_shared.usertools.message_dialogue.open_dialogue(missing_str, "Missing Markup")
         mel.eval('hikUpdateDefinitionUI;')
         mel.eval('hikToggleLockDefinition();')

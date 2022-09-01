@@ -1586,24 +1586,15 @@ class HelixRigger:
 
         character_node = pm.PyNode(event_args.character.NodeName)
         character_network = metadata.meta_network_utils.create_from_node(character_node)
-        character_name = character_network.get("character_name")
-
         joint_core_network = character_network.get_downstream(JointsCore)
         character_joint_list = joint_core_network.get_connections()
-
         first_joint = get_first_or_default(character_joint_list)
-        skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
 
         rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
         rigging.rig_base.Component_Base.zero_all_rigging(character_network)
         rigging.skeleton.zero_character(first_joint)
-
-        hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty)
-
-        hik_name = '{0}_HIK'.format(character_name)
-        rigging.skeleton.create_hik_definition(hik_name, skeleton_dict)
         
-        hik_property.connect_node(pm.PyNode(hik_name))
+        hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty)
 
         maya_utils.scene_utils.set_current_frame()
         pm.autoKeyframe(state=autokey_state)

@@ -344,15 +344,25 @@ class Properties_Binding(Binding):
             current_properties = metadata.meta_property_utils.get_properties_dict(obj)
             data = property_data['data']
 
-            # If the property already exists with correct data update and move on
+            # If the property already exists update data if necessary and move on
             if property_class in current_properties.keys():
                 do_continue = False
                 for prop in current_properties[property_class]:
-                    if prop.compare(data):
-                        prop.data = data
+                    # If we know there won't be multiple properties copy data and continue
+                    if not prop.multi_allowed:
+                        if not prop.compare(data):
+                            prop.data = data
                         do_continue = True
-                        break
+                    # If there may be more than one of the same property check for matching guids 
+                    # before copying data and continue.
+                    else:
+                        if prop.get('guid') == data.get('guid'):
+                            if not prop.compare(data):
+                                prop.data = data
+                            do_continue = True
+                            break
                 if do_continue:
+                    # Make sure we don't fall through to adding the property.
                     continue
 
             if property_class == ExportProperty and property_class in current_properties.keys():
