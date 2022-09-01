@@ -1389,19 +1389,31 @@ def create_hik_definition(character_name, skeleton_dict, hik_map = None):
     62-65 = left ring
     66-69 = left pinky
     70-73 = left 6th finger
-
+    146 = left thumb 0
+    147 = left index 0
+    148 = left middle 0
+    149 = left ring 0
+    150 = left pinky 0
+    151 = left 6th finger 0
+    
     74-77 = right thumb
     78-81 = right index
     82-85 = right middle
     86-89 = right ring
     90-93 = right pinky
     94-97 = right 6th finger
+    152 = right thumb 0
+    153 = right index 0
+    154 = right middle 0
+    155 = right ring 0
+    156 = right pinky 0
+    157 = right 6th finger 0
 
     98-101 is 6th left foot toe
     102-121 are left foot toes
     122-125 is 6th right foot toe
     126-145 are right foot toes
-    146 is left hand thumb 0
+    
     '''
     if hik_map is None:
         config_manager = v1_core.global_settings.ConfigManager()
@@ -1420,9 +1432,9 @@ def create_hik_definition(character_name, skeleton_dict, hik_map = None):
         mel.eval('hikUpdateCharacterList();')
         mel.eval('hikSelectDefinitionTab();')
 
-        for map_key, map_value in hik_map.items():
-            side, region, index_list = hik_map.get(map_key).split(';')
-            index_list = eval(index_list)
+        for map_value in hik_map.values():
+            side, region, index_list = map_value.split(';')
+            index_list = eval(index_list) # eval the string into a list
     
             side_dict = skeleton_dict.get(side)
             region_dict = side_dict.get(region)

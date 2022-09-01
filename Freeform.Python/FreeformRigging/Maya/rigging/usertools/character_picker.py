@@ -134,7 +134,7 @@ class CharacterPicker(object):
         character_node_list = [x for x in new_network_list if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == character_core_name]
 
         if do_update:
-            scene_tools.scene_manager.SceneManager().run_by_string('RiggerUI')
+            scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerUI')
 
         self.vm.Close()
 
@@ -237,7 +237,7 @@ class RigSwapper(CharacterPicker):
 
         pm.autoKeyframe(state=autokey_state)
 
-        scene_tools.scene_manager.SceneManager().run_by_string('RiggerUI')
+        scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerUI')
         self.vm.Close()
 
         if self.post_process:
