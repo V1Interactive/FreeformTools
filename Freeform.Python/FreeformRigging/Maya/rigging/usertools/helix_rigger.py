@@ -1017,6 +1017,7 @@ class HelixRigger:
         Args:
             character_network (CharacterCore): Network MetaNode object for a character
         '''
+        v1_core.v1_logging.get_logger().info("Loading Character - {0}".format(character_network.node))
         new_c_char = Freeform.Rigging.Character( character_network.node.character_name.get(), character_network.node.longName() )
         new_c_char.RigRegionEventHandler += self.rig_region_call
         new_c_char.DeselectHandler += self.deselect_all
@@ -1050,7 +1051,7 @@ class HelixRigger:
         '''
         component_network_list = character_network.get_all_downstream(ComponentCore)
         component_node_list = [x.node for x in component_network_list]
-        ui_component_node_list = self.component_lookup.keys()
+        ui_component_node_list = [x for x,y in self.component_lookup.items() if y[0] == c_character]
 
         add_component_network_list = [x for x in component_network_list if x.node not in ui_component_node_list]
         remove_component_node_list = [x for x in ui_component_node_list if x not in component_node_list]
