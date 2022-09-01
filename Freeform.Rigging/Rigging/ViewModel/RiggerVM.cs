@@ -66,7 +66,6 @@ namespace Freeform.Rigging
         public event EventHandler ZeroRigHandler;
         public event EventHandler ZeroCharacterHandler;
         public event EventHandler SwapCharacterHandler;
-        public event EventHandler TransferRegionsHandler;
         public event EventHandler TransferJointsHandler;
         public event EventHandler TransferHIKHandler;
         public event EventHandler ImportUE4AnimationHandler;
@@ -106,7 +105,6 @@ namespace Freeform.Rigging
         public RelayCommand SaveRiggingCommand { get; set; }
         public RelayCommand LoadRiggingCommand { get; set; }
         //public RelayCommand TransferAllAnimCommand { get; set; }
-        public RelayCommand TransferAllRegionsCommand{ get; set; }
         public RelayCommand TransferAllJointsCommand { get; set; }
         public RelayCommand TransferAllHIKCommand { get; set; }
         public RelayCommand ImportUE4AnimationCommand { get; set; }
@@ -793,7 +791,6 @@ namespace Freeform.Rigging
             BakeRangeCommand = new RelayCommand(BakeRangeCall);
 
             //TransferAllAnimCommand = new RelayCommand(TransferAllAnimCall);
-            TransferAllRegionsCommand = new RelayCommand(TransferAllRegionsCall);
             TransferAllJointsCommand = new RelayCommand(TransferAllJointsCall);
             TransferAllHIKCommand = new RelayCommand(TransferAllHIKCall);
             ImportUE4AnimationCommand = new RelayCommand(ImportUE4AnimationCall);
@@ -1023,20 +1020,6 @@ namespace Freeform.Rigging
                     destinationCharacter = character
                 };
                 TransferJointsHandler?.Invoke(this, eventArgs);
-            }
-        }
-
-        public void TransferAllRegionsCall(object sender)
-        {
-            if(TargetCharacter != null)
-            {
-                Character character = (Character)sender;
-                TransferEventArgs eventArgs = new TransferEventArgs()
-                {
-                  sourceCharacter = TargetCharacter,
-                  destinationCharacter = character
-                };
-                TransferRegionsHandler?.Invoke(this, eventArgs);
             }
         }
 

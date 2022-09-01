@@ -152,7 +152,6 @@ class HelixRigger:
         self.vm.SaveSettingHandler += self.save_setting
         self.vm.SaveBakeRangeHandler += self.save_bake_range
         self.vm.TransferJointsHandler += self.transfer_anim_joints
-        self.vm.TransferRegionsHandler += self.transfer_anim_regions
         self.vm.TransferHIKHandler += self.transfer_anim_hik
         self.vm.ImportUE4AnimationHandler += self.import_ue4_animation
         self.vm.OpenCharacterImporterHandler += self.open_character_importer
@@ -1931,20 +1930,6 @@ class HelixRigger:
             do_rotate_only = True if 'finger' in rig_component.network['component'].node.region.get() else False
             rig_component.attach_to_skeleton(target_dict, rotate_only = do_rotate_only, maintain_offset = True)
 
-
-    @csharp_error_catcher
-    @undoable
-    def transfer_anim_regions(self, vm, event_args):
-        '''
-        transfer_anim_regions(self, vm, event_args)
-        Transfer animation from the source character loaded in the UI to the selected character.  This does a 
-        skeleton to skeleton transfer.
-
-        Args:
-            vm (Rigging.Rigger): C# view model object sending the command
-            event_args (TransferEventArgs): Passes the source and destination character to transfer animation on from the UI
-        '''
-        rigging.skeleton.region_transfer_animations(pm.PyNode(event_args.sourceCharacter.NodeName), pm.PyNode(event_args.destinationCharacter.NodeName))
 
     @csharp_error_catcher
     @undoable
