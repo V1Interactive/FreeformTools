@@ -1112,9 +1112,6 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Transfer (Joints)" 
                                                           Command="{Binding Data.TransferAllJointsCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
-                                                <MenuItem Header="Transfer (Regions)" 
-                                                          Command="{Binding Data.TransferAllRegionsCommand, Source={StaticResource dataContextProxy}}" 
-                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <MenuItem Header="Transfer (HIK)" 
                                                           Command="{Binding Data.TransferAllHIKCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
