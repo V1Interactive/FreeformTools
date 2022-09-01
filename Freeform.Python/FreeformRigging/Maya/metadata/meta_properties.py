@@ -28,10 +28,9 @@ import v1_core
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 from v1_core.py_helpers import Freeform_Enum
-from metadata.network_core import MetaNode
+from metadata.network_core import MetaNode, CharacterCore, JointsCore
 from metadata.network_registry import Property_Registry, Property_Meta
 from metadata import meta_network_utils
-
 
 class NamespaceError(Exception):
     """Exception to call to inform user that non-integers were found in the bake range"""
@@ -229,6 +228,32 @@ class HIKProperty(CommonProperty):
 
     def __init__(self, node_name = 'hik_property', node = None, namespace = ""):
         super(HIKProperty, self).__init__(node_name, node, namespace)
+
+    def get_hik_node(self):
+        hik_node = self.get_first_connection(node_type=pm.nt.HIKCharacterNode)
+        return hik_node
+
+    def get_hik_properties(self):
+        return self.get_hik_node().propertyState.get()
+
+    def on_add(self, obj):
+        character_network = meta_network_utils.create_from_node(obj)
+        character_name = character_network.get("character_name")
+
+        joint_core_network = character_network.get_downstream(JointsCore)
+        character_joint_list = joint_core_network.get_connections()
+        first_joint = get_first_or_default(character_joint_list)
+        skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
+
+        hik_name = '{0}_HIK'.format(character_name)
+        rigging.skeleton.create_hik_definition(hik_name, skeleton_dict)
+        self.connect_node(pm.PyNode(hik_name))
+
+        ignore_list = ['message', 'caching', 'frozen', 'isHistoricallyInteresting', 'nodeState', 'binMembership', 'OutputPropertySetState']
+        for attr in self.get_hik_properties().listAttr():
+            attr_name = attr.attrName(longName=True)
+            if attr_name not in ignore_list:
+                self.node.addAttr(attr_name, proxy=attr)
 #endregion
 
 #region Rig Properties

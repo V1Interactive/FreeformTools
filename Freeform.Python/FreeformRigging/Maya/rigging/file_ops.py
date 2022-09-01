@@ -235,7 +235,11 @@ def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value,
         version = previous_version + 1 if previous_version != None else 1
     character_network.set('version', version)
 
-    save_data = {'skeleton':export_data, 'filetype' : "settings", 'subtype' : subtype, 'varient' : varient, 'version' : version}
+    character_data = {}
+    for binding in Binding_Sets.PROPERTIES.value:
+        binding.save_data(character_data, character_network.node)
+
+    save_data = {'skeleton':export_data, 'character':character_data, 'filetype' : "settings", 'subtype' : subtype, 'varient' : varient, 'version' : version}
     v1_core.json_utils.save_json(file_path, save_data)
 
 
@@ -318,6 +322,11 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
             binding_type_list = [Binding_Registry().get(x.type_name) for x in binding_list]
             if Properties_Binding in binding_type_list:
                 Properties_Binding().load_data(data, load_property_jnt)
+
+    character_data = load_settings_data.get('character')
+    if character_data:
+        for binding in Binding_Sets.PROPERTIES.value:
+            binding.load_data(character_data, character_network.node)
 
     for load_jnt in joints_network.get_connections():
         skeleton.remove_invalid_rig_markup(load_jnt)
