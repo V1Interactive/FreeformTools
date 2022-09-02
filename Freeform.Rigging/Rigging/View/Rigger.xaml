@@ -82,21 +82,22 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 </Style>
                             </MenuItem.ItemContainerStyle>
                         </MenuItem>
-                        <MenuItem Header="Load Details">
-                            <MenuItem Header="v- Section -v"/>
+                        <MenuItem Header="Load Section">
                             <ComboBox VerticalAlignment="Bottom" 
-                                  Height="20"
-                                  ItemsSource="{Binding Data.SettingsPresetList, Source={StaticResource dataContextProxy}}" 
-                                  SelectedIndex="0" 
-                                  SelectedValue="{Binding Data.SelectedPreset, Source={StaticResource dataContextProxy}, Mode=TwoWay}"/>
+                                      Height="20"
+                                      ItemsSource="{Binding Data.SettingsPresetList, Source={StaticResource dataContextProxy}}" 
+                                      SelectedIndex="0" 
+                                      SelectedValue="{Binding Data.SelectedPreset, Source={StaticResource dataContextProxy}, Mode=TwoWay}"/>
                         </MenuItem>
-                        
+
                         <MenuItem Header="_Save Settings..." 
                                   Command="{Binding Data.SaveSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
                         <MenuItem Header="Save _UE4 File..." 
                                   Command="{Binding Data.SaveUE4SettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
+                        <CheckBox Content="Increment Version"
+                                  IsChecked="{Binding Data.IncrementVersion, Source={StaticResource dataContextProxy}}"/>
                         
                     </MenuItem>
                     <MenuItem Header="_Rigging" 

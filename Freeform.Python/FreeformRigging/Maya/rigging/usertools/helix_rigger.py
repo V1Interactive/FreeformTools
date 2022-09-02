@@ -1856,7 +1856,7 @@ class HelixRigger:
             first_joint  = get_first_or_default(joint_list)
             binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
 
-            rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "rig", character_network.get("varient"))
+            rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "rig", character_network.get("varient"), event_args.incrementVersion)
         else:
             print("Found nothing to save settings from")
 
@@ -1881,7 +1881,7 @@ class HelixRigger:
                 rigging.skeleton.set_base_pose(get_first_or_default(joint_list))
 
                 binding_list = rigging.settings_binding.Binding_Sets["SKELETON"].value
-                rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "ue4", character_network.get("varient"))
+                rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "ue4", character_network.get("varient"), event_args.incrementVersion)
             
                 rigging.file_ops.load_settings_from_json(character_network.group, os.path.join(directory_path, settings_path))
         else:
