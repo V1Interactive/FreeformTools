@@ -323,7 +323,21 @@ namespace Freeform.Rigging
             }
         }
 
-        bool _removeExisting;
+        bool _incrementVersion;
+        public bool IncrementVersion
+        {
+            get { return _incrementVersion; }
+            set
+            {
+                if (_incrementVersion != value)
+                {
+                    _incrementVersion = value;
+                    RaisePropertyChanged("IncrementVersion");
+                }
+            }
+        }
+
+    bool _removeExisting;
         public bool RemoveExisting
         {
             get { return _removeExisting; }
@@ -558,7 +572,7 @@ namespace Freeform.Rigging
             }
         }
 
-        string _quickSelectText;
+    string _quickSelectText;
         public string QuickSelectText
         {
             get { return _quickSelectText; }
@@ -1373,7 +1387,8 @@ namespace Freeform.Rigging
             SettingsEventArgs eventArgs = new SettingsEventArgs()
             {
                 character = (Character)sender,
-                preset = SelectedPreset.ToUpper()
+                preset = SelectedPreset.ToUpper(),
+                incrementVersion = IncrementVersion
             };
             SaveSettingsHandler?.Invoke(this, eventArgs);
         }
@@ -1468,6 +1483,7 @@ namespace Freeform.Rigging
         {
             public Character character = null;
             public string preset = "";
+            public bool incrementVersion = false;
         }
 
         public class BakeRangeEventArgs : EventArgs

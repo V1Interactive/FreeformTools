@@ -183,7 +183,7 @@ def get_skeleton_dict_from_settings(settings_file_path):
     return skeleton_dict
 
 
-def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None):
+def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None, increment_version = False):
     '''
     Save a character settings file out to json, prompting the user with a file dialog to pick the save path
 
@@ -197,9 +197,9 @@ def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value
     start_dir = relative_path if os.path.exists(relative_path) else os.path.expanduser("~")
     load_path = pm.fileDialog2(ds = 1, fm = 0, ff = "JSON - .json (*.json)", dir = start_dir, cap = "Save Character Settings")
     if load_path:
-        save_settings_to_json(jnt, get_first_or_default(load_path), binding_list, update, subtype, varient)
+        save_settings_to_json(jnt, get_first_or_default(load_path), binding_list, update, subtype, varient, increment_version)
 
-def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None):
+def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None, increment_version = False):
     '''
     Save a character settings file out to json
 
@@ -232,7 +232,8 @@ def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value,
     version = 1
     if load_settings_data is not None:
         previous_version = load_settings_data.get('version')
-        version = previous_version + 1 if previous_version != None else 1
+        if increment_version:
+            version = previous_version + 1 if previous_version != None else 1
     character_network.set('version', version)
 
     character_data = {}
