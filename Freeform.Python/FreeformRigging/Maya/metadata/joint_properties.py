@@ -106,7 +106,7 @@ class RigMarkupProperty(JointProperty):
             self.add_attr('group', 'string')
         return does_compare
 
-    def on_add(self, obj):
+    def on_add(self, obj, **kwargs):
         character_network = meta_network_utils.get_first_network_entry(obj, CharacterCore)
         regions_network = character_network.get_downstream(RegionsCore)
         if regions_network:
