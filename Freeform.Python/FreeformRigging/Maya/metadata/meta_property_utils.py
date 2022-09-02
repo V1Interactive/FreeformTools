@@ -172,7 +172,7 @@ def add_property(pynode, property_type, **kwargs):
         py_namespace = pynode.namespace()
         property = valid_type(namespace = py_namespace, **kwargs)
         property.connect_node(pynode)
-        property.on_add(pynode)
+        property.on_add(pynode, **kwargs)
         return property
     return None
 

@@ -1580,23 +1580,38 @@ class HelixRigger:
             vm (Rigging.RiggerVM): C# view model object sending the command
             event_args (CharacterEventArgs): Passes the character to freeze from the UI
         '''
-        autokey_state = pm.autoKeyframe(q=True, state=True)
-        pm.autoKeyframe(state=False)
-
         character_node = pm.PyNode(event_args.character.NodeName)
+        hik_property = metadata.meta_property_utils.get_property(character_node, HIKProperty)
+        if hik_property:
+            v1_shared.usertools.message_dialogue.open_dialogue("HIK Characterize has already been setup", "HIK Already Setup")
+            return
+
         character_network = metadata.meta_network_utils.create_from_node(character_node)
         joint_core_network = character_network.get_downstream(JointsCore)
         character_joint_list = joint_core_network.get_connections()
         first_joint = get_first_or_default(character_joint_list)
 
-        rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
-        rigging.rig_base.Component_Base.zero_all_rigging(character_network)
-        rigging.skeleton.zero_character(first_joint)
-        
-        hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty)
+        hik_char = None
+        for jnt in character_joint_list:
+            if hasattr(jnt, 'Character') and jnt.Character.get():
+                hik_char = jnt.Character.get()
+                break
 
-        maya_utils.scene_utils.set_current_frame()
-        pm.autoKeyframe(state=autokey_state)
+        if hik_char:
+            v1_shared.usertools.message_dialogue.open_dialogue("The skeleton is already part of an HIK Characterization.\nAdding Character to Rig", "HIK Already Setup")
+            hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty, hik_character=hik_char)
+        else:
+            autokey_state = pm.autoKeyframe(q=True, state=True)
+            pm.autoKeyframe(state=False)
+
+            rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
+            rigging.rig_base.Component_Base.zero_all_rigging(character_network)
+            rigging.skeleton.zero_character(first_joint)
+        
+            hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty)
+
+            maya_utils.scene_utils.set_current_frame()
+            pm.autoKeyframe(state=autokey_state)
 
     @csharp_error_catcher
     def set_rig_path(self, vm, event_args):

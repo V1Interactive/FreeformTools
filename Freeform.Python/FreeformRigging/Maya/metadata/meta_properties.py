@@ -107,7 +107,7 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
         '''
         return NotImplemented
 
-    def on_add(self, obj):
+    def on_add(self, obj, **kwargs):
         '''
         Perform the on_add action for the specific node
         '''
@@ -192,7 +192,7 @@ class ExportProperty(CommonProperty):
     '''
     _do_register = True
 
-    def __init__(self, node_name = 'export_property', node = None, namespace = ""):
+    def __init__(self, node_name = 'export_property', node = None, namespace = "", **kwargs):
         super(ExportProperty, self).__init__(node_name, node, namespace, export = (True, 'bool'))
 
     def act(self):
@@ -226,7 +226,7 @@ class HIKProperty(CommonProperty):
     '''
     _do_register = True
 
-    def __init__(self, node_name = 'hik_property', node = None, namespace = ""):
+    def __init__(self, node_name = 'hik_property', node = None, namespace = "", **kwargs):
         super(HIKProperty, self).__init__(node_name, node, namespace)
 
     def get_hik_node(self):
@@ -236,18 +236,23 @@ class HIKProperty(CommonProperty):
     def get_hik_properties(self):
         return self.get_hik_node().propertyState.get()
 
-    def on_add(self, obj):
-        character_network = meta_network_utils.create_from_node(obj)
-        character_name = character_network.get("character_name")
+    def on_add(self, obj, **kwargs):
+        hik_character = kwargs.get('hik_character')
 
-        joint_core_network = character_network.get_downstream(JointsCore)
-        character_joint_list = joint_core_network.get_connections()
-        first_joint = get_first_or_default(character_joint_list)
-        skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
+        if hik_character:
+            self.connect_node(hik_character)
+        else:
+            character_network = meta_network_utils.create_from_node(obj)
+            character_name = character_network.get("character_name")
 
-        hik_name = '{0}_HIK'.format(character_name)
-        rigging.skeleton.create_hik_definition(hik_name, skeleton_dict)
-        self.connect_node(pm.PyNode(hik_name))
+            joint_core_network = character_network.get_downstream(JointsCore)
+            character_joint_list = joint_core_network.get_connections()
+            first_joint = get_first_or_default(character_joint_list)
+            skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
+
+            hik_name = '{0}_HIK'.format(character_name)
+            rigging.skeleton.create_hik_definition(hik_name, skeleton_dict)
+            self.connect_node(pm.PyNode(hik_name))
 
         ignore_list = ['message', 'caching', 'frozen', 'isHistoricallyInteresting', 'nodeState', 'binMembership', 'OutputPropertySetState']
         for attr in self.get_hik_properties().listAttr():
@@ -306,7 +311,7 @@ class ControlProperty(RigProperty):
     _do_register = True
     multi_allowed = True
 
-    def __init__(self, node_name = 'control_property', node = None, namespace = ""):
+    def __init__(self, node_name = 'control_property', node = None, namespace = "", **kwargs):
         super(ControlProperty, self).__init__(node_name, node, namespace, control_type = ("", 'string'), ordered_index = (0, 'short'), 
                                               zero_translate = ([0,0,0], 'double3'), zero_rotate = ([0,0,0], 'double3'), locked = (False, 'bool'))
 
