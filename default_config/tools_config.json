@@ -7,6 +7,7 @@
     "Exporter": {
         "ExportPattern": ".../Working/../",
         "FileNamePattern": "<Asset>_<Definition>",
+		"ExportDirectory": "",
         "MatchDirectory": true
     },
     "Perforce": {
@@ -16,8 +17,9 @@
     },
     "Project": {
         "CharacterFolder": "Characters",
-		"ContentRootPath": "Robogore/Data",
-        "ProjectRootPath": "V1",
+		"EngineContentPath": "Assets",
+		"ContentRootPath": "Data",
+        "ProjectRootPath": "ProjectPath",
         "ProjectDrive": "D:/",
         "RigSearchPathList": [
             "Weapons",
