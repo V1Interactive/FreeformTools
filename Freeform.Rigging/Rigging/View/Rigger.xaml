@@ -90,13 +90,16 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                       SelectedValue="{Binding Data.SelectedPreset, Source={StaticResource dataContextProxy}, Mode=TwoWay}"/>
                         </MenuItem>
 
-                        <MenuItem Header="_Save Settings..." 
+                        <MenuItem Header="Save _Settings..." 
                                   Command="{Binding Data.SaveSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
-                        <MenuItem Header="Save _UE4 File..." 
-                                  Command="{Binding Data.SaveUE4SettingsCommand, Source={StaticResource dataContextProxy}}" 
+                        <MenuItem Header="Save _Character Properties..." 
+                                  Command="{Binding Data.SaveCharacterSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
-                        <CheckBox Content="Increment Version"
+                        <MenuItem Header="Save _Game Engine File..." 
+                                  Command="{Binding Data.SaveEngineSettingsCommand, Source={StaticResource dataContextProxy}}" 
+                                  CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
+                        <CheckBox Content="_Increment Version"
                                   IsChecked="{Binding Data.IncrementVersion, Source={StaticResource dataContextProxy}}"/>
                         
                     </MenuItem>

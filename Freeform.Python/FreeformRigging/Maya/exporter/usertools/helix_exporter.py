@@ -467,9 +467,13 @@ class HelixExporter(object):
         definition_node = pm.PyNode(event_args.NodeName)
         anim_curve_network.connect_node(definition_node)
 
-        c_anim_curves = HelixExporter.create_anim_curves(anim_curve_network, metadata.meta_property_utils.attribute_changed, self.set_frame, self.get_frame)
+        c_anim_curves = AnimCurveProperties.create_c_property(anim_curve_network, 
+                                                              attribute_changed = metadata.meta_property_utils.attribute_changed, 
+                                                              set_frame = self.set_frame, 
+                                                              get_frame = self.get_frame)
         event_args.Object = c_anim_curves
 
+    @csharp_error_catcher
     def new_rotation_curve(self, vm, event_args):
         '''
         new_rotation_curve(self, vm, event_args)
@@ -479,12 +483,13 @@ class HelixExporter(object):
             vm (DCCExporterVM): The C# DCCExporterVM calling the event
             event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
         '''
-        barrel_rotate_network = RotationCurveProperties()
+        rotate_curve_network = RotationCurveProperties()
 
         asset_node = pm.PyNode(event_args.NodeName)
-        barrel_rotate_network.connect_node(asset_node)
+        rotate_curve_network.connect_node(asset_node)
 
-        c_rotation_curve = HelixExporter.create_rotation_curve(barrel_rotate_network, metadata.meta_property_utils.attribute_changed)
+        c_rotation_curve = RotationCurveProperties.create_c_property(rotate_curve_network, 
+                                                                     attribute_changed=metadata.meta_property_utils.attribute_changed)
         event_args.Object = c_rotation_curve
 
     @csharp_error_catcher
@@ -502,7 +507,7 @@ class HelixExporter(object):
         definition_node = pm.PyNode(event_args.NodeName)
         remove_root_anim_network.connect_node(definition_node)
 
-        c_remove_root = HelixExporter.create_remove_root_animation(remove_root_anim_network)
+        c_remove_root = RemoveRootAnimationProperty.create_c_property(remove_root_anim_network)
         event_args.Object = c_remove_root
 
     @csharp_error_catcher
@@ -520,7 +525,7 @@ class HelixExporter(object):
         asset_node = pm.PyNode(event_args.NodeName)
         zero_character_network.connect_node(asset_node)
 
-        c_zero_character = HelixExporter.create_zero_character(zero_character_network)
+        c_zero_character = ZeroCharacterProperty.create_c_property(zero_character_network)
         event_args.Object = c_zero_character
 
     @csharp_error_catcher
@@ -538,7 +543,7 @@ class HelixExporter(object):
         asset_node = pm.PyNode(event_args.NodeName)
         zero_character_network.connect_node(asset_node)
 
-        c_zero_character = HelixExporter.create_zero_character_rotate(zero_character_network)
+        c_zero_character = ZeroCharacterRotateProperty.create_c_property(zero_character_network)
         event_args.Object = c_zero_character
 
     @csharp_error_catcher

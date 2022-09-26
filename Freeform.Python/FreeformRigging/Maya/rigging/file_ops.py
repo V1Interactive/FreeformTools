@@ -162,25 +162,82 @@ def get_settings_files(directory_path, type, varient = None):
 
     return return_path_list
 
+def get_first_settings_file(character_network):
+    '''
+    Get the first settings file path from a character
 
-def get_skeleton_dict_from_settings(settings_file_path):
+    Args:
+        character_network (PyNode): The Maya scene character network node for the character to save
+
+    Returns:
+        string. Full file path to the first settings file found
+    '''
+    relative_file_path = character_network.get('settings_file_path')
+    settings_file_path = v1_shared.file_path_utils.relative_path_to_content(relative_file_path)
+
+    directory_path = rig_base.Component_Base.get_character_root_directory(character_network.group)
+    if not settings_file_path and directory_path:
+        settings_list = get_settings_files(directory_path, "rig")
+        first_settings_file = get_first_or_default(settings_list)
+        settings_file_path = os.path.join(directory_path, first_settings_file) if first_settings_file else None
+
+    return settings_file_path
+
+def get_skeleton_dict_from_settings(settings_file_path, side_list = [], region_list = []):
+    '''
+    Create a skeleton dictionary from a settings file
+
+    Args:
+        settings_file_path (string): File path to the settings file to load from
+        side_list (list<string>): List of side strings to filter
+        region_list (list<string>): List of region strings to filter
+
+    Returns:
+        dict<string, dict>.  Dictionary of all region markup in the settings
+    '''
     load_settings_data = v1_core.json_utils.read_json(settings_file_path)
-    load_skeleton_dict = load_settings_data.get('skeleton')
+    load_skeleton_data = load_settings_data.get('skeleton')
 
     skeleton_dict = {}
-    for jnt_name, data_dict in load_skeleton_dict.items():
+    for jnt_name, data_dict in load_skeleton_data.items():
         for property_data in data_dict.get('properties').values():
             if property_data['type'] == "RigMarkupProperty":
                 data = property_data.get('data')
                 side = data.get('side')
                 region = data.get('region')
                 tag = data.get('tag')
+                if (side_list and side not in side_list) or (region_list and region not in region_list):
+                    continue
                 skeleton_dict.setdefault(side, {})
                 skeleton_dict[side].setdefault(region, {})
                 skeleton_dict[side][region][tag] = jnt_name
                 skeleton_dict[side][region]['group'] = data.get('group')
 
     return skeleton_dict
+
+def load_skeleton_bind_from_settings(file_path, character_network, skeleton_list):
+    '''
+    Load skeleton bind pose from a settings file onto the given skeleton
+
+    Args:
+        file_path (string): File path to the settings file to load from
+        character_network (MetaNode): The Maya scene character network node for the character to save
+        skeleton_list (list<PyNode>): List of all joints to load settings on
+    '''
+    autokey_state = pm.autoKeyframe(q=True, state=True)
+    pm.autoKeyframe(state=False)
+
+    binding_list = Binding_Sets.TRANSFORMS.value
+
+    load_settings_data = v1_core.json_utils.read_json(file_path)
+    load_skeleton_data = load_settings_data.get('skeleton')
+
+    if binding_list != Binding_Sets.PROPERTIES.value:
+        for jnt_name, data in load_skeleton_data.items():
+            for jnt in skeleton_list:
+                if jnt_name in jnt.stripNamespace().nodeName():
+                    for binding_object in binding_list:
+                        binding_object.load_data(data, jnt)
 
 
 def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value, update = False, subtype = "rig", varient = None, increment_version = False):
@@ -191,6 +248,9 @@ def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value
         jnt (PyNode): A Maya scene joint object that's part of a character skeleton
         binding_list (list<Binding>): List of all Binding objects to handle saving different settings
         update (boolean): whether or not to update the json file or create a new one
+        subtype (str): Name tag for the type of settings file
+        varient (str): Name tag for the character varient to filter files
+        increment_version (bool): Whether or not we should increment the file version # with save
     '''
     relative_path = rig_base.Component_Base.get_character_root_directory(jnt)
 
@@ -208,20 +268,23 @@ def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value,
         file_path (str): Full file path to the location to save the json file
         binding_list (list<Binding>): List of all Binding objects to handle saving different settings
         update (boolean): whether or not to update the json file or create a new one
+        subtype (str): Name tag for the type of settings file to filter by
+        varient (str): Name tag for the character varient to filter files
+        increment_version (bool): Whether or not we should increment the file version # with save
     '''
     load_settings_data = None
     if os.path.exists(file_path):
         load_settings_data = v1_core.json_utils.read_json(file_path)
 
-    load_skeleton_dict = None
+    load_skeleton_data = None
     if update:
-        load_skeleton_dict = v1_core.json_utils.read_json(file_path).get('skeleton')
+        load_skeleton_data = v1_core.json_utils.read_json(file_path).get('skeleton')
 
     root_joint = skeleton.get_root_joint(jnt)
     joint_list = [root_joint] + pm.listRelatives(root_joint, ad=True, type='joint')
     character_network = metadata.meta_network_utils.get_first_network_entry(root_joint, CharacterCore)
 
-    export_data = {} if not load_skeleton_dict else load_skeleton_dict
+    export_data = {} if not load_skeleton_data else load_skeleton_data
     for skeleton_joint in joint_list:
         skeleton_joint_name = skeleton_joint.name().replace(skeleton_joint.namespace(), '').split('|')[-1]
         export_data.setdefault(skeleton_joint_name, {})
@@ -241,6 +304,44 @@ def save_settings_to_json(jnt, file_path, binding_list = Binding_Sets.ALL.value,
         binding.save_data(character_data, character_network.node)
 
     save_data = {'skeleton':export_data, 'character':character_data, 'filetype' : "settings", 'subtype' : subtype, 'varient' : varient, 'version' : version}
+    v1_core.json_utils.save_json(file_path, save_data)
+
+def save_character_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.PROPERTIES.value, subtype = "character properties"):
+    '''
+    Save a settings file out to json storing only the character properties
+
+    Args:
+        jnt (PyNode): A Maya scene joint object that's part of a character skeleton
+        file_path (str): Full file path to the location to save the json file
+        binding_list (list<Binding>): List of all Binding objects to handle saving different settings
+        subtype (str): Name tag for the type of settings file to filter by
+    '''
+
+    relative_path = rig_base.Component_Base.get_character_root_directory(jnt)
+
+    start_dir = relative_path if os.path.exists(relative_path) else os.path.expanduser("~")
+    load_path = pm.fileDialog2(ds = 1, fm = 0, ff = "JSON - .json (*.json)", dir = start_dir, cap = "Save Character Properties")
+    if load_path:
+        save_character_settings_to_json(jnt, get_first_or_default(load_path), binding_list, subtype)
+
+def save_character_settings_to_json(jnt, file_path, binding_list = Binding_Sets.PROPERTIES.value, subtype = "character properties"):
+    '''
+    Save a settings file out to json storing only the character properties
+
+    Args:
+        jnt (PyNode): A Maya scene joint object that's part of a character skeleton
+        file_path (str): Full file path to the location to save the json file
+        binding_list (list<Binding>): List of all Binding objects to handle saving different settings
+        subtype (str): Name tag for the type of settings file to filter by
+    '''
+    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, CharacterCore)
+
+    export_data = {}
+    character_data = {}
+    for binding in binding_list:
+        binding.save_data(character_data, character_network.node)
+
+    save_data = {'skeleton':export_data, 'character':character_data, 'filetype' : "settings", 'subtype' : subtype, 'varient' : None, 'version' : 1}
     v1_core.json_utils.save_json(file_path, save_data)
 
 
@@ -271,20 +372,25 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
     autokey_state = pm.autoKeyframe(q=True, state=True)
     pm.autoKeyframe(state=False)
 
-    load_settings_data = v1_core.json_utils.read_json(file_path)
-    load_skeleton_dict = load_settings_data.get('skeleton')
-
     character_network = metadata.meta_network_utils.get_first_network_entry(character_grp, CharacterCore)
-    settings_version = load_settings_data.get('version')
-    version = settings_version if settings_version is not None else 1
-    character_network.set('version', version)
+
+    load_settings_data = v1_core.json_utils.read_json(file_path)
+    load_skeleton_data = load_settings_data.get('skeleton')
+    load_skeleton_data = {} if not load_skeleton_data else load_skeleton_data
+
+    if load_skeleton_data:
+        settings_version = load_settings_data.get('version')
+        version = settings_version if settings_version is not None else 1
+        character_network.set('version', version)
+        settings_file_path = v1_shared.file_path_utils.full_path_to_relative(file_path)
+        character_network.set('settings_file_path', settings_file_path)
 
     joints_network = character_network.get_downstream(JointsCore)
     target_namespace = character_grp.namespace()
 
     # Create any missing joints, parented to world so we know to fill them in next
     if binding_list != Binding_Sets.PROPERTIES.value:
-        for jnt_name, data in load_skeleton_dict.items():
+        for jnt_name, data in load_skeleton_data.items():
             if not pm.objExists( target_namespace + jnt_name ):
                 v1_core.v1_logging.get_logger().info("Creating Joint - {0}".format(jnt_name))
                 pm.select(None) # Clear selection before making joints so no auto-parenting happens
@@ -309,7 +415,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
                         xform_binding.load_data(data, jnt, target_namespace)
 
     load_property_jnt = None
-    for jnt_name, data in load_skeleton_dict.items():
+    for jnt_name, data in load_skeleton_data.items():
         load_property_jnt = pm.PyNode(target_namespace + jnt_name) if pm.objExists(target_namespace + jnt_name) else None
         joint_list = pm.ls(target_namespace + jnt_name, type='joint')
         load_property_jnt = get_first_or_default(joint_list, default = load_property_jnt)
@@ -340,7 +446,7 @@ def save_to_json_with_dialog(character_network):
     state out to file.  Prompts user to choose the file save path
 
     Args:
-        character_network (PyNode): The Maya scene character network node for the character to save
+        character_network (MetaNode): The Maya scene character network node for the character to save
     '''
     config_manager = v1_core.global_settings.ConfigManager()
     start_dir = config_manager.get_character_directory()
@@ -354,7 +460,7 @@ def save_to_json(character_network, file_path):
     state out to file
 
     Args:
-        character_network (PyNode): The Maya scene character network node for the character to save
+        character_network (MetaNode): The Maya scene character network node for the character to save
         file_path (str): Full file path to the location to save the json file
     '''
     rigging_data = {}
@@ -389,7 +495,7 @@ def load_from_json_with_dialog(character_network):
     to the character by region.  Prompts user to choose the file save path
 
     Args:
-        character_network (PyNode): The Maya scene character network node for the character to save
+        character_network (MetaNode): The Maya scene character network node for the character to save
     '''
     config_manager = v1_core.global_settings.ConfigManager()
     start_dir = config_manager.get_character_directory()
@@ -405,7 +511,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     to the character by region.
 
     Args:
-        character_network (PyNode): The Maya scene character network node for the character to save
+        character_network (MetaNode): The Maya scene character network node for the character to save
         file_path (str): Full file path to the location to save the json file
     '''
     bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)

@@ -47,9 +47,16 @@ http://abc-td.com/using-getweights-and-setweights-in-the-maya-python-api/
 
 
 def find_skin_cluster(obj):
-    obj = obj if type(obj) == pm.nt.Mesh else obj.getShape()
-    skin_cluster_list = obj.inMesh.listConnections(type='skinCluster')
-    return skin_cluster_list[0] if len(skin_cluster_list) == 1 else []
+    skin_cluster_name = pm.mel.eval('findRelatedSkinCluster {0}'.format(obj.name()))
+    return_cluster = None
+    if skin_cluster_name:
+        return_cluster = pm.PyNode(skin_cluster_name)
+    else:
+        obj = obj if type(obj) == pm.nt.Mesh else obj.getShape()
+        skin_cluster_list = obj.inMesh.listConnections(type='skinCluster')
+        return_cluster = skin_cluster_list[0] if len(skin_cluster_list) == 1 else None
+
+    return return_cluster
 
 
 #region settings file ops

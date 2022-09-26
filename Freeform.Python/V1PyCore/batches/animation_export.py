@@ -41,16 +41,17 @@ def file_commands(batch_dir):
         #import metadata
         #from metadata.network_core import CharacterCore, JointsCore
         #from rigging.component_registry import Component_Registry
+        #from rigging.rig_components.fk import FK
 
         #character_node = metadata.meta_network_utils.get_all_network_nodes(CharacterCore)[0]
         #character_network = metadata.meta_network_utils.create_from_node(character_node)
         #character_joint = character_network.get_downstream(JointsCore).get_connections()[0]
         #skeleton_dict = rigging.skeleton.get_skeleton_dict(character_joint)
 
-        #fk_pelvis = Component_Registry().get('FK')()
+        #fk_pelvis = Component_Registry().get(FK)()
         #fk_pelvis.rig(skeleton_dict, 'center', 'pelvis', world_space=True)
 
-        #fk_spine = Component_Registry().get('FK')()
+        #fk_spine = Component_Registry().get(FK)()
         #fk_spine.rig(skeleton_dict, 'center', 'spine', world_space=True)
 
         #rig_swapper = rigging.usertools.character_picker.RigSwapper([], character_node)

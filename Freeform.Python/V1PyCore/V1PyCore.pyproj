@@ -6,7 +6,7 @@
     <ProjectGuid>03600953-2c6a-4ff7-9656-1c17ddc464c5</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>__root__.py</StartupFile>
-    <SearchPath>..\..\..\Program Files\Autodesk\Maya2016\Python\Lib\site-packages\;W:\Program Files\Autodesk\Maya2020\Python\Lib\site-packages;W:\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
+    <SearchPath>..\..\..\Program Files\Autodesk\Maya2016\Python\Lib\site-packages\;..\..\..\..\Program Files\Autodesk\Maya2020\Python\Lib\site-packages;..\..\..\..\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>V1PyCore</Name>

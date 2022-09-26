@@ -21,9 +21,13 @@
 namespace HelixResources.Style
 {
     using System;
-    using System.ComponentModel;
+  using System.Collections;
+  using System.Collections.Generic;
+  using System.ComponentModel;
     using System.Drawing;
+    using System.Globalization;
     using System.IO;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using System.Windows;
     using System.Windows.Controls;
@@ -139,7 +143,47 @@ namespace HelixResources.Style
         public event PropertyChangedEventHandler PropertyChanged;
     }
 
-    public class Tabby : HeaderedContentControl
+  public class MultiSelectionListBox : ListBox
+  {
+    public static readonly DependencyProperty SelectedItemsListProperty = DependencyProperty.Register(
+      "SelectedItemsList",
+      typeof(IList),
+      typeof(MultiSelectionListBox),
+      new PropertyMetadata(null, OnSelectedItemList));
+
+    public IList SelectedItemsList
+    {
+      get { return (IList)GetValue(SelectedItemsListProperty); }
+      set { SetValue(SelectedItemsListProperty, value); }
+    }
+
+
+    public MultiSelectionListBox()
+    {
+      SelectionChanged += MultiSelectionListBox_SelectionChanged;
+    }
+
+
+    private static void OnSelectedItemList(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+      MultiSelectionListBox listBox = (MultiSelectionListBox)d;
+      IList newItemList = e.NewValue as IList;
+
+      listBox.SetSelectedItems(newItemList);
+    }
+
+    void MultiSelectionListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+      IEnumerable<object> tempListSrc = SelectedItems.Cast<object>();
+      List<object> tempListDest = new List<object>();
+      tempListDest.AddRange(tempListSrc.ToList());
+
+      SelectedItemsList = tempListDest;
+    }
+  }
+
+
+  public class Tabby : HeaderedContentControl
     {
         static Tabby()
         {
@@ -241,6 +285,19 @@ namespace HelixResources.Style
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new NotSupportedException();
+        }
+    }
+
+    public class BooleanToVisibilityMultiConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        {
+            return values.OfType<bool>().All(b => b) ? Visibility.Visible : Visibility.Hidden;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 

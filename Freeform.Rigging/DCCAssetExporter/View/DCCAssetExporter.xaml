@@ -658,10 +658,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
                     </Grid.RowDefinitions>
 
                     <ListBox SelectionMode="Single" 
-                                HorizontalContentAlignment="Stretch" 
-                                ItemsSource="{Binding Path=ExportDefinitionListViewSource.View}" 
-                                SelectedItem="{Binding Path=SelectedDefinition, UpdateSourceTrigger=PropertyChanged}" 
-                                Grid.Row="0">
+                             HorizontalContentAlignment="Stretch" 
+                             ItemsSource="{Binding Path=ExportDefinitionListViewSource.View}" 
+                             SelectedItem="{Binding Path=SelectedDefinition, UpdateSourceTrigger=PropertyChanged}" 
+                             Grid.Row="0">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>

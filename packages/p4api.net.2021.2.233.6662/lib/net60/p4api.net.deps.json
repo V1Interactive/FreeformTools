@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "p4api.net/2021.2.233.6662": {
+        "runtime": {
+          "p4api.net.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "p4api.net/2021.2.233.6662": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

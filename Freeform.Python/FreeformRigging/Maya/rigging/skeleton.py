@@ -32,10 +32,12 @@ import maya_utils
 import metadata
 
 # from rigging import rig_tools
-from rigging import constraints
+from rigging import constraints, skin_weights, file_ops
+from rigging.settings_binding import Binding_Sets, Bind_Translate, Bind_Rotate
 from metadata.joint_properties import RigMarkupProperty, JointRetargetProperty
-from metadata.meta_properties import ExportProperty, ControlProperty, HIKProperty
-from metadata.network_core import AttachmentJoints, AddonCore, AddonControls, CharacterCore, ComponentCore, ControlJoints, JointsCore, RegionsCore, SkeletonJoints
+from metadata.meta_properties import ExportProperty, ControlProperty, HIKProperty, PartialModelProperty, EditUVProperty
+from metadata.network_core import AttachmentJoints, AddonCore, AddonControls, CharacterCore, ComponentCore, ControlJoints, JointsCore, RegionsCore, SkeletonJoints, ImportedCore, MeshesCore
+from metadata.network_registry import Network_Registry, Property_Registry
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
@@ -181,7 +183,39 @@ def clean_skeleton_dict(skeleton_dict):
     for side, region in remove_item.items():         
         del skeleton_dict.get(side)[region]
 
-def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict, namespace, side_list = [], region_list = []):
+def update_skeleton_from_settings_data(template_settings_file, skeleton_root,):
+    load_settings_data = v1_core.json_utils.read_json(template_settings_file)
+    load_skeleton_data = load_settings_data.get('skeleton')
+
+    target_namespace = skeleton_root.namespace()
+    joints_network = metadata.meta_network_utils.get_first_network_entry(skeleton_root, JointsCore)
+
+    for jnt_name, data in load_skeleton_data.items():
+        if not pm.objExists( target_namespace + jnt_name ):
+            v1_core.v1_logging.get_logger().info("Creating Joint - {0}".format(jnt_name))
+            pm.select(None) # Clear selection before making joints so no auto-parenting happens
+            new_jnt = pm.joint(name = target_namespace + jnt_name)
+            pm.addAttr(new_jnt, ln='bind_translate', dt='double3')
+            pm.addAttr(new_jnt, ln='bind_rotate', dt='double3')
+
+            Bind_Translate().load_data(data, new_jnt)
+            Bind_Rotate().load_data(data, new_jnt)
+
+            joints_network.connect_node(new_jnt)
+
+    load_property_jnt = None
+    for jnt_name, data in load_skeleton_data.items():
+        load_property_jnt = pm.PyNode(target_namespace + jnt_name) if pm.objExists(target_namespace + jnt_name) else None
+        joint_list = pm.ls(target_namespace + jnt_name, type='joint')
+        load_property_jnt = get_first_or_default(joint_list, default = load_property_jnt)
+        # If the joint from the settings file exists in the skeleton
+        if load_property_jnt:
+            # Joints we just made above should be the only ones without a parent
+            if load_property_jnt.getParent() == None:
+                for joint_binding in Binding_Sets.NEW_JOINT.value:
+                    joint_binding.load_data(data, load_property_jnt, target_namespace)
+
+def build_regions_from_settings_dict(template_settings_file, orig_skeleton_dict, namespace, side_list = [], region_list = []):
     '''
     Creates all of the regions from a settings file on the skeleton with matching joint names in the provided namespace
     Does not create any regions that already exist on the skeleton in the namespace
@@ -193,14 +227,12 @@ def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict,
         side_list (list<string>): List of all side names to include in loading
         region_list (list<string>): List of all region names to include in loading
     '''
-    skeleton_dict = rigging.file_ops.get_skeleton_dict_from_settings(template_settings_file)
+    skeleton_dict = file_ops.get_skeleton_dict_from_settings(template_settings_file, side_list, region_list)
 
     markup_jnt = None
     for side, region_dict in skeleton_dict.items():
-        if side_list and side not in side_list:
-            continue
         for region, data_dict in region_dict.items():
-            if region_list and region not in region_list and (orig_skeleton_dict.get(side) and region in orig_skeleton_dict[side].keys()):
+            if (orig_skeleton_dict.get(side) and region in orig_skeleton_dict[side].keys()):
                 continue
             for data_name, jnt_name in data_dict.items():
                 if pm.objExists(namespace+jnt_name):
@@ -227,8 +259,8 @@ def build_regions_from_skeleton_dict(template_settings_file, orig_skeleton_dict,
     if markup_jnt:
         remove_invalid_rig_markup(markup_jnt)
     else:
-        confirm_message="No joints on the character match the template settings. \nThis could be caused by a missing or incorrect namespace on the character network node"
-        pm.confirmDialog(title="Mismatching Joints", message=confirm_message, button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
+        confirm_message="No Regions were created. \nThis could be caused by a missing or incorrect namespace on the character network node"
+        pm.confirmDialog(title="Regions Not Created", message=confirm_message, button=['OK'], defaultButton='OK', cancelButton='OK', dismissString='OK' )
 
 
 def remove_invalid_rig_markup(jnt):
@@ -982,7 +1014,7 @@ def region_transfer_animations(source_node, dest_node, keep_offset = True):
 
     pm.autoKeyframe(state=autokey_state)
 
-def joint_transfer_animations(source_node, dest_node, keep_offset = True):
+def joint_transfer_animations(source_node, dest_node, keep_offset = True, joint_list = None):
     '''
     Transfer animation between 2 skeletons via parent constraints between each joint.  Both skeleton's are zeroed before
     transfer.  Matching joints are found by name
@@ -997,7 +1029,7 @@ def joint_transfer_animations(source_node, dest_node, keep_offset = True):
 
     character_network = metadata.meta_network_utils.create_from_node(dest_node)
     joint_core_network = character_network.get_downstream(JointsCore)
-    character_joint_list = joint_core_network.get_connections()
+    character_joint_list = joint_core_network.get_connections() if joint_list is None else joint_list
     character_namespace = character_network.group.namespace()
 
     source_network = metadata.meta_network_utils.create_from_node(source_node)
@@ -1294,6 +1326,9 @@ def zero_character_eyes():
 
 
 def parent_shapes_to_joint(obj_list):
+    '''
+
+    '''
     joint_list = pm.ls(obj_list, type='joint')
     joint_obj = get_first_or_default(joint_list)
     if joint_obj:
@@ -1307,6 +1342,9 @@ def parent_shapes_to_joint(obj_list):
 
 
 def get_rig_network_from_region(skele_dict, side, region):
+    '''
+
+    '''
     root_joint = skele_dict.get(side).get(region).get('root')
     end_joint = skele_dict.get(side).get(region).get('end')
 
@@ -1317,6 +1355,170 @@ def get_rig_network_from_region(skele_dict, side, region):
 
     return get_first_or_default(component_network)
 
+
+def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_group = None, settings_data = (None, None)):
+    '''
+    Import a list of files and combine all meshes from each file into a single skinned mesh
+    on a single skeleton.
+
+    Args:
+        path_list (list<string>): List of all file paths to imports
+        skeleton_list (list<PyNode>): List of all skeleton joints to bind to
+        base_mesh (PyNode): Existing mesh in the scene to combine imported meshes with
+        settings_data ((character_network, settings_path)): A tuple of the character network and settings path from Rigger's ActiveCharacter
+
+    Returns:
+        PyNode. The combined mesh resulting from the imports
+    '''
+    mesh_name = "Combined_Mesh"
+    existing_joint_list = skeleton_list if skeleton_list else pm.ls(type='joint')
+
+    import_dict = {}
+    for path in path_list:
+        import_objects = maya_utils.scene_utils.import_file_safe(path, fbx_mode="add", tag_imported=True, returnNewNodes=True)
+        import_dict[path] = import_objects
+
+    # if there aren't existing joints find the first skeleton in the imported joints
+    search_joint_list = []
+    delete_skeleton_list = []
+    if existing_joint_list:
+        search_joint_list = existing_joint_list
+
+    full_imported_joint_list = []
+    for file_import_list in import_dict.values():
+        imported_joint_list = pm.ls(file_import_list, type='joint')
+        full_imported_joint_list.extend(imported_joint_list)
+        if not existing_joint_list:
+            search_joint_list.extend(imported_joint_list)
+        else:
+            # if there's already a joint list put all imported joints in the delete list
+            delete_skeleton_list.extend(imported_joint_list)
+
+    # find one skeleton and store all other joints for delete
+    root_jnt = get_root_joint(search_joint_list[0])
+    root_namespace = root_jnt.namespace()
+    combine_skeleton_list = []
+    for jnt in search_joint_list:
+        if root_jnt.shortName().rsplit('|')[-1] in jnt.longName().split('|'):
+            combine_skeleton_list.append(jnt)
+        else:
+            delete_skeleton_list.append(jnt)
+
+    # If there's a character in the scene load onto the first one
+    character_network = metadata.meta_network_utils.get_first_network_entry(jnt, CharacterCore)
+    if character_network:
+        settings_path = file_ops.get_first_settings_file(character_network)
+        if not any(settings_data) and character_network is not None and settings_path is not None:
+            settings_data = (character_network, settings_path)
+
+    # if the bind skeleton is a character set bind pose of all skeletons to match
+    # and zero the character
+    if all(settings_data):
+        import freeform_utils.character_utils
+        character_network, settings_path = settings_data
+        file_ops.load_skeleton_bind_from_settings(settings_path, character_network, full_imported_joint_list)
+        if mesh_group is None:
+            mesh_group = character_network.mesh_group
+            if base_mesh is None:
+                base_mesh = freeform_utils.character_utils.get_combine_mesh(character_network)
+
+        freeform_utils.character_utils.zero_character(character_network)
+
+    # duplicate all meshes and bind them to the one skeleton
+    dupe_combine_list = []
+    delete_mesh_list = []
+    for path, imported_obj_list in import_dict.items():
+        imported_mesh_list = pm.ls(imported_obj_list, type='mesh')
+        imported_mesh_list = [x.getParent() for x in imported_mesh_list]
+        imported_mesh_list = list(set(imported_mesh_list))
+        delete_mesh_list.extend(imported_mesh_list)
+        for mesh in imported_mesh_list:
+            mesh_skin_cluster = skin_weights.find_skin_cluster(mesh)
+            if (mesh_skin_cluster is not None):
+                dupe_mesh = duplicate_for_combine(mesh, mesh_skin_cluster, combine_skeleton_list)
+
+                property_dict = metadata.meta_property_utils.load_properties_from_obj(dupe_mesh)
+                edit_uv_property = get_first_or_default(property_dict.get(Property_Registry().get(EditUVProperty.__name__)))
+                if edit_uv_property:
+                    edit_uv_property.act()
+
+                pm.select(dupe_mesh, replace=True)
+                pm.bakePartialHistory(prePostDeformers=True)
+                dupe_combine_list.append(dupe_mesh)
+
+    # If a base mesh was given include it in the combine
+    if base_mesh:
+        base_mesh_skin_cluster = skin_weights.find_skin_cluster(base_mesh)
+        dupe_base_mesh = duplicate_for_combine(base_mesh, base_mesh_skin_cluster, combine_skeleton_list)
+        dupe_combine_list.insert(0, dupe_base_mesh)
+        delete_mesh_list.append(base_mesh)
+        mesh_name = base_mesh.stripNamespace().nodeName()
+
+    combine_mesh = None
+    if len(dupe_combine_list) > 1:
+        partial_property_list = []
+        # Gather and disconnect PartialModelProperty
+        for obj in dupe_combine_list:
+            property_list = metadata.meta_property_utils.get_property_list(obj, PartialModelProperty)
+            partial_property_list.extend(property_list)
+
+        # Combine Mesh and reconnect PartialModelProperty nodes
+        combine_mesh, combine_skin_cluster = pm.polyUniteSkinned(dupe_combine_list, ch=True, mergeUVSets=True, centerPivot=True)
+        combine_mesh = pm.PyNode(combine_mesh)
+        combine_skin_cluster = pm.PyNode(combine_skin_cluster)
+        pm.select(combine_mesh, replace=True)
+        pm.bakePartialHistory(prePostDeformers=True)
+
+        for partial_property in partial_property_list:
+            partial_property.connect_node(combine_mesh)
+
+        total_vertex_count = -1
+        for obj in dupe_combine_list:
+            vertex_count = len(obj.vtx)
+            existing_property = metadata.meta_property_utils.get_property(obj, PartialModelProperty)
+            if not existing_property:
+                imported_network = metadata.meta_network_utils.get_first_network_entry(obj, ImportedCore)
+                partial_property = Property_Registry().get(PartialModelProperty)()
+                imported_network.connect_node(partial_property.node)
+                partial_property.connect_node(combine_mesh)
+
+                object_first_vertex = total_vertex_count + 1
+                object_last_vertex = total_vertex_count + vertex_count
+                partial_property.set('vertex_indicies', "[({0},{1})]".format(object_first_vertex, object_last_vertex))
+
+            total_vertex_count += vertex_count
+
+        pm.delete(dupe_combine_list)
+
+    pm.delete(delete_mesh_list)
+    pm.delete(delete_skeleton_list)
+
+    return_mesh = dupe_combine_list[0] if dupe_combine_list else None
+    if combine_mesh:
+        combine_mesh.rename(mesh_name)
+        return_mesh = combine_mesh
+
+    if not return_mesh.namespace():
+        return_mesh.rename('{0}:{1}'.format(root_namespace, mesh_name))
+
+    return_mesh.setParent(mesh_group)
+
+    return return_mesh
+
+def duplicate_for_combine(mesh, mesh_skin_cluster, skeleton_list):
+    imported_network = metadata.meta_network_utils.get_first_network_entry(mesh, ImportedCore)
+    partial_property_list = metadata.meta_property_utils.get_property_list(mesh, PartialModelProperty)
+
+    dupe_mesh = get_first_or_default(pm.duplicate(mesh))
+    imported_network.connect_node(dupe_mesh)
+    for partial_property in partial_property_list:
+        partial_property.connect_node(dupe_mesh)
+
+    dupe_skin_cluster = pm.skinCluster(dupe_mesh, skeleton_list)
+    pm.copySkinWeights( ss=mesh_skin_cluster, ds=dupe_skin_cluster, noMirror=True )
+    pm.skinCluster(dupe_skin_cluster, e=True, rui=True)
+    
+    return dupe_mesh
 
 def hik_transfer_animations(source_node, dest_node):
     '''
@@ -1337,9 +1539,11 @@ def hik_transfer_animations(source_node, dest_node):
     character_network = metadata.meta_network_utils.create_from_node(dest_node)
     character_hik_property = metadata.meta_property_utils.get_property(dest_node, HIKProperty)
 
+    character_joint_list = []
     if source_hik_property and character_hik_property:
         source_hik_node = source_hik_property.get_hik_node()
         character_hik_node = character_hik_property.get_hik_node()
+        character_joint_list = character_hik_node.listConnections(type='joint')
 
         mel.eval("HIKCharacterControlsTool;")
 
@@ -1353,7 +1557,13 @@ def hik_transfer_animations(source_node, dest_node):
         mel.eval('hikUpdateDefinitionUI;')
         mel.eval('hikBakeCharacter(0);')
 
+    root_joint = get_root_joint(character_joint_list[0])
+    full_skeleton = root_joint.listRelatives(ad=True)
+    missed_joint_list = [x for x in full_skeleton if x not in character_joint_list]
+
     pm.autoKeyframe(state=autokey_state)
+
+    return (root_joint, missed_joint_list)
 
 def create_hik_definition(character_name, skeleton_dict, hik_map = None):
     '''

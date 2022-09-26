@@ -6,7 +6,7 @@
     <ProjectGuid>{d8f93d26-e1cf-4768-951c-312840942a1a}</ProjectGuid>
     <ProjectHome />
     <StartupFile />
-    <SearchPath>Maya;..\V1PyCore;W:\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
+    <SearchPath>Maya;..\V1PyCore;..\..\..\..\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>

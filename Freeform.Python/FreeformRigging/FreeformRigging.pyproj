@@ -6,7 +6,7 @@
     <ProjectGuid>{ab10f252-39a2-45e1-a7d7-611755678e96}</ProjectGuid>
     <ProjectHome />
     <StartupFile />
-    <SearchPath>Maya;..\V1PyCore;..\DCCUtilities\Maya;W:\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
+    <SearchPath>Maya;..\V1PyCore;..\DCCUtilities\Maya;..\..\..\..\Program Files\Autodesk\Maya2022\Python37\Lib\site-packages</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
@@ -25,6 +25,7 @@
     <Folder Include="Maya\exporter\" />
     <Folder Include="Maya\exporter\usertools\" />
     <Folder Include="Maya\freeform_utils\" />
+    <Folder Include="Maya\freeform_utils\usertools\" />
     <Folder Include="Maya\metadata\" />
     <Folder Include="Maya\rigging\" />
     <Folder Include="Maya\rigging\rig_overdrivers\" />
@@ -44,6 +45,10 @@
     <Compile Include="Maya\freeform_utils\fbx_presets.py" />
     <Compile Include="Maya\freeform_utils\materials.py" />
     <Compile Include="Maya\freeform_utils\anim_attributes.py" />
+    <Compile Include="Maya\freeform_utils\usertools\property_editor.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Maya\freeform_utils\usertools\__init__.py" />
     <Compile Include="Maya\freeform_utils\__init__.py" />
     <Compile Include="Maya\metadata\exporter_properties.py">
       <SubType>Code</SubType>

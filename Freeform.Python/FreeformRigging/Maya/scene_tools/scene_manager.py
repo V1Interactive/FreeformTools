@@ -133,13 +133,18 @@ class SceneManager(object, metaclass=Singleton):
         Args:
             match_string (string): String to match with method names
         '''
+        return_dict = {}
         for method in SceneManager.update_method_list:
             if match_string.lower() in str(method).lower():
-                method(*args, **kwargs)
+                method_name = method.__name__ if hasattr(method, '__name__') else str(method)
+                return_dict[method_name] = method(*args, **kwargs)
 
         for method in SceneManager.method_list:
             if match_string.lower() in str(method).lower():
-                method(*args, **kwargs)
+                method_name = method.__name__ if hasattr(method, '__name__') else str(method)
+                return_dict[method_name] = method(*args, **kwargs)
+
+        return return_dict
 
     def remove_method(self, remove_method):
         '''

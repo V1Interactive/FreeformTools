@@ -147,20 +147,28 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Open in Explorer" 
                                                           Command="{Binding Data.OpenFileExplorerCommand, Source={StaticResource dataContextProxy}}"
                                                           CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Import and Combine" 
+                                                          Command="{Binding Data.ImportCombineCommand, Source={StaticResource dataContextProxy}}" 
+                                                          Visibility="{Binding Data.IsFBX, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
+                                                          IsEnabled="{Binding Data.IsMaya, Source={StaticResource dataContextProxy}}"/>
                                                 <Separator Margin="0,4" 
                                                            Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"/>
                                                 <MenuItem Header="Checkout" 
                                                           Command="{Binding Data.CheckoutCommand, Source={StaticResource dataContextProxy}}" 
-                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
+                                                          IsEnabled="{Binding Data.PerforceEnabled, Source={StaticResource dataContextProxy}}"/>
                                                 <MenuItem Header="Add" 
                                                           Command="{Binding Data.AddCommand, Source={StaticResource dataContextProxy}}"
-                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
+                                                          IsEnabled="{Binding Data.PerforceEnabled, Source={StaticResource dataContextProxy}}"/>
                                                 <MenuItem Header="Delete" 
                                                           Command="{Binding Data.DeleteCommand, Source={StaticResource dataContextProxy}}"
-                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
+                                                          IsEnabled="{Binding Data.PerforceEnabled, Source={StaticResource dataContextProxy}}"/>
                                                 <MenuItem Header="Revert" 
                                                           Command="{Binding Data.RevertCommand, Source={StaticResource dataContextProxy}}"
-                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                                                          Visibility="{Binding Data.IsFile, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
+                                                          IsEnabled="{Binding Data.PerforceEnabled, Source={StaticResource dataContextProxy}}"/>
                                             </ContextMenu>
                                         </local:DragUserControl.ContextMenu>
                                     </local:DragUserControl>

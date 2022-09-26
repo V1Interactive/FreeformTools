@@ -24,11 +24,13 @@ import os
 import sys
 
 import v1_core
+import v1_shared
 
 from v1_shared.decorators import csharp_error_catcher
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
-from metadata import network_registry, meta_network_utils, meta_property_utils
+from metadata import meta_network_utils, meta_property_utils
+from metadata.network_registry import Network_Registry, Property_Registry
 
 from maya_utils import node_utils
 from maya_utils import fbx_wrapper
@@ -212,10 +214,12 @@ def setup_exporter():
     '''
     Quick initial Exporter setup from scene objects.
     '''
-    character_core_type = network_registry.Network_Registry().get('CharacterCore')
-    joints_core_type = network_registry.Network_Registry().get('JointsCore')
-    export_definition_type = network_registry.Network_Registry().get('ExportDefinition')
-    character_animation_asset_type = network_registry.Property_Registry().get('CharacterAnimationAsset')
+    from metadata.network_core import CharacterCore, JointsCore
+    from metadata.exporter_properties import ExportDefinition, CharacterAnimationAsset
+    character_core_type = Network_Registry().get(CharacterCore)
+    joints_core_type = Network_Registry().get(JointsCore)
+    export_definition_type = Network_Registry().get(ExportDefinition)
+    character_animation_asset_type = Property_Registry().get(CharacterAnimationAsset)
 
     export_definition_list = meta_network_utils.get_all_network_nodes(export_definition_type)
     current_definition = meta_network_utils.create_from_node(export_definition_list[0]) if export_definition_list else None
@@ -306,7 +310,7 @@ def clean_reference_cameras():
         except:
             continue
 
-def import_file_safe(file_path, fbx_mode = "add", **kwargs):
+def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, **kwargs):
     '''
     Import FBX files or Maya files safely, and with the ability to return import nodes.
     
@@ -355,6 +359,14 @@ def import_file_safe(file_path, fbx_mode = "add", **kwargs):
         import_return = import_parent_list
         for import_parent in import_parent_list:
             import_return = import_return + import_parent.listRelatives(ad=True)
+
+    if import_return and tag_imported:
+        from metadata.network_core import ImportedCore
+        imported_core = Network_Registry().get(ImportedCore)()
+        relative_path = v1_shared.file_path_utils.full_path_to_relative(file_path)
+        imported_core.set('import_path', relative_path)
+        imported_core.connect_nodes(import_return)
+        import_return.append(imported_core.node)
 
     return import_return
 

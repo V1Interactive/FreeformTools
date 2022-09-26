@@ -20,12 +20,12 @@ If not, see <https://www.gnu.org/licenses/>.
 import pymel.core as pm
 
 import v1_core
+import v1_shared
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
 
 from metadata.network_registry import Property_Registry
 from metadata import meta_network_utils
-from metadata.meta_properties import PropertyNode
 
 
 
@@ -57,7 +57,8 @@ def get_properties_dict(pynode):
     property_dict = {}
     if meta_network_utils.is_in_network(pynode):
         network = [meta_network_utils.create_from_node(x) for x in pm.listConnections(pynode.affectedBy, type='network')]
-        property_node_type = Property_Registry().get_hidden("PropertyNode")
+        from metadata.meta_properties import PropertyNode
+        property_node_type = Property_Registry().get_hidden(PropertyNode)
         property_list = [x for x in network if property_node_type in type(x).mro()]
         for property in property_list:
             property_dict.setdefault(type(property), [])
@@ -187,7 +188,35 @@ def add_property_by_name(pynode, module_type_name):
     module_name = get_first_or_default(module_type_name)
     type_name = get_index_or_default(module_type_name, 1)
     node_type = Property_Registry().get(type_name)
+    property_obj = None
 
     if node_type.multi_allowed or not get_properties_dict(pynode).get(node_type):
         py_namespace = pynode.namespace()
-        node_type(namespace = py_namespace).connect_node(pynode)
+        property_obj = node_type(namespace = py_namespace)
+        property_obj.connect_node(pynode)
+
+    return property_obj
+
+def load_properties_from_obj(obj):
+    '''
+    Loads properties that were stored in the obj's attributes
+    '''
+    property_dict = {}
+    attr_dict = {}
+    for attr in [x for x in obj.listAttr(ud=True) if 'x_x' in x.attrName()]:
+        guid_key, attr_name = attr.attrName().split('x_x')
+        attr_dict.setdefault(guid_key, {})
+        attr_dict[guid_key][attr_name] = attr.get()
+        attr.delete()
+
+    for node_id, property_attr_dict in attr_dict.items():
+        property_info = v1_shared.shared_utils.get_class_info( property_attr_dict.get('meta_type') )
+        property_obj = add_property_by_name(obj, property_info)
+
+        if property_obj:
+            property_dict.setdefault(type(property_obj), [])
+            property_dict[type(property_obj)].append(property_obj)
+            for prop_name, prop_value in property_attr_dict.items():
+                property_obj.set(prop_name, prop_value)
+
+    return property_dict

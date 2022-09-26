@@ -29,6 +29,7 @@ namespace Freeform.Rigging.ContentBrowser
     using HelixResources.Style;
     using Freeform.Core.UI;
     using Freeform.Core.Helpers;
+    using Freeform.Core.ConfigSettings;
 
 
     /*
@@ -244,9 +245,15 @@ namespace Freeform.Rigging.ContentBrowser
             get { return typeof(UserFile) == this.GetType(); }
         }
 
+        // Easy binding for if this is a .FBX File
+        public bool IsFBX
+        {
+            get { return IsFile && Extension.ToLower() == ".fbx"; }
+        }
 
-        // Constructor
-        public UserFile(string path)
+
+    // Constructor
+    public UserFile(string path)
         {
             P4Success = true;
             BorderStyle = "V1Border";
@@ -294,6 +301,13 @@ namespace Freeform.Rigging.ContentBrowser
         // Update the Perforce status of the file, and whether or not Perforce successfully checked the file
         public virtual void UpdatePerforceStatus()
         {
+            ConfigManager configManager = new ConfigManager();
+            PerforceConfig perforceConfig = (PerforceConfig)configManager.GetCategory(SettingsCategories.PERFORCE);
+            if (perforceConfig.Enabled == false)
+            {
+                return;
+            }
+
             // If Perforce is Down or errors on getting file status fail gracefully and set P4 status to unknown
             try
             {
