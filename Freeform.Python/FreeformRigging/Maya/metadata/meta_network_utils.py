@@ -41,7 +41,8 @@ def get_network_core():
     Returns:
         (PyNode). Maya scene network node for the network Core
     '''
-    core_type = Network_Registry().get("Core")
+    from metadata.network_core import Core
+    core_type = Network_Registry().get(Core)
     core_module, core_name = v1_shared.shared_utils.get_class_info( str(core_type) )
 
     core_node = [x for x in pm.ls(type='network') if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == core_name]

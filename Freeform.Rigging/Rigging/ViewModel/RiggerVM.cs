@@ -43,7 +43,8 @@ namespace Freeform.Rigging
         public event EventHandler LoadSettingsHandler;
         public event EventHandler GetStartingDirectoryHandler;
         public event EventHandler SaveSettingsHandler;
-        public event EventHandler SaveUE4SettingsHandler;
+        public event EventHandler SaveCharacterSettingsHandler;
+        public event EventHandler SaveEngineSettingsHandler;
         public event EventHandler OpenRegionEditorHandler;
         public event EventHandler RigBuilderHandler;
         public event EventHandler ColorSetsHandler;
@@ -85,7 +86,8 @@ namespace Freeform.Rigging
         public RelayCommand ExporterUICommand { get; set; }
         public RelayCommand LoadSettingsCommand { get; set; }
         public RelayCommand SaveSettingsCommand { get; set; }
-        public RelayCommand SaveUE4SettingsCommand { get; set; }
+        public RelayCommand SaveCharacterSettingsCommand { get; set; }
+        public RelayCommand SaveEngineSettingsCommand { get; set; }
         public RelayCommand RigRegionCommand { get; set; }
         public RelayCommand OpenRegionEditorCommand { get; set; }
         public RelayCommand SetCharacterCommand { get; set; }
@@ -776,7 +778,8 @@ namespace Freeform.Rigging
             ExporterUICommand = new RelayCommand(ExporterUICall);
             LoadSettingsCommand = new RelayCommand(LoadSettingsCall);
             SaveSettingsCommand = new RelayCommand(SaveSettingsCall);
-            SaveUE4SettingsCommand = new RelayCommand(SaveUE4SettingsCall);
+            SaveCharacterSettingsCommand = new RelayCommand(SaveCharacterSettingsCall);
+            SaveEngineSettingsCommand = new RelayCommand(SaveEngineSettingsCall);
             RigRegionCommand = new RelayCommand(RigRegionEventCall);
             OpenRegionEditorCommand = new RelayCommand(OpenRegionEditorEventCall);
             SetCharacterCommand = new RelayCommand(SetActiveCharacterCall);
@@ -1393,14 +1396,23 @@ namespace Freeform.Rigging
             SaveSettingsHandler?.Invoke(this, eventArgs);
         }
 
-        public void SaveUE4SettingsCall(object sender)
+        public void SaveCharacterSettingsCall(object sender)
+        {
+            SettingsEventArgs eventArgs = new SettingsEventArgs()
+            {
+                character = (Character)sender
+            };
+            SaveCharacterSettingsHandler?.Invoke(this, eventArgs);
+        }
+
+        public void SaveEngineSettingsCall(object sender)
         {
             SettingsEventArgs eventArgs = new SettingsEventArgs()
             {
                 character = (Character)sender,
                 preset = SelectedPreset.ToUpper()
             };
-            SaveUE4SettingsHandler?.Invoke(this, eventArgs);
+            SaveEngineSettingsHandler?.Invoke(this, eventArgs);
         }
 
         public void RigRegionEventCall(object sender)

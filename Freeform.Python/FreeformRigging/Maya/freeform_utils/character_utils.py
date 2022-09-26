@@ -23,13 +23,14 @@ import System
 import Freeform.Core
 
 import os
+import time
 
 import metadata
 import scene_tools
 import rigging
 
-from metadata.network_core import AddonCore, AddonControls, CharacterCore, ComponentCore, JointsCore, RigComponent, ControlJoints, OverDrivenControl, RegionsCore, RigCore
-from metadata.meta_properties import ControlProperty
+from metadata.network_core import AddonCore, AddonControls, CharacterCore, ComponentCore, JointsCore, RigComponent, ControlJoints, OverDrivenControl, RegionsCore, RigCore, MeshesCore, ImportedCore
+from metadata.meta_properties import ControlProperty, PartialModelProperty
 
 import maya_utils
 
@@ -52,6 +53,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     Returns:
         PyNode. The CharacterCore MetaNode created for the character
     '''
+    start_time = time.clock()
     config_manager = v1_core.global_settings.ConfigManager()
 
     rigging.skeleton.clean_skeleton(jnt)
@@ -73,6 +75,8 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
             name = pm.promptDialog(query=True, text=True)
         else:
             return None
+
+    v1_core.v1_logging.get_logger().info("Characterizing {0} From - {1}".format(name, jnt.name()))
 
     skeleton_root = rigging.skeleton.get_root_joint(jnt)
     replaced_joint_list = rigging.skeleton.replace_transforms_with_joints([skeleton_root] + pm.listRelatives(skeleton_root, ad=True, type='transform'))
@@ -115,13 +119,21 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     mesh_group = pm.group(name=character_namespace + "{0}_meshes".format(name), empty=True)
     mesh_group.setParent(character_network.group)
+    meshes_core = MeshesCore(parent = character_network.node, namespace = character_namespace, meshes_group = mesh_group)
     pm.select(None)
 
-    if freeze_skeleton:
+    auto_freeze_skeleton = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("AutoFreezeSkeleton")
+    if auto_freeze_skeleton and freeze_skeleton:
+        freeze_time = time.clock()
         rigging.rig_tools.freeze_xform_rig(character_network)
+        v1_core.v1_logging.get_logger().info("Froze Skeleton in {0} Seconds".format(time.clock() - freeze_time))
 
     if update_ui:
+        update_time = time.clock()
         scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
+        v1_core.v1_logging.get_logger().info("Updated UI in {0} Seconds".format(time.clock() - update_time))
+
+    v1_core.v1_logging.get_logger().info("Characterize Completed in {0} Seconds".format(time.clock() - start_time))
 
     return character_network
 
@@ -151,7 +163,7 @@ def characterize_with_zeroing(jnt = None):
         output_attr // input_attr
         
     for jnt in animated_joint_list:
-        jnt.rename("transfer:" + jnt.stripNamespace().split('|')[-1])
+        jnt.rename("transfer:" + jnt.stripNamespace().nodeName())
         
     character_network = characterize_skeleton(root_joint)
     
@@ -670,3 +682,29 @@ def toggle_proximity_visibility():
         vis_mode = 0 if current_mode == 2 else 2
         for obj in controller_list:
             obj.visibilityMode.set(vis_mode)
+
+
+def zero_character(character_network):
+    '''
+    Zero all rigging and skeleton joints of a character.
+    '''
+    joint_core_network = character_network.get_downstream(JointsCore)
+    character_joint_list = joint_core_network.get_connections()
+    first_joint = get_first_or_default(character_joint_list)
+
+    rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
+    rigging.rig_base.Component_Base.zero_all_rigging(character_network)
+    rigging.skeleton.zero_character(first_joint)
+
+def get_combine_mesh(character_network):
+    base_mesh = None
+    mesh_list = character_network.mesh_group.listRelatives(ad=True, type='mesh')
+    parent_list = list(set([x.getParent() for x in mesh_list]))
+    for parent_obj in parent_list:
+        imported_network = metadata.meta_network_utils.get_first_network_entry(parent_obj, ImportedCore)
+        partial_property_list = metadata.meta_property_utils.get_property_list(parent_obj, PartialModelProperty)
+        if imported_network or partial_property_list:
+            base_mesh = parent_obj
+            break
+
+    return base_mesh

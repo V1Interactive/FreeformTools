@@ -116,8 +116,11 @@ class RigBuilder(object):
             template_settings_file = self.default_settings.get(template_group)
             namespace = character_network.node.namespace()
             if template_settings_file:
-                rigging.skeleton.build_regions_from_skeleton_dict(template_settings_file, skeleton_dict, namespace, side_list, region_list)
+                rigging.skeleton.update_skeleton_from_settings_data(template_settings_file, joints_network.get_first_connection())
+                rigging.skeleton.build_regions_from_settings_dict(template_settings_file, skeleton_dict, namespace, side_list, region_list)
 
+            relative_path = v1_shared.file_path_utils.full_path_to_relative(template_settings_file)
+            character_network.set('root_path', relative_path.rsplit(os.sep, 1)[0])
             created_rigging = rigging.file_ops.load_from_json(character_network, event_args.FilePath, side_list, region_list)
 
             scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')

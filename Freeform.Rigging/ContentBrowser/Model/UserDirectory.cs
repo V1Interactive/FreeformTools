@@ -250,6 +250,10 @@ namespace Freeform.Rigging.ContentBrowser
                 {
                     returnList.Add(file);
                 }
+                else if(file.IsSelected == true || file.ViewIsSelected == true)
+                {
+                    returnList.Add(file);
+                }
             }
 
             foreach (UserDirectory dir in Subfolders)

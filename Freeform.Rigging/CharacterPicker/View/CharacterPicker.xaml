@@ -52,8 +52,15 @@ If not, see <https://www.gnu.org/licenses/>.-->
             <TextBox x:Name="focusedBox" Text="{Binding RigSearchFilter, UpdateSourceTrigger=PropertyChanged}" Margin="4,2" Grid.Column="1"/>
         </Grid>
 
-        <ScrollViewer HorizontalContentAlignment="Stretch" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,3" Grid.Row="1">
-            <ListBox HorizontalContentAlignment="Stretch" SelectionMode="{Binding SelectionMode}" ItemsSource="{Binding Path=RigListViewSource.View}" SelectedItem="{Binding Path=SelectedRigItem, UpdateSourceTrigger=PropertyChanged}">
+        <ScrollViewer HorizontalContentAlignment="Stretch" 
+                      VerticalScrollBarVisibility="Auto" 
+                      HorizontalScrollBarVisibility="Disabled" 
+                      Margin="0,3" 
+                      Grid.Row="1">
+            <ListBox HorizontalContentAlignment="Stretch" 
+                     SelectionMode="{Binding SelectionMode}" 
+                     ItemsSource="{Binding Path=RigListViewSource.View}" 
+                     SelectedItem="{Binding Path=SelectedRigItem, UpdateSourceTrigger=PropertyChanged}">
                 <ListBox.Template>
                     <ControlTemplate>
                         <ItemsPresenter/>

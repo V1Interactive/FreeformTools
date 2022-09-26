@@ -211,7 +211,8 @@ class FK(Rig_Component):
     @csharp_error_catcher
     def switch_to_ik(self, c_rig_button, event_args):
         switch_condition = len(self.network['controls'].get_connections()) == 3
-        ik_type = Component_Registry().get('IK')
+        from rigging.rig_components.ik import IK
+        ik_type = Component_Registry().get(IK)
         self.switch_component(ik_type, switch_condition)
 
     def get_rigger_methods(self):

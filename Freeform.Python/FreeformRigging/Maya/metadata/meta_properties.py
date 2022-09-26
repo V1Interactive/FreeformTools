@@ -27,10 +27,12 @@ import rigging
 import v1_core
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
+from maya_utils.decorators import undoable
+
 from v1_core.py_helpers import Freeform_Enum
 from metadata.network_core import MetaNode, CharacterCore, JointsCore
 from metadata.network_registry import Property_Registry, Property_Meta
-from metadata import meta_network_utils
+from metadata import meta_network_utils, meta_property_utils
 
 class NamespaceError(Exception):
     """Exception to call to inform user that non-integers were found in the bake range"""
@@ -113,6 +115,21 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
         '''
         return NotImplemented
 
+    def bake_to_connected(self):
+        for obj in self.get_connections():
+            self.bake_to_object(obj)
+
+        self.delete()
+
+    def bake_to_object(self, obj):
+        for attr_name, value in self.data.items():
+            guid_name = self.data.get('guid').replace('-', '_')
+            guid_name = ''.join([i for i in guid_name if not i.isdigit()])
+            add_name = "{0}x_x{1}".format(guid_name, attr_name)
+            if not obj.hasAttr(attr_name):
+                obj.addAttr(add_name, type=type(value))
+                obj.setAttr(add_name, value)
+
 
 #region Model Properties
 class ModelProperty(PropertyNode):
@@ -142,6 +159,146 @@ class ModelProperty(PropertyNode):
 
     def __init__(self, node_name = 'model_property_temp', node = None, namespace = "", **kwargs):
         super(ModelProperty, self).__init__(node_name, node, namespace, **kwargs)
+
+
+class PartialModelProperty(ModelProperty):
+    '''
+    Property for tagging different parts within a mesh
+    Create a new property if a network node is not provided, otherwise instantiate off of the given scene network node
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+    '''
+    _do_register = True
+
+    @property
+    def mesh(self):
+        '''
+        Transform node for the connected mesh
+        '''
+        return self.get_connections()[0]
+
+    @property
+    def import_path(self):
+        '''
+        Path that the geometry was imported from
+        '''
+        from metadata.network_core import ImportedCore
+        imported_network = meta_network_utils.get_first_network_entry(self.node, ImportedCore)
+        return imported_network.get('import_path')
+
+
+    def __init__(self, node_name = 'partial_model_property', node = None, namespace = "", **kwargs):
+        super(ModelProperty, self).__init__(node_name, node, namespace, vertex_indicies = ("", 'string'), **kwargs)
+
+
+    def select(self):
+        '''
+        Select all vertices
+        '''
+        vertex_group_list = eval(self.get('vertex_indicies'))
+        pm.select(self.node, replace=True)
+        for vtx_group in vertex_group_list:
+            pm.select(self.mesh.vtx[vtx_group[0]:vtx_group[1]], add=True)
+
+    def do_delete(self):
+        '''
+        Property Editor UI Call to delete this network
+        '''
+        self.delete_all()
+
+    @undoable
+    def delete_all(self):
+        '''
+        Delete the scene network node and connected geometry, updating all other partial nodes for the deleted vertices
+        '''
+        from metadata.network_core import ImportedCore
+        imported_network = meta_network_utils.get_first_network_entry(self.node, ImportedCore)
+        my_mesh = self.mesh
+
+        vertex_group_list = eval(self.get('vertex_indicies'))
+        highest_count = vertex_group_list[0][1]
+        vertex_count = vertex_group_list[0][1] - vertex_group_list[0][0] + 1
+        updated_list = []
+        for vtx_group in vertex_group_list:
+            if vtx_group[0] > highest_count:
+                highest_count = vtx_group[1]
+                vtx_group = (vtx_group[0]-vertex_count, vtx_group[1]-vertex_count)
+                vertex_count += (vtx_group[1] - vtx_group[0] + 1)
+                
+            mesh_face_list = pm.polyListComponentConversion( my_mesh.vtx[vtx_group[0]:vtx_group[1]], tf=True )
+            updated_list.append(vtx_group)
+            pm.delete(mesh_face_list)
+
+        self.set('vertex_indicies', str(updated_list))
+
+        pm.select(my_mesh, replace=True)
+        pm.bakePartialHistory(prePostDeformers=True)
+
+        if self.node.exists():
+            pm.delete(self.node)
+        
+        if imported_network:
+            imported_network.delete()
+
+        partial_property_list = meta_property_utils.get_property_list(my_mesh, PartialModelProperty)
+
+        if len(partial_property_list) == 1:
+            partial_property = partial_property_list[0]
+            imported_network = meta_network_utils.get_first_network_entry(partial_property.node, ImportedCore)
+            imported_network.connect_node(my_mesh)
+            partial_property.delete()
+        else:
+            for partial_property in partial_property_list:
+                partial_vtx_group_list = eval(partial_property.get('vertex_indicies'))
+                updated_list = []
+                for vtx_group in partial_vtx_group_list:
+                    if vtx_group[0] > highest_count:
+                        vtx_group = (vtx_group[0]-vertex_count, vtx_group[1]-vertex_count)
+                    updated_list.append(vtx_group)
+                partial_property.set('vertex_indicies', str(updated_list))
+
+class EditUVProperty(ModelProperty):
+    '''
+    Property for tagging different parts within a mesh
+    Create a new property if a network node is not provided, otherwise instantiate off of the given scene network node
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+    '''
+    _do_register = True
+
+    def __init__(self, node_name = 'edit_uv_property', node = None, namespace = "", **kwargs):
+        super(EditUVProperty, self).__init__(node_name, node, namespace, pivotU = (0, 'float'), pivotV = (0, 'float'), 
+                                             scaleU = (1.0, 'float'), scaleV = (1.0, 'float'), **kwargs)
+
+    def act(self):
+        for obj in self.get_connections():
+            pm.polyEditUV(obj.faces, pu=self.get('pivotU'), pv=self.get('pivotV'), su=self.get('scaleU'), sv=self.get('scaleV'))
+
+    def set_lower_half(self):
+        self.set('pivotU', 0.5)
+        self.set('pivotV', 0.0)
+        self.set('scaleU', 1.0)
+        self.set('scaleV', 0.5)
+
+    def set_upper_half(self):
+        self.set('pivotU', 0.5)
+        self.set('pivotV', 1.0)
+        self.set('scaleU', 1.0)
+        self.set('scaleV', 0.5)
 #endregion
 
 #region Common Properties
@@ -193,7 +350,7 @@ class ExportProperty(CommonProperty):
     _do_register = True
 
     def __init__(self, node_name = 'export_property', node = None, namespace = "", **kwargs):
-        super(ExportProperty, self).__init__(node_name, node, namespace, export = (True, 'bool'))
+        super(ExportProperty, self).__init__(node_name, node, namespace, export = (True, 'bool'), **kwargs)
 
     def act(self):
         '''
@@ -227,7 +384,7 @@ class HIKProperty(CommonProperty):
     _do_register = True
 
     def __init__(self, node_name = 'hik_property', node = None, namespace = "", **kwargs):
-        super(HIKProperty, self).__init__(node_name, node, namespace)
+        super(HIKProperty, self).__init__(node_name, node, namespace, **kwargs)
 
     def get_hik_node(self):
         hik_node = self.get_first_connection(node_type=pm.nt.HIKCharacterNode)
@@ -313,7 +470,7 @@ class ControlProperty(RigProperty):
 
     def __init__(self, node_name = 'control_property', node = None, namespace = "", **kwargs):
         super(ControlProperty, self).__init__(node_name, node, namespace, control_type = ("", 'string'), ordered_index = (0, 'short'), 
-                                              zero_translate = ([0,0,0], 'double3'), zero_rotate = ([0,0,0], 'double3'), locked = (False, 'bool'))
+                                              zero_translate = ([0,0,0], 'double3'), zero_rotate = ([0,0,0], 'double3'), locked = (False, 'bool'), **kwargs)
 
     def get_control_info(self):
         component_network = meta_network_utils.get_first_network_entry(self.get_connections()[0], network_core.ComponentCore)

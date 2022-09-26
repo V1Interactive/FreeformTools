@@ -255,6 +255,12 @@ class MetaNode(object, metaclass=Network_Meta):
 
         return is_equal
 
+    def select(self):
+        '''
+        Select the node
+        '''
+        pm.select(self.node, replace=True)
+
     def delete(self):
         '''
         Delete the scene network node
@@ -270,6 +276,12 @@ class MetaNode(object, metaclass=Network_Meta):
         meta_node_list.reverse()
         for meta_node in meta_node_list:
             meta_node.delete()
+
+    def do_delete(self):
+        '''
+        Property Editor UI Call to delete this network
+        '''
+        self.delete()
 
     def get_network_node(self, start_node, check_type, attribute, validate = True):
         '''
@@ -470,6 +482,25 @@ class DependentNode(MetaNode):
 
             dependent_network.connect_node(self.node)
 
+class ImportedCore(DependentNode):
+    '''
+    Network object to track where imported objects came from
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): Maya scene node to initialize the property from
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
+
+    Node Attributes:
+        import_path (int): CONTENT_ROOT relative path to the file for this import
+    '''
+    dependent_node = Core
+
+    def __init__(self, parent = None, node_name = 'imported_core', node = None, namespace = ""):
+        super(ImportedCore, self).__init__(parent, node_name, node, namespace, import_path = ("", 'string'))
 
 class CharacterCore(DependentNode):
     '''
@@ -499,11 +530,35 @@ class CharacterCore(DependentNode):
 
         folder_path_list = [content_path] + sub_path_list
         return folder_path_list
+
+    @property
+    def mesh_group(self):
+        mesh_group = None
+        meshes_network = self.get_downstream(MeshesCore)
+        if meshes_network:
+            mesh_group = meshes_network.group
+        else:
+            mesh_group_name = self.group.name().replace("_Character", "_meshes")
+            if pm.objExists(mesh_group_name):
+                mesh_group = pm.PyNode(mesh_group_name)
+
+        return mesh_group
+
+    @property
+    def rig_group(self):
+        rig_network = self.get_downstream(RigCore)
+        return rig_network.group
+
+    @property
+    def joints_group(self):
+        joints_network = self.get_downstream(JointsCore)
+        return joints_network.group
     
 
-    def __init__(self, parent = None, node_name = 'v1_character', node = None, namespace = ""):
-        super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = (1, 'short'), character_name = ("", 'string'), root_path = ("", 'string'),
-                                            sub_paths = ("", 'string'), rig_file_path = ("", 'string'), color_set = ("", 'string'), scalar = (1.0, 'float'))
+    def __init__(self, parent = None, node_name = 'character_core', node = None, namespace = ""):
+        super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = (1, 'short'), character_name = ("", 'string'), 
+                                            root_path = ("", 'string'), sub_paths = ("", 'string'), rig_file_path = ("", 'string'), 
+                                            settings_file_path = ("", 'string'), color_set = ("", 'string'), scalar = (1.0, 'float'))
         if not node:
             self.set('character_name', node_name)
 
@@ -596,6 +651,34 @@ class RegionsCore(DependentNode):
 
     def __init__(self, parent = None, node_name = 'regions_core', node = None, namespace = ""):
         super(RegionsCore, self).__init__(parent, node_name, node, namespace)
+
+class MeshesCore(DependentNode):
+    '''
+    Character Network object that connects to all regions for the character
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): Maya scene node to initialize the property from
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        dependent_node (type): MetaNode type, dependent nodes will be created if they are not found in the graph
+    '''
+    dependent_node = CharacterCore
+
+    @property
+    def group(self):
+        '''
+        Transform node that is the scene group object for this node
+        '''
+        return_node = self.get_first_connection(node_type = 'transform')
+
+        return return_node
+
+    def __init__(self, parent = None, node_name = 'meshes_core', node = None, namespace = "", meshes_group = None):
+        super(MeshesCore, self).__init__(parent, node_name, node, namespace)
+        if not node:
+            self.connect_node(meshes_group)
 
 class RigCore(DependentNode):
     '''

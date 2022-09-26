@@ -1,6 +1,6 @@
 {
     "Developer": {
-        "DevToolsPath": "Helix/bin/x64/Debug",
+        "DevToolsPath": "FreeformTools/bin/x64/Debug",
         "DeveloperMode": false,
         "ProjectDrive": "D:/"
     },
@@ -39,7 +39,8 @@
 	"Rigging": {
 		"RigFolder": "Rigging",
 		"RigFilePattern": "*_rig.ma",
-		"JointNamePattern": "*<side>"
+		"JointNamePattern": "*<side>",
+		"AutoFreezeSkeleton": false
 	},
 	"Tools": {
 		"RemovePycFiles": true,

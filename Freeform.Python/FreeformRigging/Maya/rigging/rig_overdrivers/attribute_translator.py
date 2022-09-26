@@ -105,7 +105,7 @@ class Attribute_Translator(Addon_Component):
         addon_control.visibility.set(False)
 
         # Rename control for more clarity on what attribute this node works with
-        addon_control.rename("{0}{1}_{2}".format(self.namespace, object_space.stripNamespace().split("|")[-1], self.prefix))
+        addon_control.rename("{0}{1}_{2}".format(self.namespace, object_space.stripNamespace().nodeName(), self.prefix))
         
         # Remove controller markup for this object.  Since this control object is just used to transfer information from
         # the actual scene control object to an attribute
@@ -152,13 +152,13 @@ class Attribute_Translator(Addon_Component):
                 addon_control_attr = getattr(addon_control, attr_name)
 
                 # Condition to handle + and - direction of attributes
-                condition_name = "{0}{1}_{2}".format(self.namespace, object_space.stripNamespace().split("|")[-1], 'condition')
+                condition_name = "{0}{1}_{2}".format(self.namespace, object_space.stripNamespace().nodeName(), 'condition')
                 condition = pm.shadingNode('condition', name = condition_name, asUtility=True)
                 # Set to Greater Than(2) or Less Than(4)
                 condition.operation.set(2) if is_positive else condition.operation.set(4)
                 condition.colorIfFalse.set([0,0,0])
 
-                multiply_name = "{0}{1}_{2}".format(self.namespace, object_space.stripNamespace().split("|")[-1], 'multiplyDivide')
+                multiply_name = "{0}{1}_{2}".format(self.namespace, object_space.stripNamespace().nodeName(), 'multiplyDivide')
                 multiply = pm.shadingNode('multiplyDivide', name = multiply_name, asUtility=True)
                 multiply.operation.set(1) # Set to Multiply
 

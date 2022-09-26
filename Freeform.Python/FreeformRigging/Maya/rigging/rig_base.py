@@ -815,7 +815,7 @@ class Component_Base(object, metaclass=Component_Meta):
             control.visibility.set(keyable=False)
             control.drawOverride.disconnect()
 
-            controller_node = pm.createNode('controller', name = "{0}{1}_tag".format(self.namespace, control.stripNamespace().split("|")[-1]))
+            controller_node = pm.createNode('controller', name = "{0}{1}_tag".format(self.namespace, control.stripNamespace().nodeName()))
             control.message >> controller_node.controllerObject
 
             ordered_index = ordered_control_list.index(control) + index_offset
@@ -1113,7 +1113,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         for attribute in custom_attr_list:
             attribute.unlock()
             attribute.delete()
-        addon_control.rename("{0}{1}_{2}".format(self.namespace, control.stripNamespace().split("|")[-1], self.prefix))
+        addon_control.rename("{0}{1}_{2}".format(self.namespace, control.stripNamespace().nodeName(), self.prefix))
         addon_control.setParent(addon_network.group)
         self.network['controls'].connect_node(addon_control)
 
@@ -1257,7 +1257,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         rig_core_network = component_network.get_upstream(RigCore)
         character_namespace = character_network.group.namespace()
 
-        component_name = component_node.stripNamespace().split("|")[-1]
+        component_name = component_node.stripNamespace().nodeName()
         core_node_name = component_name.replace("component_core", "{0}_core".format(self.prefix))
         addon_core_network = AddonCore(parent = component_node, node_name = core_node_name, namespace = character_namespace)
         addon_core_network.node.component_type.set(str(type(self)), type='string')
@@ -1307,7 +1307,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         '''
         layer_list = jnt.drawOverride.listConnections()
         jnt.drawOverride.disconnect()
-        controller_node = pm.createNode('controller', name = "{0}{1}_tag".format(self.namespace, jnt.stripNamespace().split("|")[-1]))
+        controller_node = pm.createNode('controller', name = "{0}{1}_tag".format(self.namespace, jnt.stripNamespace().nodeName()))
         jnt.message >> controller_node.controllerObject
 
         zero_group_list = [skeleton.create_zero_group(jnt)]
@@ -2266,7 +2266,8 @@ class Rig_Component(Component_Base):
         joint_list = skeleton.sort_chain_by_hierarchy( self.network['skeleton'].get_connections() )
         jnt = joint_list[control_index]
 
-        overdriver_type = Addon_Registry().get('Overdriver')
+        from rigging.rig_overdrivers.overdriver import Overdriver
+        overdriver_type = Addon_Registry().get(Overdriver)
         for child_jnt in jnt.getChildren(type='joint'):
             if child_jnt in joint_list:
                 self.switch_space( control_list[control_index-1], overdriver_type, None )
@@ -2475,37 +2476,42 @@ class Rig_Component(Component_Base):
 
         component_menu = pm.menuItem(label = "Change Component", subMenu=True, parent=parent_menu)
 
-        fk_type = Component_Registry().get('FK')
+        from rigging.rig_components.fk import FK, Aim_FK
+        from rigging.rig_components.ik import IK
+        from rigging.rig_components.ribbon import Ribbon
+        fk_type = Component_Registry().get(FK)
         fk_method, fk_args, fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", fk_type)
         pm.menuItem(label="FK", parent=component_menu, command=lambda _: fk_method(*fk_args, **fk_kwargs))
 
-        aim_fk_type = Component_Registry().get('Aim_FK')
+        aim_fk_type = Component_Registry().get(Aim_FK)
         aim_fk_method, aim_fk_args, aim_fk_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", aim_fk_type)
         pm.menuItem(label="FK (Aimed)", parent=component_menu, command=lambda _: aim_fk_method(*aim_fk_args, **aim_fk_kwargs))
 
-        ik_type = Component_Registry().get('IK')
+        ik_type = Component_Registry().get(IK)
         ik_method, ik_args, ik_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", ik_type)
         pm.menuItem(label="IK", parent=component_menu, command=lambda _: ik_method(*ik_args, **ik_kwargs))
 
-        ribbon_type = Component_Registry().get('Ribbon')
+        ribbon_type = Component_Registry().get(Ribbon)
         ribbon_method, ribbon_args, ribbon_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_component, "Context Menu (Rig_Component)", ribbon_type)
         pm.menuItem(label="Ribbon", parent=component_menu, command=lambda _: ribbon_method(*ribbon_args, **ribbon_kwargs))
 
         pm.menuItem(divider=True, parent=parent_menu)
 
 
+        from rigging.rig_overdrivers.overdriver import Overdriver, Position_Overdriver, Rotation_Overdriver
+
         space_menu = pm.menuItem(label = "Space Switching", subMenu=True, parent=parent_menu)
-        overdriver_type = Addon_Registry().get('Overdriver')
+        overdriver_type = Addon_Registry().get(Overdriver)
         od_method, od_args, od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
                                                                            control, overdriver_type)
         pm.menuItem(label="Switch Space", parent=space_menu, command=lambda _: od_method(*od_args, **od_kwargs))
 
-        position_overdriver_type = Addon_Registry().get('Position_Overdriver')
+        position_overdriver_type = Addon_Registry().get(Position_Overdriver)
         po_od_method, po_od_args, po_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
                                                                                     control, position_overdriver_type)
         pm.menuItem(label="Switch Space - Position", parent=space_menu, command=lambda _: po_od_method(*po_od_args, **po_od_kwargs))
         
-        rotation_overdriver_type = Addon_Registry().get('Rotation_Overdriver')
+        rotation_overdriver_type = Addon_Registry().get(Rotation_Overdriver)
         ro_od_method, ro_od_args, ro_od_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)",
                                                                                     control, rotation_overdriver_type)
         pm.menuItem(label="Switch Space - Rotation", parent=space_menu, command=lambda _: ro_od_method(*ro_od_args, **ro_od_kwargs))
@@ -2513,8 +2519,10 @@ class Rig_Component(Component_Base):
 
         pm.menuItem(divider=True, parent=parent_menu)
 
+        from rigging.rig_overdrivers.dynamic_overdriver import Aim
+
         dynamics_menu = pm.menuItem(label = "Dynamics", subMenu=True, parent=parent_menu)
-        aim_overdriver_type = Addon_Registry().get('Aim')
+        aim_overdriver_type = Addon_Registry().get(Aim)
         aim_method, aim_args, aim_kwargs = v1_core.v1_logging.logging_wrapper(self.switch_space, "Context Menu (Rig_Component)", 
                                                                               control, aim_overdriver_type)
         pm.menuItem(label="Dynamics - Aim", parent=dynamics_menu, command=lambda _: aim_method(*aim_args, **aim_kwargs))

@@ -226,7 +226,7 @@ class RigSwapper(CharacterPicker):
         character_root_joint = rigging.skeleton.get_root_joint(character_joint)
 
         source_root_properties = metadata.meta_property_utils.get_properties_dict(source_root_joint)
-        animation_asset_list = source_root_properties.get(Property_Registry().get(CharacterAnimationAsset.__name__))
+        animation_asset_list = source_root_properties.get(Property_Registry().get(CharacterAnimationAsset))
 
         if animation_asset_list:
             for animation_asset in animation_asset_list:

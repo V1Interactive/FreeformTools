@@ -142,7 +142,7 @@ class XForm_Binding(Binding):
             obj (PyNode): Maya scene object to load attributes onto
             args (args): Optional args
         '''
-        load_attribute = pm.PyNode('{0}.{1}'.format(obj.name(), self.attribute))
+        load_attribute = getattr(obj, self.attribute)
         try:
             if len(self.binding) > 1:
                 load_attribute.set([data[self.category][x] for x in self.binding])
@@ -365,6 +365,7 @@ class Properties_Binding(Binding):
                     # Make sure we don't fall through to adding the property.
                     continue
 
+            # ------ Won't execute if a property has been found to copy data to
             if property_class == ExportProperty and property_class in current_properties.keys():
                 get_first_or_default(current_properties[property_class]).data = data
             else:
@@ -378,6 +379,7 @@ class Binding_Sets(Freeform_Enum):
     '''
     ALL = [Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order(), Bind_Translate(), Bind_Rotate(), Parent_Binding(), Properties_Binding()]
     SKELETON = [Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order(), Bind_Translate(), Bind_Rotate(), Parent_Binding()]
+    TRANSFORMS = [Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order()]
     NEW_JOINT = [Parent_Binding(), Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order()]
     TRANSLATE = [Translate(), Bind_Translate()]
     ROTATE = [Rotate(), Joint_Orient(), Rotate_Order(), Bind_Rotate()]

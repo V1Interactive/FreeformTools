@@ -17,6 +17,7 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+import inspect
 from enum import Enum
 
 class Freeform_Enum(Enum):
@@ -75,7 +76,9 @@ class UI_Singleton_Base(object, metaclass=UI_Singleton):
 
 class Freeform_Registry(object, metaclass=Singleton):
     '''
-    Base Registry class for gathering components of the Freeform Tools
+    Base Registry class for gathering components of the Freeform Tools.  On class import
+    classes register their type into these registries for easy and consistent lookup no matter
+    how the import was handled.
     '''
     @property
     def type_list(self):
@@ -116,8 +119,14 @@ class Freeform_Registry(object, metaclass=Singleton):
 
         return return_item
 
-    def get(self, get_name, all_registries=False):
-        return self._get_internal(get_name, self.registry, all_registries)
+    def get(self, get_obj, all_registries=False):
+        if(inspect.isclass(get_obj)):
+            get_obj = get_obj.__name__
+        
+        return self._get_internal(get_obj, self.registry, all_registries)
 
-    def get_hidden(self, get_name, all_registries=False):
-        return self._get_internal(get_name, self.hidden_registry, all_registries)
+    def get_hidden(self, get_obj, all_registries=False):
+        if(inspect.isclass(get_obj)):
+            get_obj = get_obj.__name__
+
+        return self._get_internal(get_obj, self.hidden_registry, all_registries)

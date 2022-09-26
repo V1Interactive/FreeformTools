@@ -514,7 +514,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
                     getattr(export_joint, attr).disconnect()
 
             if export_namespace:
-                export_joint.rename("{0}:{1}".format(export_namespace, orig_joint.stripNamespace().split('|')[-1]))
+                export_joint.rename("{0}:{1}".format(export_namespace, orig_joint.stripNamespace().nodeName()))
 
             if do_export:
                 if export_namespace:

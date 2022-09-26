@@ -54,6 +54,7 @@ namespace Freeform.Rigging.ContentBrowser
 
         // All Events for Python to register functionality on
         public event EventHandler OpenFileHandler;
+        public event EventHandler ImportCombineHandler;
 
         // All Commands fired from UI controls
         public RelayCommand DoubleClickCommand { get; set; }
@@ -70,9 +71,10 @@ namespace Freeform.Rigging.ContentBrowser
         public RelayCommand DeleteCommand { get; set; }
         public RelayCommand RevertCommand { get; set; }
         public RelayCommand ChangeViewStateCommand { get; set; }
+        public RelayCommand ImportCombineCommand { get; set; }
 
         // Main variable for determining the size of file Icons
-        int _iconWidth;
+    int _iconWidth;
         public int IconWidth
         {
             get { return _iconWidth; }
@@ -129,8 +131,23 @@ namespace Freeform.Rigging.ContentBrowser
             }
         }
 
-        // Message displayed to users for errors or other browser information
-        string _userMessage;
+        // Title of the main UI window
+        string _launchProgram;
+        public string LaunchProgram
+        {
+            get { return _launchProgram; }
+            set
+            {
+                if (_launchProgram != value)
+                {
+                    _launchProgram = value;
+                    RaisePropertyChanged("LaunchProgram");
+                }
+            }
+        }
+
+    // Message displayed to users for errors or other browser information
+    string _userMessage;
         public string UserMessage
         {
             get { return _userMessage; }
@@ -510,6 +527,27 @@ namespace Freeform.Rigging.ContentBrowser
             }
         }
 
+        // Toggles visibility of Perforce UI options
+        bool _perforceEnabled;
+        public bool PerforceEnabled
+        {
+            get { return _perforceEnabled; }
+            set
+            {
+                if (_perforceEnabled != value)
+                {
+                    _perforceEnabled = value;
+                    RaisePropertyChanged("PerforceEnabled");
+                }
+            }
+        }
+
+        // Whether or not Maya is the launch program
+        public bool IsMaya
+        {
+            get { return LaunchProgram == "Maya"; }
+        }
+
         // Selected directory in the directory tree
         UserDirectory _selectedDirectory;
         public UserDirectory SelectedDirectory
@@ -585,6 +623,10 @@ namespace Freeform.Rigging.ContentBrowser
         {
             try
             {
+                ConfigManager configManager = new ConfigManager();
+                PerforceConfig perforceConfig = (PerforceConfig)configManager.GetCategory(SettingsCategories.PERFORCE);
+                PerforceEnabled = perforceConfig.Enabled;
+
                 FilterExtensionList = new List<string>();
                 RootDirectoryItems = new ObservableCollection<UserFile>();
                 ContentList = new ObservableCollection<UserFile>();
@@ -617,10 +659,10 @@ namespace Freeform.Rigging.ContentBrowser
                 DeleteCommand = new RelayCommand(DeleteCall);
                 RevertCommand = new RelayCommand(RevertCall);
                 ChangeViewStateCommand = new RelayCommand(ChangeViewStateCall);
+                ImportCombineCommand = new RelayCommand(ImportCombineCall);
 
-
-                ConfigManager configManger = new ConfigManager();
-                BuildDirectoryTree(configManger.GetContentRoot());
+                BuildDirectoryTree(configManager.GetContentRoot());
+                BuildDirectoryTree(configManager.GetEngineContentRoot());
 
                 DirectoryWatcher.Changed += new FileSystemEventHandler(UpdateTick);
                 DirectoryWatcher.Renamed += new RenamedEventHandler(RenameTick);
@@ -638,6 +680,13 @@ namespace Freeform.Rigging.ContentBrowser
         // Updates the Perforce status of the file
         public static void UpdatePerforceStatus(List<UserFile> fileList)
         {
+            ConfigManager configManager = new ConfigManager();
+            PerforceConfig perforceConfig = (PerforceConfig)configManager.GetCategory(SettingsCategories.PERFORCE);
+            if(perforceConfig.Enabled == false)
+            {
+                return;
+            }
+
             string[] fileStatusList = fileList.Select(x => x.ItemPath).ToArray();
 
             if (fileStatusList.Any())
@@ -732,8 +781,6 @@ namespace Freeform.Rigging.ContentBrowser
         // Used to handle pasting a file path into the content browser to navitage to the pasted path
         public void NavigateToPath(string path)
         {
-            ConfigManager configManger = new ConfigManager();
-            string contentRoot = configManger.GetContentRoot();
             string filePath = string.Empty;
 
             // If path is a file get the Directory of the file instead
@@ -750,9 +797,18 @@ namespace Freeform.Rigging.ContentBrowser
                 }
             }
 
-            if ((System.IO.File.Exists(path) || Directory.Exists(path)) && path.ToLower().Contains(contentRoot.ToLower()))
+            if (System.IO.File.Exists(path) || Directory.Exists(path))
             {
-                UserDirectory foundDirectory = (RootDirectoryItems[0] as UserDirectory).FindChildFolder(path);
+                UserDirectory foundDirectory = null;
+
+                foreach (UserFile rootDirectory in RootDirectoryItems)
+                {
+                    if (path.ToLower().Contains(rootDirectory.ItemPath.ToLower()))
+                    {
+                        foundDirectory = (rootDirectory as UserDirectory).FindChildFolder(path);
+                    }
+                }
+
                 if (foundDirectory != null)
                 {
                     SelectedDirectory = foundDirectory;
@@ -760,7 +816,7 @@ namespace Freeform.Rigging.ContentBrowser
                 }
             }
             
-            if(filePath != string.Empty)
+            if (filePath != string.Empty)
             {
                 foreach (UserFile file in SelectedDirectory.Files)
                 {
@@ -789,11 +845,14 @@ namespace Freeform.Rigging.ContentBrowser
         // Build out the tree of directories from a root path
         public void BuildDirectoryTree(string path)
         {
-            UserDirectory rootDirectory = CreateDirectory(path, null);
-            RootDirectoryItems.Add(rootDirectory);
-            SelectedDirectory = rootDirectory;
-            SelectedDirectory.IsExpanded = true;
-            SelectedDirectory.IsSelected = true;
+            if (Directory.Exists(path))
+            {
+                UserDirectory rootDirectory = CreateDirectory(path, null);
+                RootDirectoryItems.Add(rootDirectory);
+                SelectedDirectory = rootDirectory;
+                SelectedDirectory.IsExpanded = true;
+                SelectedDirectory.IsSelected = true;
+            }
         }
 
         public void CheckFile(UserFile file)
@@ -1031,10 +1090,18 @@ namespace Freeform.Rigging.ContentBrowser
 
         // UI Command to open the directory of file path in windows explorer
         public void OpenFileExplorerCall(object sender)
-        {
-            UserFile openFile = (UserFile)sender;
-            string navPath = openFile.GetType() == typeof(UserFile) ? openFile.Folder : openFile.ItemPath;
-            Process.Start("explorer.exe", navPath);
+        {   
+            if (sender == null)
+            {
+                sender = SelectedDirectory != null ? SelectedDirectory : SelectedFile;
+            }
+
+            if (sender != null)
+            {
+                UserFile openFile = (UserFile)sender;
+                string navPath = openFile.GetType() == typeof(UserFile) ? openFile.Folder : openFile.ItemPath;
+                Process.Start("explorer.exe", navPath);
+            }
         }
 
         // Perforce Checkout all selected files
@@ -1093,11 +1160,25 @@ namespace Freeform.Rigging.ContentBrowser
                 UIViewState = ViewState.FileView;
         }
 
+        public void ImportCombineCall(object sender)
+        {
+            ImportCombineEventArgs eventArgs = new ImportCombineEventArgs
+            {
+                FilePathList = SelectedFileList
+            };
+            ImportCombineHandler?.Invoke(this, eventArgs);
+        }
+
 
         // EventArgs to pass a file path to Python
-        public class OpenFileEventArgs : EventArgs
+        class OpenFileEventArgs : EventArgs
         {
             public string FilePath = string.Empty;
         }
-    }
+        // EventArgs to pass a file path to Python
+        public class ImportCombineEventArgs : EventArgs
+        {
+          public List<UserFile> FilePathList = new List<UserFile>();
+        }
+  }
 }

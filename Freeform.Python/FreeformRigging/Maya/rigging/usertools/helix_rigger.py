@@ -126,7 +126,8 @@ class HelixRigger:
         self.vm.GetStartingDirectoryHandler += self.fetch_starting_dir
         self.vm.LoadSettingsHandler += self.load_settings
         self.vm.SaveSettingsHandler += self.save_settings
-        self.vm.SaveUE4SettingsHandler += self.save_ue4_settings
+        self.vm.SaveCharacterSettingsHandler += self.save_character_settings
+        self.vm.SaveEngineSettingsHandler += self.save_engine_settings
         self.vm.RigBuilderHandler += self.open_rig_builder
         self.vm.ColorSetsHandler += self.open_color_sets
         self.vm.SaveRiggingHandler += self.save_to_json
@@ -164,14 +165,15 @@ class HelixRigger:
 
         self.get_prop_files()
         self.vm.UpdateRiggerUI()
-        scene_tools.scene_manager.SceneManager.update_method_list.append(self.vm.UpdateRiggerUI)
-        scene_tools.scene_manager.SceneManager.method_list.append(self.vm.UpdateRiggerInPlace)
+        scene_tools.scene_manager.SceneManager().update_method_list.append(self.vm.UpdateRiggerUI)
+        scene_tools.scene_manager.SceneManager().method_list.append(self.vm.UpdateRiggerInPlace)
 
-        scene_tools.scene_manager.SceneManager.method_list.append(self.rigger_update_control_button_list)
-        scene_tools.scene_manager.SceneManager.method_list.append(self.rigger_update_character_components)
+        scene_tools.scene_manager.SceneManager().method_list.append(self.rigger_update_control_button_list)
+        scene_tools.scene_manager.SceneManager().method_list.append(self.rigger_update_character_components)
+        scene_tools.scene_manager.SceneManager().method_list.append(self.rigger_get_active_character)
 
-        scene_tools.scene_manager.SceneManager.selection_changed_list.append(self.rigger_select_component)
-        scene_tools.scene_manager.SceneManager.selection_changed_list.append(self.rigger_populate_component_category)
+        scene_tools.scene_manager.SceneManager().selection_changed_list.append(self.rigger_select_component)
+        scene_tools.scene_manager.SceneManager().selection_changed_list.append(self.rigger_populate_component_category)
 
 
     def show(self):
@@ -197,7 +199,8 @@ class HelixRigger:
         self.vm.GetStartingDirectoryHandler -= self.fetch_starting_dir
         self.vm.LoadSettingsHandler -= self.load_settings
         self.vm.SaveSettingsHandler -= self.save_settings
-        self.vm.SaveUE4SettingsHandler -= self.save_ue4_settings
+        self.vm.SaveCharacterSettingsHandler -= self.save_character_settings
+        self.vm.SaveEngineSettingsHandler -= self.save_engine_settings
         self.vm.RigBuilderHandler -= self.open_rig_builder
         self.vm.ColorSetsHandler -= self.open_color_sets
         self.vm.SaveRiggingHandler -= self.save_to_json
@@ -240,9 +243,10 @@ class HelixRigger:
 
         scene_tools.scene_manager.SceneManager().remove_method(self.rigger_update_control_button_list)
         scene_tools.scene_manager.SceneManager().remove_method(self.rigger_update_character_components)
+        scene_tools.scene_manager.SceneManager().remove_method(self.rigger_get_active_character)
 
-        scene_tools.scene_manager.SceneManager.selection_changed_list.remove(self.rigger_select_component)
-        scene_tools.scene_manager.SceneManager.selection_changed_list.remove(self.rigger_populate_component_category)
+        scene_tools.scene_manager.SceneManager().selection_changed_list.remove(self.rigger_select_component)
+        scene_tools.scene_manager.SceneManager().selection_changed_list.remove(self.rigger_populate_component_category)
 
     def create_rig_buttons(self):
         '''
@@ -957,6 +961,16 @@ class HelixRigger:
                 c_character.RemoveComponent(c_component)
 
 
+    def rigger_get_active_character(self):
+        '''
+        Returns the active character from the UI
+        '''
+        character_network = None
+        if self.vm.ActiveCharacter:
+            character_node = pm.PyNode(self.vm.ActiveCharacter.NodeName)
+            character_network = metadata.meta_network_utils.create_from_node(character_node)
+        return character_network
+
     def get_c_character(self, character_network):
         '''
         Finds and returns the C# Character object from a maya CharacterCore network
@@ -1589,7 +1603,6 @@ class HelixRigger:
         character_network = metadata.meta_network_utils.create_from_node(character_node)
         joint_core_network = character_network.get_downstream(JointsCore)
         character_joint_list = joint_core_network.get_connections()
-        first_joint = get_first_or_default(character_joint_list)
 
         hik_char = None
         for jnt in character_joint_list:
@@ -1604,9 +1617,7 @@ class HelixRigger:
             autokey_state = pm.autoKeyframe(q=True, state=True)
             pm.autoKeyframe(state=False)
 
-            rigging.rig_base.Component_Base.zero_all_overdrivers(character_network)
-            rigging.rig_base.Component_Base.zero_all_rigging(character_network)
-            rigging.skeleton.zero_character(first_joint)
+            freeform_utils.character_utils.zero_character(character_network)
         
             hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty)
 
@@ -1850,7 +1861,7 @@ class HelixRigger:
             vm (Rigging.Rigger): C# view model object sending the command
             event_args (SettingsEventArgs): Passes the character, settings preset, and whether or not to update the settings file
         '''
-        if pm.objExists(event_args.character.NodeName):
+        if event_args.character and pm.objExists(event_args.character.NodeName):
             character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
             joint_list   = character_network.get_downstream(JointsCore).get_connections()
             first_joint  = get_first_or_default(joint_list)
@@ -1861,8 +1872,35 @@ class HelixRigger:
             print("Found nothing to save settings from")
 
     @csharp_error_catcher
-    def save_ue4_settings(self, vm, event_args):
-        if pm.objExists(event_args.character.NodeName):
+    def save_character_settings(self, vm, event_args):
+        '''
+        save_character_settings(self, vm, event_args)
+        Saves a json character settings file from character properties
+
+        Args:
+            vm (Rigging.Rigger): C# view model object sending the command
+            event_args (SettingsEventArgs): Passes the character, settings preset, and whether or not to update the settings file
+        '''
+        if event_args.character and pm.objExists(event_args.character.NodeName):
+            character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
+            joint_list   = character_network.get_downstream(JointsCore).get_connections()
+            first_joint  = get_first_or_default(joint_list)
+
+            rigging.file_ops.save_character_settings_to_json_with_dialog(first_joint)
+        else:
+            print("Found nothing to save settings from")
+
+    @csharp_error_catcher
+    def save_engine_settings(self, vm, event_args):
+        '''
+        save_engine_settings(self, vm, event_args)
+        Saves a json character settings file with no zero orient values to match Engine exported animation
+
+        Args:
+            vm (Rigging.Rigger): C# view model object sending the command
+            event_args (SettingsEventArgs): Passes the character, settings preset, and whether or not to update the settings file
+        '''
+        if event_args.character and pm.objExists(event_args.character.NodeName):
             character_node = pm.PyNode(event_args.character.NodeName)
             character_network = metadata.meta_network_utils.create_from_node(character_node)
             joint_list = character_network.get_downstream(JointsCore).get_connections()
@@ -1971,7 +2009,37 @@ class HelixRigger:
             vm (Rigging.Rigger): C# view model object sending the command
             event_args (TransferEventArgs): Passes the source and destination character to transfer animation on from the UI
         '''
-        rigging.skeleton.hik_transfer_animations(pm.PyNode(event_args.sourceCharacter.NodeName), pm.PyNode(event_args.destinationCharacter.NodeName))
+        source_character_node = pm.PyNode(event_args.sourceCharacter.NodeName)
+        dest_character_node = pm.PyNode(event_args.destinationCharacter.NodeName)
+
+        root_joint, missed_joint_list = rigging.skeleton.hik_transfer_animations(source_character_node, dest_character_node)
+        skeleton_dict = rigging.skeleton.get_skeleton_dict(root_joint)
+
+        constrain_joint_list = [x for x in root_joint.listRelatives() if x not in missed_joint_list]
+
+        # Make sure to pin all joints above the root in world space so when we bake root motion it doesn't 
+        # double translate the character
+        component_list = []
+        for constrain_joint in constrain_joint_list:
+            rig_prop_list = metadata.meta_property_utils.get_property_list(constrain_joint, metadata.joint_properties.RigMarkupProperty)
+            root_prop = None
+            for rig_prop in rig_prop_list:
+                if rig_prop.get('tag') == 'root':
+                    root_prop = rig_prop
+
+            if root_prop is not None:
+                fk_component = FK()
+                fk_component.rig(skeleton_dict, root_prop.get('side'), root_prop.get('region'))
+                control_list = fk_component.network['controls'].get_connections()
+                for control in control_list:
+                    fk_component.switch_space( control, Overdriver, None )
+                component_list.append(fk_component)
+
+        transfer_joint_list = [root_joint] + missed_joint_list
+        rigging.skeleton.joint_transfer_animations(source_character_node, dest_character_node, keep_offset=False, joint_list=transfer_joint_list)
+
+        for component in component_list:
+            component.bake_and_remove()
 
     @csharp_error_catcher
     def import_ue4_animation(self, vm, event_args):
