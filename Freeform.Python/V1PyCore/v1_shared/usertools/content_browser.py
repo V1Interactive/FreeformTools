@@ -29,6 +29,8 @@ class ContentBrowser(object):
             self.launch_program = "Maya"
             self.vm.OpenFileHandler += self.launch_in_maya
             self.vm.ImportCombineHandler += self.import_and_combine
+            self.vm.ExportSelectedHandler += self.export_selected
+
         if "3dsmax" in self.process.ToString():
             self.launch_program = "3dsMax"
         if "UE4Editor" in self.process.ToString():
@@ -60,7 +62,6 @@ class ContentBrowser(object):
     @csharp_error_catcher
     def launch_in_maya(self, vm, event_args):
         '''
-
         If this runs from the wrong program it will error on importing pymel
         '''
         import pymel.core as pm
@@ -71,9 +72,26 @@ class ContentBrowser(object):
             maya_utils.scene_utils.import_file_safe(event_args.FilePath, fbx_mode="add", tag_imported=True, returnNewNodes=True)
 
     @csharp_error_catcher
+    def export_selected(self, vm, event_args):
+        '''
+        Exports selected scene items to the selected file
+        '''
+        import pymel.core as pm
+        import v1_core
+        import freeform_utils
+        import maya_utils
+
+        if os.path.exists(event_args.FilePath) and pm.ls(sl=True):
+            config_manager = v1_core.global_settings.ConfigManager()
+            check_perforce = config_manager.get("Perforce").get("Enabled")
+
+            freeform_utils.fbx_presets.FBXAnimation().load()
+            maya_utils.scene_utils.export_selected_safe(event_args.FilePath, checkout = check_perforce, s = True)
+
+
+    @csharp_error_catcher
     def import_and_combine(self, vm, event_args):
         '''
-
         If this runs from the wrong program it will error on importing pymel
         '''
         import pymel.core as pm

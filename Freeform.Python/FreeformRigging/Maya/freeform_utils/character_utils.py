@@ -53,7 +53,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     Returns:
         PyNode. The CharacterCore MetaNode created for the character
     '''
-    start_time = time.clock()
+    start_time = time.perf_counter()
     config_manager = v1_core.global_settings.ConfigManager()
 
     rigging.skeleton.clean_skeleton(jnt)
@@ -124,16 +124,17 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     auto_freeze_skeleton = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("AutoFreezeSkeleton")
     if auto_freeze_skeleton and freeze_skeleton:
-        freeze_time = time.clock()
+        freeze_time = time.perf_counter()
         rigging.rig_tools.freeze_xform_rig(character_network)
-        v1_core.v1_logging.get_logger().info("Froze Skeleton in {0} Seconds".format(time.clock() - freeze_time))
+        v1_core.v1_logging.get_logger().info("Froze Skeleton in {0} Seconds".format(time.perf_counter() - freeze_time))
 
     if update_ui:
-        update_time = time.clock()
+        update_time = time.perf_counter()
         scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
-        v1_core.v1_logging.get_logger().info("Updated UI in {0} Seconds".format(time.clock() - update_time))
+        v1_core.v1_logging.get_logger().info("Updated UI in {0} Seconds".format(time.perf_counter() - update_time))
 
-    v1_core.v1_logging.get_logger().info("Characterize Completed in {0} Seconds".format(time.clock() - start_time))
+    v1_core.v1_logging.get_logger().info("Characterize Completed in {0} Seconds".format(time.perf_counter() - start_time))
+
 
     return character_network
 

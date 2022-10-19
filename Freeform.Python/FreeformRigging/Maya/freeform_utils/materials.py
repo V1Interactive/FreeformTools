@@ -69,7 +69,38 @@ class RigControlShaderEnum(Freeform_Enum):
     SPACE_LOCKED = MaterialSettings("rig_control_default_space_locked_SG", pm.dt.Color(0.45,0.35,0.5), pm.dt.Color(0.5,0.5,0.5), 1)
     LOCKED = MaterialSettings("rig_control_default_locked_SG", pm.dt.Color(0.45,0.45,0.45), pm.dt.Color(0.5,0.5,0.5), 1)
     DEFAULT = MaterialSettings("rig_control_default_default_SG", pm.dt.Color(0.7,0.7,0), pm.dt.Color(0.7,0.7,0.7), 1)
+    GREY = MaterialSettings("default_grey_SG", pm.dt.Color(0.5,0.5,0.5), pm.dt.Color(0,0,0), 0)
 
+
+def create_material(material_setting):
+    '''
+    Get or create a scene material from MaterialSettings
+
+    Args:
+        material_setting (MaterialSettings): Object that holds material name and properties
+    '''
+    control_shader = None
+    if material_setting and material_setting.name:
+        if pm.objExists(material_setting.name):
+            control_shader = pm.PyNode(material_setting.name)
+        else:
+            material = pm.shadingNode('blinn', asShader=True, name=material_setting.name.replace('SG', 'material'))
+            material_setting.apply_to_material(material)
+            control_shader = pm.sets( renderable=True, noSurfaceShader=True, empty=True, name=material_setting.name )
+            # Connect material to shader
+            material.outColor >> control_shader.surfaceShader
+
+    return control_shader
+
+def set_material(set_obj, control_shader):
+    '''
+    Set a material on an object or list of objects
+
+    Args:
+        set_obj (PyNode): Object to set materials on
+        control_shader (Shader): Material shader to use
+    '''
+    pm.sets(control_shader, edit=True, forceElement=set_obj)
 
 def save_scene_material(side, scene_material):
     '''

@@ -21,9 +21,9 @@
 namespace HelixResources.Style
 {
     using System;
-  using System.Collections;
-  using System.Collections.Generic;
-  using System.ComponentModel;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Drawing;
     using System.Globalization;
     using System.IO;
