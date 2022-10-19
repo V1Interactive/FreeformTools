@@ -30,6 +30,7 @@ class ContentBrowser(object):
             self.vm.OpenFileHandler += self.launch_in_maya
             self.vm.ImportCombineHandler += self.import_and_combine
             self.vm.ExportSelectedHandler += self.export_selected
+
         if "3dsmax" in self.process.ToString():
             self.launch_program = "3dsMax"
         if "UE4Editor" in self.process.ToString():

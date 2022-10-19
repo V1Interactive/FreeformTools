@@ -293,7 +293,7 @@ class EditUVProperty(ModelProperty):
 
         control_shader = freeform_utils.materials.create_material(material_setting)
         freeform_utils.materials.set_material(self.get_connections(), control_shader)
-
+        
         for obj in self.get_connections():
             pm.polyEditUV(obj.faces, pu=self.get('pivotU'), pv=self.get('pivotV'), su=self.get('scaleU'), sv=self.get('scaleV'))
 

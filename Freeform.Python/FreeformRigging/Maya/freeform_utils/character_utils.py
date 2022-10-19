@@ -135,6 +135,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
 
     v1_core.v1_logging.get_logger().info("Characterize Completed in {0} Seconds".format(time.perf_counter() - start_time))
 
+
     return character_network
 
 def characterize_with_zeroing(jnt = None):
