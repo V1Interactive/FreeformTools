@@ -186,28 +186,28 @@ class BakeQueue(object):
                 for pre_process in priority_dict[key]:
                     method = pre_process[0]
                     kwargs = pre_process[1]
-                    method_time = time.clock()
+                    method_time = time.perf_counter()
                     constraint_list = constraint_list + method(**kwargs)
-                    v1_core.v1_logging.get_logger().debug("PRE-PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.clock() - method_time))
+                    v1_core.v1_logging.get_logger().debug("PRE-PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.perf_counter() - method_time))
 
             v1_core.v1_logging.get_logger().debug("Running {0} Bake Processes".format(len(self.queue.values())))
             for method, obj_list, kwargs in self.queue.values():
-                method_time = time.clock()
+                method_time = time.perf_counter()
                 if obj_list:
                     method(obj_list, **kwargs)
                 else:
                     method(**kwargs)
-                v1_core.v1_logging.get_logger().debug("BAKE PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.clock() - method_time))
+                v1_core.v1_logging.get_logger().debug("BAKE PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.perf_counter() - method_time))
 
             pm.delete(constraint_list)
 
             v1_core.v1_logging.get_logger().debug("Running {0} Post-Processes".format(len(self.post_process_list)))
             for post_process in self.post_process_list:
-                method_time = time.clock()
+                method_time = time.perf_counter()
                 method = post_process[0]
                 kwargs = post_process[1]
                 method(**kwargs)
-                v1_core.v1_logging.get_logger().debug("POST-PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.clock() - method_time))
+                v1_core.v1_logging.get_logger().debug("POST-PROCESS {0} : {1} : Completed in {2} seconds".format(method.__name__, method.__repr__(), time.perf_counter() - method_time))
         except Exception as e:
             exception_text = v1_core.exceptions.get_exception_message()
 
@@ -279,13 +279,13 @@ def bake_objects(obj_list, translate, rotate, scale, use_settings = True, custom
 
         v1_core.v1_logging.get_logger().info("Baking {0} \n Use Settings: {1}, over range {2}\nBake Attrs: {3}\nBakeSettings: {4}".format(obj_list, use_settings, time_range, attr_list, kwargs))
 
-        bake_start = time.clock()
+        bake_start = time.perf_counter()
         # Baking is stupidly slower if you pass in a value to smart bake(sr), even if it's False, so we split out the command
         if bake_settings.smart_bake:
             pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, sr=True, preserveOutsideKeys = True, **kwargs)
         else:
             pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, preserveOutsideKeys = True, **kwargs)
-        v1_core.v1_logging.get_logger().info("Bake Command Completed in {0} Seconds".format(time.clock() - bake_start))
+        v1_core.v1_logging.get_logger().info("Bake Command Completed in {0} Seconds".format(time.perf_counter() - bake_start))
 
         pm.setKeyframe(obj_list, t=-1010, at='rotate', v=0)
         pm.filterCurve(obj_list)

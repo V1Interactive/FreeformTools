@@ -99,7 +99,7 @@ def load_index_skin_weights(obj, file_path):
     apply_index_weighting(obj, weight_data)
 
 def apply_index_weighting(obj, weight_data):
-    start_time = time.clock()
+    start_time = time.perf_counter()
 
     main_progress_bar = pm.mel.eval('$tmp = $gMainProgressBar')
     pm.progressBar( main_progress_bar, edit=True, beginProgress=True, isInterruptable=True, status='Applying Skin Weights...', maxValue=obj.vtx.count() )
@@ -134,7 +134,7 @@ def apply_index_weighting(obj, weight_data):
 
     pm.progressBar(main_progress_bar, edit=True, endProgress=True)
 
-    print(time.clock() - start_time)
+    print(time.perf_counter() - start_time)
 
 
 def load_voxel_skin_weights(obj, file_path, voxel_size, max_iterations = 40, min_distance = 0.25):
@@ -145,7 +145,7 @@ def load_voxel_skin_weights(obj, file_path, voxel_size, max_iterations = 40, min
 
 
 def apply_voxel_weighting(obj, voxel_data, max_iterations, min_distance):
-    start_time = time.clock()
+    start_time = time.perf_counter()
 
     main_progress_bar = pm.mel.eval('$tmp = $gMainProgressBar')
     pm.progressBar( main_progress_bar, edit=True, beginProgress=True, isInterruptable=True, status='Applying Skin Weights...', maxValue=obj.vtx.count() )
@@ -179,7 +179,7 @@ def apply_voxel_weighting(obj, voxel_data, max_iterations, min_distance):
 
     pm.progressBar(main_progress_bar, edit=True, endProgress=True)
 
-    print(time.clock() - start_time)
+    print(time.perf_counter() - start_time)
 
 
 def voxel_cube(voxel_vector, voxel_size):

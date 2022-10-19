@@ -2604,16 +2604,18 @@ class HelixRigger:
                     set_property = metadata.meta_property_utils.get_property(set_control, ControlProperty)
                     already_locked = set_property.get('locked', 'bool')
                     control_shader = locked_shader if already_locked else side_shader
+
+                    set_shader = control_shader
                     if set_control not in selection_list and not already_locked:
-                        pm.sets(side_shader, edit=True, forceElement=set_control)
-                    else:
-                        pm.sets(control_shader, edit=True, forceElement=set_control)
+                        set_shader = side_shader
+                    freeform_utils.materials.set_material(set_control, set_shader)
 
                 if addon_network:
                     overdriver_shader = rigging.rig_base.Component_Base.create_material("SPACE_SWITCHED")
                     overdriver_locked_shader = rigging.rig_base.Component_Base.create_material("SPACE_LOCKED")
                     control_shader = overdriver_locked_shader if lock_state else overdriver_shader
-                    pm.sets(control_shader, edit=True, forceElement=[obj])
+
+                    freeform_utils.materials.set_material(obj, control_shader)
 
                 self.rigger_update_control_button_list(component_network)
 

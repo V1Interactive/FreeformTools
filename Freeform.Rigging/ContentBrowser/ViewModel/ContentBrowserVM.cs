@@ -55,6 +55,7 @@ namespace Freeform.Rigging.ContentBrowser
         // All Events for Python to register functionality on
         public event EventHandler OpenFileHandler;
         public event EventHandler ImportCombineHandler;
+        public event EventHandler ExportSelectedHandler;
 
         // All Commands fired from UI controls
         public RelayCommand DoubleClickCommand { get; set; }
@@ -72,8 +73,9 @@ namespace Freeform.Rigging.ContentBrowser
         public RelayCommand RevertCommand { get; set; }
         public RelayCommand ChangeViewStateCommand { get; set; }
         public RelayCommand ImportCombineCommand { get; set; }
+        public RelayCommand ExportSelectedCommand { get; set; }
 
-        // Main variable for determining the size of file Icons
+    // Main variable for determining the size of file Icons
     int _iconWidth;
         public int IconWidth
         {
@@ -660,6 +662,7 @@ namespace Freeform.Rigging.ContentBrowser
                 RevertCommand = new RelayCommand(RevertCall);
                 ChangeViewStateCommand = new RelayCommand(ChangeViewStateCall);
                 ImportCombineCommand = new RelayCommand(ImportCombineCall);
+                ExportSelectedCommand = new RelayCommand(ExportSelectedCall);
 
                 BuildDirectoryTree(configManager.GetContentRoot());
                 BuildDirectoryTree(configManager.GetEngineContentRoot());
@@ -1167,6 +1170,15 @@ namespace Freeform.Rigging.ContentBrowser
                 FilePathList = SelectedFileList
             };
             ImportCombineHandler?.Invoke(this, eventArgs);
+        }
+
+        public void ExportSelectedCall(object sender)
+        {
+            OpenFileEventArgs eventArgs = new OpenFileEventArgs
+            {
+              FilePath = sender as string
+            };
+            ExportSelectedHandler?.Invoke(this, eventArgs);
         }
 
 

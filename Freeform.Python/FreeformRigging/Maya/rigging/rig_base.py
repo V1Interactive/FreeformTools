@@ -224,6 +224,7 @@ class Component_Base(object, metaclass=Component_Meta):
         if material_category.get("use_color_set"):
             color_set_category = v1_core.global_settings.GlobalSettings().get_sub_category(freeform_utils.materials.MaterialSettings.material_category, color_set)
 
+        material_setting = None
         if color_set_category != None and color_set_category.get(side):
             values = color_set_category.get(side)
             material_setting = freeform_utils.materials.MaterialSettings(values['name'], values['color'], values['transparency'], values['translucence'])
@@ -234,16 +235,7 @@ class Component_Base(object, metaclass=Component_Meta):
 
             material_setting = material_enum.value
 
-        control_shader = None
-        if material_setting.name:
-            if pm.objExists(material_setting.name):
-                control_shader = pm.PyNode(material_setting.name)
-            else:
-                material = pm.shadingNode('blinn', asShader=True, name=material_setting.name.replace('SG', 'material'))
-                material_setting.apply_to_material(material)
-                control_shader = pm.sets( renderable=True, noSurfaceShader=True, empty=True, name=material_setting.name )
-                # Connect material to shader
-                material.outColor >> control_shader.surfaceShader
+        control_shader = freeform_utils.materials.create_material(material_setting)
 
         return control_shader
 
@@ -644,7 +636,7 @@ class Component_Base(object, metaclass=Component_Meta):
                 character_network = component.network['character']
                 color_set = character_network.get('color_set')
                 control_shader = Component_Base.create_material(mirrored_side, color_set)
-                pm.sets(control_shader, edit=True, forceElement=mirrored_control)
+                freeform_utils.materials.set_material(mirrored_control, control_shader)
 
             pm.delete(mirror_grp)
         else:
@@ -852,11 +844,10 @@ class Component_Base(object, metaclass=Component_Meta):
         control_shader = Component_Base.create_material(side, color_set)
         # Have to step through controls and set materials since setting a parent object's material sets all children the same
         for set_control in ordered_control_list:
+            set_shader = control_shader
             if set_control in locked_control_list:
-                pm.sets(locked_shader, edit=True, forceElement=[set_control])
-            else:
-                print(set_control, control_shader)
-                pm.sets(control_shader, edit=True, forceElement=[set_control])
+                set_shader = locked_shader
+            freeform_utils.materials.set_material(set_control, set_shader)
 
         if import_controls:
             pm.delete([x for x in imported_nodes if pm.objExists(x)])
@@ -1080,7 +1071,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         if weight_string == None:
             weight_string = ""
 
-        addon_start = time.clock()
+        addon_start = time.perf_counter()
         for object_space in object_space_list:
             addon_network = metadata.meta_network_utils.get_first_network_entry(object_space, AddonControls)
             if addon_network:
@@ -1152,7 +1143,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         
         scene_tools.scene_manager.SceneManager().run_by_string('rigger_update_control_button_list', self.network['component'])
 
-        v1_core.v1_logging.get_logger().debug("Addon {0} on {1} created in {2} seconds".format(addon_network.get('component_type'), control, time.clock() - addon_start))
+        v1_core.v1_logging.get_logger().debug("Addon {0} on {1} created in {2} seconds".format(addon_network.get('component_type'), control, time.perf_counter() - addon_start))
 
         return True
 
@@ -1330,7 +1321,8 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
             locked_shader = Component_Base.create_material("SPACE_LOCKED", color_set)
             lock_state = control_property.get('locked', 'bool')
             control_shader = locked_shader if lock_state else overdriver_shader
-            pm.sets(control_shader, edit=True, forceElement=[jnt])
+
+            freeform_utils.materials.set_material(jnt, control_shader)
 
         for layer in layer_list:
             layer.drawInfo >> jnt.drawOverride
@@ -1440,7 +1432,7 @@ class Rig_Component(Component_Base):
                 it's shape from
         '''
         v1_core.v1_logging.get_logger().debug("Rig_Component rig_from_json - {0} - {1} - {2}".format(cls, side, region))
-        rig_component_start = time.clock()
+        rig_component_start = time.perf_counter()
 
         return_component = None
         exists = False
@@ -1487,7 +1479,7 @@ class Rig_Component(Component_Base):
             return_component.update(component_dict)
             exists = True
 
-        v1_core.v1_logging.get_logger().debug("Rigging from json for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
+        v1_core.v1_logging.get_logger().debug("Rigging from json for {0} {1} created in {2} seconds".format(side, region, time.perf_counter() - rig_component_start))
 
         return (return_component, exists)
 
@@ -1540,7 +1532,7 @@ class Rig_Component(Component_Base):
         '''
         # Rigging basic setup, create duplicate rigging chain ready for controls
         v1_core.v1_logging.get_logger().debug("Rig_Component start rigging - {0} - {1} - {2}".format(side, region, type(self)))
-        rig_component_start = time.clock()
+        rig_component_start = time.perf_counter()
 
         self.skeleton_dict = skeleton_dict
 
@@ -1582,7 +1574,7 @@ class Rig_Component(Component_Base):
         rigging_root = skeleton.get_chain_root(rigging_chain)
         rigging_root.setParent(component_grp)
 
-        v1_core.v1_logging.get_logger().debug("Rigging for {0} {1} created in {2} seconds".format(side, region, time.clock() - rig_component_start))
+        v1_core.v1_logging.get_logger().debug("Rigging for {0} {1} created in {2} seconds".format(side, region, time.perf_counter() - rig_component_start))
 
     def update_from_skeleton(self):
         '''

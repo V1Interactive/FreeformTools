@@ -403,7 +403,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
             c_asset (ExportAsset): ExportAsset calling the export
             event_args (ExportDefinitionEventArgs): EventArgs storing the definition we are exporting
         '''
-        export_start = time.clock()
+        export_start = time.perf_counter()
         v1_core.v1_logging.get_logger().info("Exporter - {0} Export Started".format(self.asset_type))
 
         config_manager = v1_core.global_settings.ConfigManager()
@@ -459,7 +459,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
             pm.autoKeyframe(state=autokey_state)
             if pm.animLayer('BaseAnimation', q=True, exists=True):
                 pm.animLayer('BaseAnimation', e=True, l=base_anim_lock_state)
-            v1_core.v1_logging.get_logger().info("Exporter - Finished in {0} seconds".format(time.clock() - export_start))
+            v1_core.v1_logging.get_logger().info("Exporter - Finished in {0} seconds".format(time.perf_counter() - export_start))
 
 
     def set_bake_frame_range(self, definition_node):

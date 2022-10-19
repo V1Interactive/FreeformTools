@@ -203,7 +203,6 @@ class IK(Rig_Component):
             settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
             frame_range = maya_utils.baking.get_bake_time_range(target_chain, settings)
 
-            pv_bake_time = time.clock()
             self.set_pv_frame(pv_control, target_chain, pm.currentTime())
 
             thigh_joint = get_last_or_default(skeleton.sort_chain_by_hierarchy(target_chain))

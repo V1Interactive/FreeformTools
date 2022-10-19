@@ -36,6 +36,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
     <SolidColorBrush x:Key="AlternatingLineDark" Color="#202628"/>
 
 
+    <sys:Double x:Key="TitleTextSize">20</sys:Double>
     <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">10</sys:Double>
     <sys:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarHeightKey}">10</sys:Double>
     
@@ -159,6 +160,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
         <Setter Property="BorderBrush" Value="{StaticResource ErrorColor}"/>
     </Style>
 
+    <Style x:Key="HighlightTrimButton" TargetType="{x:Type Button}" BasedOn="{StaticResource TrimButton}">
+        <Setter Property="TextElement.Foreground" Value="{StaticResource HighlightColor}"/>
+        <Setter Property="TextElement.FontWeight" Value="Bold"/>
+    </Style>
+
     <Style TargetType="{x:Type Border}">
         <Setter Property="BorderBrush" Value="{StaticResource BackgroundColor}"/>
         <Setter Property="BorderThickness" Value="2"/>
@@ -228,6 +234,12 @@ If not, see <https://www.gnu.org/licenses/>.-->
 
     <Style x:Key="HighlightTextBlock" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
         <Setter Property="Foreground" Value="{StaticResource HighlightColor}"/>
+    </Style>
+
+    <Style x:Key="TitleTextBlock" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Setter Property="Foreground" Value="{StaticResource HighlightColor}"/>
+        <Setter Property="TextBlock.FontSize" Value="{StaticResource TitleTextSize}"/>
+        <Setter Property="TextBlock.FontWeight" Value="Bold"/>
     </Style>
 
     <Style x:Key="ErrorTextBlock" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource {x:Type TextBlock}}">

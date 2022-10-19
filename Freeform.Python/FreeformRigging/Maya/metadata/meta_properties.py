@@ -282,9 +282,18 @@ class EditUVProperty(ModelProperty):
 
     def __init__(self, node_name = 'edit_uv_property', node = None, namespace = "", **kwargs):
         super(EditUVProperty, self).__init__(node_name, node, namespace, pivotU = (0, 'float'), pivotV = (0, 'float'), 
-                                             scaleU = (1.0, 'float'), scaleV = (1.0, 'float'), **kwargs)
+                                             scaleU = (1.0, 'float'), scaleV = (1.0, 'float'), material_name = ("", 'string'), **kwargs)
 
     def act(self):
+        import freeform_utils.materials
+        material_enum = freeform_utils.materials.RigControlShaderEnum["GREY"]
+        material_setting = material_enum.value
+        if self.get('material_name'):
+            material_setting.name = "combined_{0}_SG".format(self.get('material_name'))
+
+        control_shader = freeform_utils.materials.create_material(material_setting)
+        freeform_utils.materials.set_material(self.get_connections(), control_shader)
+
         for obj in self.get_connections():
             pm.polyEditUV(obj.faces, pu=self.get('pivotU'), pv=self.get('pivotV'), su=self.get('scaleU'), sv=self.get('scaleV'))
 

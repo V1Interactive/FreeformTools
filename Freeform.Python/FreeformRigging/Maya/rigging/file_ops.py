@@ -523,7 +523,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     autokey_state = pm.autoKeyframe(q=True, state=True)
     pm.autoKeyframe(state=False)
 
-    start_time = time.clock()
+    start_time = time.perf_counter()
 
     load_settings_data = v1_core.json_utils.read_json(file_path)
 
@@ -544,7 +544,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
 
     # Build Components
     set_control_var_dict = {}
-    create_time = time.clock()
+    create_time = time.perf_counter()
     created_rigging = {}
     side_iteritems = [(x,y) for x,y in rigging_data.items() if x in side_filter] if side_filter else rigging_data.items()
     for side, region_dict in side_iteritems:
@@ -559,14 +559,14 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
                 component, did_exist = component_type.rig_from_json(side, region, target_skeleton_dict, component_dict, control_holder_list)
                 set_control_var_dict[component.set_control_vars] = component_dict.get('control_vars')
                 created_rigging[side][region] = (component, did_exist)
-    v1_core.v1_logging.get_logger().info("Rigging Created in {0} Seconds".format(time.clock() - create_time))
+    v1_core.v1_logging.get_logger().info("Rigging Created in {0} Seconds".format(time.perf_counter() - create_time))
 
-    queue_time = time.clock()
+    queue_time = time.perf_counter()
     maya_utils.baking.Global_Bake_Queue().run_queue()
 
     for control_var_method, args in set_control_var_dict.items():
         control_var_method(args)
-    v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.clock() - queue_time))
+    v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.perf_counter() - queue_time))
 
     skeleton.zero_character(get_first_or_default(joint_core_network.get_connections()), ignore_rigged = False)
     rig_base.Component_Base.zero_all_overdrivers(character_network)
@@ -576,7 +576,7 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
     maya_utils.baking.Global_Bake_Queue().clear()
 
     # Build Overdrivers
-    addon_time = time.clock()
+    addon_time = time.perf_counter()
     side_addon_iteritems = [(x,y) for x,y in addon_data.items() if x in side_filter] if side_filter else addon_data.items()
     for side, region_dict in side_addon_iteritems:
         region_addon_iteritems = [(x,y) for x,y in region_dict.items() if x in region_filter] if region_filter else region_dict.items()
@@ -598,15 +598,15 @@ def load_from_json(character_network, file_path, side_filter = [], region_filter
                     addon_component_type = component_registry.Addon_Registry().get(addon_component_dict['type'])
                     # addon_component_type = getattr(sys.modules[addon_component_dict['module']], addon_component_dict['type'])
                     addon_component = addon_component_type.rig_from_json(component, addon_component_dict, created_rigging)
-    v1_core.v1_logging.get_logger().info("Addons Created in {0} Seconds".format(time.clock() - addon_time))
+    v1_core.v1_logging.get_logger().info("Addons Created in {0} Seconds".format(time.perf_counter() - addon_time))
 
-    queue_time = time.clock()
+    queue_time = time.perf_counter()
     maya_utils.baking.Global_Bake_Queue().run_queue()
-    v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.clock() - queue_time))
+    v1_core.v1_logging.get_logger().info("Batching Queue Completed in {0} Seconds".format(time.perf_counter() - queue_time))
 
     bake_settings.restore_bake_settings(user_bake_settings)
     pm.delete([x for x in imported_nodes if x.exists()])
-    v1_core.v1_logging.get_logger().info("Rigging Completed in {0} Seconds".format(time.clock() - start_time))
+    v1_core.v1_logging.get_logger().info("Rigging Completed in {0} Seconds".format(time.perf_counter() - start_time))
 
     maya_utils.scene_utils.set_current_frame()
     pm.autoKeyframe(state=autokey_state)

@@ -621,7 +621,16 @@ def get_chain_root(jnt_chain):
     return get_first_or_default([x for x in jnt_chain if x.getParent() not in jnt_chain])
 
 def get_chain_middle(joint_chain):
-    mid_length = len(joint_chain)/2
+    '''
+    Get the middle joint or joint/s from a list of joints.  Joints must be in hierarchy order
+
+    Args:
+        jnt_chain (list<PyNode>): Maya scene joint chain to query
+
+    Returns:
+        list<PyNode>. The joint or joint pair that make up the middle of the chain
+    '''
+    mid_length = int(len(joint_chain)/2)
     middle_list = None
     if(len(joint_chain) % 2 == 1): # Odd # of joints
         middle_list = joint_chain[mid_length:mid_length+1]

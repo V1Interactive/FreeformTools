@@ -271,9 +271,10 @@ class Point_FK(FK):
     @undoable
     def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = None, additive = False, reverse = False, **kwargs):
         if self.verify_component(skeleton_dict, side, region):
-            super(Point_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
+            return super(Point_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
         else:
-            print("Can't Apply Point FK to more than 1 joint")
+            v1_shared.usertools.message_dialogue.open_dialogue("Can't Apply Point FK to more than 1 joint", title="Can't Build Point FK")
+            return False
 
     def bind_chain_process(self, skeleton_chain, control_chain, additive):
         rigging_chain = self.network['rigging'].get_connections()
@@ -453,9 +454,11 @@ class Eye_FK(FK):
         raise NotImplementedError
 
     def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = None, additive = False, reverse = False, **kwargs):
-        if not self.valid_check(skeleton_dict, side, region):
+        if self.valid_check(skeleton_dict, side, region):
+            return super(Eye_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
+        else:
+            v1_shared.usertools.message_dialogue.open_dialogue("Can't Apply Eye FK", title="Can't Build Eye FK")
             return False
-        super(Eye_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
 
     def rig_setup(self, side, region, reverse, control_holder_list):
         control_chain = super(Eye_FK, self).rig_setup(side, region, reverse, control_holder_list)
