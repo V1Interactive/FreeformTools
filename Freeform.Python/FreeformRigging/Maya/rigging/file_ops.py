@@ -254,7 +254,7 @@ def save_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets.ALL.value
     '''
     relative_path = rig_base.Component_Base.get_character_root_directory(jnt)
 
-    start_dir = relative_path if os.path.exists(relative_path) else os.path.expanduser("~")
+    start_dir = relative_path if os.path.exists(relative_path) else v1_core.global_settings.GlobalSettings.get_user_freeform_folder()
     load_path = pm.fileDialog2(ds = 1, fm = 0, ff = "JSON - .json (*.json)", dir = start_dir, cap = "Save Character Settings")
     if load_path:
         save_settings_to_json(jnt, get_first_or_default(load_path), binding_list, update, subtype, varient, increment_version)
@@ -319,7 +319,7 @@ def save_character_settings_to_json_with_dialog(jnt, binding_list = Binding_Sets
 
     relative_path = rig_base.Component_Base.get_character_root_directory(jnt)
 
-    start_dir = relative_path if os.path.exists(relative_path) else os.path.expanduser("~")
+    start_dir = relative_path if os.path.exists(relative_path) else v1_core.global_settings.GlobalSettings.get_user_freeform_folder()
     load_path = pm.fileDialog2(ds = 1, fm = 0, ff = "JSON - .json (*.json)", dir = start_dir, cap = "Save Character Properties")
     if load_path:
         save_character_settings_to_json(jnt, get_first_or_default(load_path), binding_list, subtype)
@@ -355,7 +355,7 @@ def load_settings_from_json_with_dialog(character_grp, binding_list = Binding_Se
     '''
     relative_path = rig_base.Component_Base.get_character_root_directory(character_grp)
 
-    start_dir = relative_path if (relative_path and os.path.exists(relative_path)) else os.path.expanduser("~")
+    start_dir = relative_path if (relative_path and os.path.exists(relative_path)) else v1_core.global_settings.GlobalSettings.get_user_freeform_folder()
     load_path = pm.fileDialog2(ds = 1, fm = 1, ff = "JSON - .json (*.json)", dir = start_dir, cap = "Load Character Settings")
     if load_path:
         load_settings_from_json(character_grp, get_first_or_default(load_path), binding_list)

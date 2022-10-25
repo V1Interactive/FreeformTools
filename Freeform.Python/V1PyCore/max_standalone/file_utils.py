@@ -26,7 +26,7 @@ def export_max_file(load_path):
     '''
     Test method to use headless maya to open and export a Maya file to FBX from outside of Maya
     '''
-    user_temp = os.path.join(os.path.expanduser("~"), "temp")
+    user_temp = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "temp")
     if not os.path.isdir(user_temp):
         os.makedirs(user_temp)
     max_export_path = os.path.join(user_temp, r"headless_max.fbx")

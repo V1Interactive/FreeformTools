@@ -13,7 +13,7 @@ def main():
     import System
 
     file_list = []
-    output_path = os.path.join(os.path.expanduser("~"), "Documents", "V1", "_ue_existing_files.txt")
+    output_path = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "_ue_existing_files.txt")
     with open(output_path, "r") as f:
         file_list = f.readlines()
         f.close()
@@ -35,7 +35,7 @@ def main():
             success = "Failed to Add" if not added_list else "Added to Default Changelist"
             p4_missing_file_list.append(file.strip() + "  =>  " + success + "\n")
 
-    output_path = os.path.join(os.path.expanduser("~"), "Documents",  "V1", "_ue_p4_added_files.txt")
+    output_path = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "_ue_p4_added_files.txt")
     with open(output_path, "w") as f:
         f.truncate(0)
         f.writelines(p4_missing_file_list)

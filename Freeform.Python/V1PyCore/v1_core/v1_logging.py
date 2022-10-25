@@ -101,8 +101,9 @@ def setup_logging(log_name):
     Args:
         log_name (string): Name of the log file to output to
     '''
-    user_dir = os.path.expanduser('~')
-    user_dir = os.path.join(user_dir, 'V1') if "Documents" in user_dir else os.path.join(user_dir, 'Documents', 'V1')
+    from v1_core import global_settings
+
+    user_dir = global_settings.GlobalSettings.get_user_freeform_folder()
     if not os.path.exists(user_dir):
         os.makedirs(user_dir)
     output_path = os.path.join(user_dir, '{0}_log.log'.format(log_name))

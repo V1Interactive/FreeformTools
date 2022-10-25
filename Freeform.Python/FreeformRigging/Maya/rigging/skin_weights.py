@@ -64,7 +64,7 @@ def save_skin_weights_with_dialog(character_grp):
     character_node = get_first_or_default(character_grp.affectedBy.listConnections(type='network'))
     content_path = v1_shared.file_path_utils.relative_path_to_content(character_node.root_path.get())
 
-    start_dir = content_path if os.path.exists(content_path) else os.path.expanduser("~")
+    start_dir = content_path if os.path.exists(content_path) else v1_core.global_settings.GlobalSettings.get_user_freeform_folder()
     load_path = get_first_or_default(pm.fileDialog2(ds = 1, fm = 0, ff = "JSON - .json (*.json)", dir = start_dir))
     if load_path:
         save_skin_weights(character_grp, load_path)
