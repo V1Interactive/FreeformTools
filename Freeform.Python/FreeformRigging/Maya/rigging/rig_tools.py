@@ -103,7 +103,7 @@ def freeze_xform_rig(character_network):
 
     new_character_network = freeform_utils.character_utils.characterize_skeleton(new_root, name="ZeroTemp", update_ui=False, freeze_skeleton=False)
     
-    settings_path = os.path.join(os.path.expanduser("~"), "V1", "_rig_temp_settings.json")
+    settings_path = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "_rig_temp_settings.json")
     file_ops.save_settings_to_json(new_root, settings_path)
 
     rig_base.Component_Base.delete_character(new_character_network.node)

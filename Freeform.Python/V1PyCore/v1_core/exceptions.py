@@ -23,6 +23,7 @@ import traceback
 import fnmatch
 
 from v1_core import v1_logging
+from v1_core import global_settings
 
 
 def except_hook(type_, exception, trace):
@@ -86,7 +87,8 @@ class GER_Path_Fix(Exception_Fix):
         split_text = replace_text.split("local\\temp\\")
         folder_split_text = split_text[-1].split("\\")
         folder_name = folder_split_text[0]
-        dir = os.path.join( os.path.expanduser('~').replace("/Documents", ""), "appdata/local/temp/{0}").format(folder_name).replace('\\', '/')
+
+        dir = os.path.join(os.path.expanduser('~').replace("/Documents", ""), "appdata/local/temp/{0}").format(folder_name).replace('\\', '/')
         if not os.path.exists(dir):
             os.makedirs(dir)
         return True

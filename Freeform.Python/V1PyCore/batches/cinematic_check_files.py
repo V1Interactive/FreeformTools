@@ -7,7 +7,7 @@ import v1_core
 
 
 def get_file_list():
-    file_list_directory = os.path.join(os.path.expanduser("~"), "Documents", "batch")
+    file_list_directory = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "batch")
     # If an arg is passed in it is the relative path to the directory to look for export_file_list's in
     if len(sys.argv) > 1:
         config_manager = v1_core.global_settings.ConfigManager()

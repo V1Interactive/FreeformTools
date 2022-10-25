@@ -769,7 +769,7 @@ class HelixRigger:
             vm (Rigging.RiggerVM): C# view model object sending the command
             event_args (SelectButtonEventArgs): C# event holding the List of buttons to save
         '''
-        quick_buttons_file = os.path.join(os.path.expanduser("~"), "V1", "rigging", "quick_select_buttons.json")
+        quick_buttons_file = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "rigging", "quick_select_buttons.json")
         button_dict = {}
 
         for search_button in event_args.SelectButtonList:
@@ -781,7 +781,7 @@ class HelixRigger:
         '''
         Loads user set quick select menu items
         '''
-        quick_buttons_file = os.path.join(os.path.expanduser("~"), "V1", "rigging", "quick_select_buttons.json")
+        quick_buttons_file = os.path.join(v1_core.global_settings.GlobalSettings.get_user_freeform_folder(), "rigging", "quick_select_buttons.json")
         button_dict = v1_core.json_utils.read_json(quick_buttons_file) if os.path.exists(quick_buttons_file) else {}
 
         for button_name, selection_set in button_dict.items():
@@ -1272,6 +1272,8 @@ class HelixRigger:
             c_character.OutOfDate = out_of_date
 
             return out_of_date
+
+        return False
 
 
     def _create_c_component(self, node_name, type_name, side, region):
@@ -2912,7 +2914,8 @@ class HelixRigger:
             vm (Rigging.Rigger): C# view model object sending the command
             event_args (FilePathEventArgs): Gets the initial starting directory from Python and passes it to C#
         '''
-        start_dir = os.path.expanduser("~")
+        
+        start_dir = v1_core.global_settings.GlobalSettings.get_user_freeform_folder()
         if vm.ActiveCharacter:
             character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(vm.ActiveCharacter.NodeName))
             relative_path = rigging.rig_base.Component_Base.get_character_root_directory(character_network.group)

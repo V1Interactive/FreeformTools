@@ -18,6 +18,8 @@ If not, see <https://www.gnu.org/licenses/>.
 '''
 
 import os
+import ctypes
+from ctypes.wintypes import MAX_PATH
 from abc import ABCMeta, abstractmethod, abstractproperty
 from functools import reduce
 from copy import deepcopy
@@ -50,9 +52,29 @@ class GlobalSettings(object):
         settings_file (string): Full file path to the users global_settings.json
     '''
 
-    settings_file = os.path.expanduser('~/V1/user_settings.json')
+    @staticmethod
+    def get_user_documents():
+        dll = ctypes.windll.shell32
+        buf = ctypes.create_unicode_buffer(MAX_PATH + 1)
+        user_path = None
+        if dll.SHGetSpecialFolderPathW(None, buf, 0x0005, False):
+            user_path = buf.value
+        else:
+            user_path = os.path.expanduser('~')
+
+        return user_path
+
+    @staticmethod
+    def get_user_freeform_folder():
+        return os.path.join(GlobalSettings.get_user_documents(), "V1")
+
+    @staticmethod
+    def get_user_settings():
+        return os.path.join(GlobalSettings.get_user_freeform_folder(), "user_settings.json")
+
 
     def __init__(self):
+        self.settings_file = GlobalSettings.get_user_settings()
         self.settings = {}
         if not os.path.exists(self.settings_file):
             self.save_settings()
@@ -190,8 +212,13 @@ class GlobalSettings(object):
 
 
 class ConfigSettings(GlobalSettings):
-    settings_file = os.path.join(os.environ.get("V1TOOLSROOT"), "tools_config.json")
+    def __init__(self):
+        self.settings_file = os.path.join(os.environ.get("V1TOOLSROOT"), "tools_config.json")
+        self.settings = {}
+        if not os.path.exists(self.settings_file):
+            self.save_settings()
 
+        self.get_settings()
 
 class SettingsCategory(object):
     '''
