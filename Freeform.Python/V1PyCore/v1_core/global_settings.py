@@ -66,7 +66,7 @@ class GlobalSettings(object):
 
     @staticmethod
     def get_user_freeform_folder():
-        return os.path.join(GlobalSettings.get_user_documents(), "V1")
+        return os.path.join(GlobalSettings.get_user_documents(), "FreeformTools")
 
     @staticmethod
     def get_user_settings():
