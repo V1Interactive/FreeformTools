@@ -331,6 +331,10 @@
         File.Copy(userSetupPyPath, userSetupPyCopyPath, true);
       }
 
+      string defaultConfigPath = Path.Join(ToolsPath, "default_config", "tools_config.json");
+      string configPath = Path.Join(ToolsPath, "tools_config.json");
+      File.Copy(defaultConfigPath, configPath, true);
+
       // Copy the pythonnet directory to the site-packages directory
       string pythonnetDirectory = string.Empty;
       foreach (string subDir in Directory.GetDirectories(PythonPackageDirectory))
