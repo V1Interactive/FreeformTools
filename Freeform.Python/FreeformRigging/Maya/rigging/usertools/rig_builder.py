@@ -138,9 +138,9 @@ class RigBuilder(object):
                 directory_path = os.path.join(rigging_template_folder, directory) + os.sep
                 json_file_list = glob.glob("{0}*.json".format(directory_path))
 
-                settings_file = get_first_or_default(rigging.file_ops.get_settings_files(directory_path, 'rig'))
+                settings_file = rigging.file_ops.get_first_settings_file(directory_path, 'rig')
                 if settings_file:
-                    self.default_settings[directory] = os.path.join(directory_path, settings_file)
+                    self.default_settings[directory] = settings_file
 
                 new_template_group = Freeform.Rigging.RigBuilder.TemplateGroup(directory)
                 self.vm.TemplateList.Add(new_template_group)

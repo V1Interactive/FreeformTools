@@ -42,6 +42,8 @@ def read_json_first_level(file_path, line_filter_list):
     Parse a json file as a text file to find top level single line entries, then combine those
     entries as a single json dictionary with json.loads
 
+    Any top level dictionaries will return as empty.
+
     Args:
         file_path (string): Full path to a .json file
         line_filter_list (list<string>): List of strings to filter by
@@ -54,7 +56,7 @@ def read_json_first_level(file_path, line_filter_list):
         for line in f:
             found_filter_list = [x for x in line_filter_list if x in line.split(":")[0]]
             if found_filter_list:
-                line_dict = json.loads("{" + line.replace(',', '') + "}")
+                line_dict = json.loads("{" + line.replace(',', '').replace("{", "{}") + "}")
                 return_dict = dict(return_dict, **line_dict)
 
     return return_dict

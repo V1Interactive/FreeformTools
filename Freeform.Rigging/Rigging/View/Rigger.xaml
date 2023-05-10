@@ -96,7 +96,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <MenuItem Header="Save _Character Properties..." 
                                   Command="{Binding Data.SaveCharacterSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
-                        <MenuItem Header="Save _Game Engine File..." 
+                        <MenuItem Header="Save Full _Rotate Properties..." 
                                   Command="{Binding Data.SaveEngineSettingsCommand, Source={StaticResource dataContextProxy}}" 
                                   CommandParameter="{Binding Data.ActiveCharacter, Source={StaticResource dataContextProxy}}"/>
                         <CheckBox Content="_Increment Version"
@@ -1119,8 +1119,11 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Transfer (HIK)" 
                                                           Command="{Binding Data.TransferAllHIKCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
-                                                <MenuItem Header="Import UE4 Animation" 
-                                                          Command="{Binding Data.ImportUE4AnimationCommand, Source={StaticResource dataContextProxy}}" 
+                                                <MenuItem Header="Import Full Rotate Animation" 
+                                                          Command="{Binding Data.ImportRotateAnimationCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                                <MenuItem Header="Retarget Animation" 
+                                                          Command="{Binding Data.ImportRetargetAnimationCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
                                                 <Separator/>
                                                 <MenuItem Header="Remove All Animation" 

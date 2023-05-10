@@ -34,7 +34,8 @@
             "Weapons",
 			"Prop"
         ],
-        "UseProject": false
+        "UseProject": false,
+		"Display_Dialogues": true
     },
 	"Rigging": {
 		"RigFolder": "Rigging",

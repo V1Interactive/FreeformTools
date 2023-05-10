@@ -81,7 +81,7 @@ class Particle_Constraint_Dialogue(object):
     @undoable
     def build_particle_constraint(self, vm, event_args):
         '''
-        get_frame(self, vm, event_args)
+        build_particle_constraint(self, vm, event_args)
         Event method to get the current frame and pass it to C#
 
         Args:

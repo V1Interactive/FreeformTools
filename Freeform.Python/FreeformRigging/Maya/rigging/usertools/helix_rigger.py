@@ -154,7 +154,8 @@ class HelixRigger:
         self.vm.SaveBakeRangeHandler += self.save_bake_range
         self.vm.TransferJointsHandler += self.transfer_anim_joints
         self.vm.TransferHIKHandler += self.transfer_anim_hik
-        self.vm.ImportUE4AnimationHandler += self.import_ue4_animation
+        self.vm.ImportRotateAnimationHandler += self.import_engine_animation
+        self.vm.ImportRetargetAnimationHandler += self.import_retarget_animation
         self.vm.OpenCharacterImporterHandler += self.open_character_importer
         self.vm.LoadCharacterHandler += self.load_character_call
         self.vm.OpenRegionEditorHandler += self.open_region_editor
@@ -227,7 +228,8 @@ class HelixRigger:
         self.vm.SaveBakeRangeHandler -= self.save_bake_range
         self.vm.TransferJointsHandler -= self.transfer_anim_joints
         self.vm.TransferHIKHandler -= self.transfer_anim_hik
-        self.vm.ImportUE4AnimationHandler -= self.import_ue4_animation
+        self.vm.ImportRotateAnimationHandler -= self.import_engine_animation
+        self.vm.ImportRetargetAnimationHandler -= self.import_retarget_animation
         self.vm.OpenCharacterImporterHandler -= self.open_character_importer
         self.vm.LoadCharacterHandler -= self.load_character_call
         self.vm.OpenRegionEditorHandler -= self.open_region_editor
@@ -653,9 +655,15 @@ class HelixRigger:
 
         folder_path_list = character_network.character_folders
         folder_path_list = [x for x in folder_path_list if os.path.exists(x)]
+        general_rigging_folder = rigging.file_ops.get_general_rigging_folder()
+        general_settings_list = rigging.file_ops.get_settings_files(general_rigging_folder, "character properties", character_network.get("varient"))
+        for settings_path in general_settings_list:
+            self.create_menu_item(settings_path, self.load_settings_profile, self.vm.SettingsMenuItems)
+
         for folder in folder_path_list:
-            settings_path_list = [os.path.join(folder, x) for x in rigging.file_ops.get_settings_files(folder, "rig", character_network.get("varient"))]
-            for settings_path in settings_path_list:
+            settings_path_list = rigging.file_ops.get_settings_files(folder, "rig", character_network.get("varient"))
+            properties_path_list = rigging.file_ops.get_settings_files(folder, "character properties", character_network.get("varient"))
+            for settings_path in settings_path_list+properties_path_list:
                 self.create_menu_item(settings_path, self.load_settings_profile, self.vm.SettingsMenuItems)
 
     def create_rigging_profiles(self):
@@ -754,9 +762,14 @@ class HelixRigger:
                     control_property = metadata.meta_property_utils.get_property(control, ControlProperty)
                     for control_info in control_info_list:
                         if control_property.get("control_type") == control_info[0] and control_property.get("ordered_index") == control_info[1]:
+                            over_driver_control = freeform_utils.character_utils.get_addon_from_control(control)
+                            control = over_driver_control if over_driver_control != None else control
                             selection_list.append(control)
 
-        pm.select(selection_list, replace=True)
+        if event_args.Shift:
+            pm.select(selection_list, add=True)
+        else:
+            pm.select(selection_list, replace=True)
 
 
     @csharp_error_catcher
@@ -1236,9 +1249,7 @@ class HelixRigger:
         directory_path = rigging.rig_base.Component_Base.get_character_root_directory(character_network.group)
         settings_file_path = ""
         if directory_path:
-            settings_list = rigging.file_ops.get_settings_files(directory_path, "rig")
-            first_settings_file = get_first_or_default(settings_list)
-            settings_file_path = os.path.join(directory_path, first_settings_file) if first_settings_file else None
+            settings_file_path = rigging.file_ops.get_first_settings_file(directory_path, "rig")
 
         if settings_file_path:
             out_of_date = False
@@ -1912,7 +1923,7 @@ class HelixRigger:
             directory_path = ""
             for folder_path in character_network.character_folders:
                 directory_path = folder_path
-                settings_path  = get_first_or_default(rigging.file_ops.get_settings_files(directory_path, "rig", character_network.get("varient")))
+                settings_path  = rigging.file_ops.get_first_settings_file(directory_path, "rig", character_network.get("varient"))
                 if settings_path:
                     break
 
@@ -1921,9 +1932,9 @@ class HelixRigger:
                 rigging.skeleton.set_base_pose(get_first_or_default(joint_list))
 
                 binding_list = rigging.settings_binding.Binding_Sets["SKELETON"].value
-                rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "ue4", character_network.get("varient"), event_args.incrementVersion)
+                rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "engine", character_network.get("varient"), event_args.incrementVersion)
             
-                rigging.file_ops.load_settings_from_json(character_network.group, os.path.join(directory_path, settings_path))
+                rigging.file_ops.load_settings_from_json(character_network.group, settings_path)
         else:
             print("Found nothing to save settings from")
 
@@ -2044,20 +2055,39 @@ class HelixRigger:
             component.bake_and_remove()
 
     @csharp_error_catcher
-    def import_ue4_animation(self, vm, event_args):
+    def import_engine_animation(self, vm, event_args):
         '''
-        import_ue4_animation(self, vm, event_args)
-        Import a UE4 exported animation, set it up as a transfer character, then transfer that animation onto the selected character
+        import_engine_animation(self, vm, event_args)
+        Import a engine exported animation, set it up as a transfer character, then transfer that animation onto the selected character
 
         Args:
             vm (Rigging.Rigger): C# view model object sending the command
-            event_args (CharacterEventArgs): Passes the character to transfer animation on from the UI
+            event_args (CharacterEventArgs): Passes the character and .fbx file to import
         '''
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
 
         character_node = pm.PyNode(event_args.character.NodeName)
-        freeform_utils.character_utils.transfer_ue_anim_to_character(character_node, event_args.filePath)
+        freeform_utils.character_utils.transfer_engine_anim_to_character(character_node, event_args.filePath)
+        self.vm.UpdateRiggerInPlace()
+
+        pm.autoKeyframe(state=autokey_state)
+
+    @csharp_error_catcher
+    def import_retarget_animation(self, vm, event_args):
+        '''
+        import_retarget_animation(self, vm, event_args)
+        Import an animation file to retarget onto the selected character
+
+        Args:
+            vm (Rigging.Rigger): C# view model object sending the command
+            event_args (CharacterEventArgs): Passes the character and .fbx file to import
+        '''
+        autokey_state = pm.autoKeyframe(q=True, state=True)
+        pm.autoKeyframe(state=False)
+
+        character_node = pm.PyNode(event_args.character.NodeName)
+        freeform_utils.character_utils.retarget_anim_to_character(character_node, event_args.filePath)
         self.vm.UpdateRiggerInPlace()
 
         pm.autoKeyframe(state=autokey_state)

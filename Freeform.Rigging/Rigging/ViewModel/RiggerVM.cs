@@ -69,7 +69,8 @@ namespace Freeform.Rigging
         public event EventHandler SwapCharacterHandler;
         public event EventHandler TransferJointsHandler;
         public event EventHandler TransferHIKHandler;
-        public event EventHandler ImportUE4AnimationHandler;
+        public event EventHandler ImportRotateAnimationHandler;
+        public event EventHandler ImportRetargetAnimationHandler;
         public event EventHandler SaveBakeRangeHandler;
         public event EventHandler SaveSettingHandler;
         public event EventHandler OpenCharacterImporterHandler;
@@ -109,7 +110,8 @@ namespace Freeform.Rigging
         //public RelayCommand TransferAllAnimCommand { get; set; }
         public RelayCommand TransferAllJointsCommand { get; set; }
         public RelayCommand TransferAllHIKCommand { get; set; }
-        public RelayCommand ImportUE4AnimationCommand { get; set; }
+        public RelayCommand ImportRotateAnimationCommand { get; set; }
+        public RelayCommand ImportRetargetAnimationCommand { get; set; }
         public RelayCommand RemoveAnimationCommand { get; set; }
         public RelayCommand SelectAllAnimatedCommand { get; set; }
         public RelayCommand SelectAllCommand { get; set; }
@@ -810,7 +812,8 @@ namespace Freeform.Rigging
             //TransferAllAnimCommand = new RelayCommand(TransferAllAnimCall);
             TransferAllJointsCommand = new RelayCommand(TransferAllJointsCall);
             TransferAllHIKCommand = new RelayCommand(TransferAllHIKCall);
-            ImportUE4AnimationCommand = new RelayCommand(ImportUE4AnimationCall);
+            ImportRotateAnimationCommand = new RelayCommand(ImportRotateAnimationCall);
+            ImportRetargetAnimationCommand = new RelayCommand(ImportRetargetAnimationCall);
 
             UpdateCharacterCommand = new RelayCommand(UpdateCharacterEventCall);
 
@@ -1003,6 +1006,12 @@ namespace Freeform.Rigging
             {
                 SelectButton = button
             };
+
+            if (Control.ModifierKeys == Keys.Shift)
+            {
+                eventArgs.Shift = true;
+            }
+
             RunQuickSelectHandler?.Invoke(this, eventArgs);
         }
 
@@ -1054,14 +1063,14 @@ namespace Freeform.Rigging
             }
         }
 
-        public void ImportUE4AnimationCall(object sender)
+        public void ImportRotateAnimationCall(object sender)
         {
             Character character = (Character)sender;
 
             using (OpenFileDialog filesDialog = new OpenFileDialog())
             {
-                filesDialog.Title = "Load UE4 Exported Animation";
-                filesDialog.Filter = "JSON file (*.fbx)|*.fbx";
+                filesDialog.Title = "Load Full Rotation Animation";
+                filesDialog.Filter = "FBX file (*.fbx)|*.fbx";
                 filesDialog.RestoreDirectory = true;
 
                 DialogResult fileResult = filesDialog.ShowDialog();
@@ -1072,7 +1081,30 @@ namespace Freeform.Rigging
                         character = character,
                         filePath = filesDialog.FileName
                     };
-                    ImportUE4AnimationHandler?.Invoke(this, eventArgs);
+                    ImportRotateAnimationHandler?.Invoke(this, eventArgs);
+                }
+            }
+        }
+
+        public void ImportRetargetAnimationCall(object sender)
+        {
+            Character character = (Character)sender;
+
+            using (OpenFileDialog filesDialog = new OpenFileDialog())
+            {
+                filesDialog.Title = "Load Retarget Animation";
+                filesDialog.Filter = "FBX file (*.fbx)|*.fbx";
+                filesDialog.RestoreDirectory = true;
+
+                DialogResult fileResult = filesDialog.ShowDialog();
+                if (fileResult == DialogResult.OK)
+                {
+                    CharacterFileEventArgs eventArgs = new CharacterFileEventArgs()
+                    {
+                        character = character,
+                        filePath = filesDialog.FileName
+                    };
+                    ImportRetargetAnimationHandler?.Invoke(this, eventArgs);
                 }
             }
         }
@@ -1512,6 +1544,7 @@ namespace Freeform.Rigging
         public class CreateButtonEventArgs : EventArgs
         {
             public SelectBarButton SelectButton = null;
+            public bool Shift = false;
         }
 
         public class SelectButtonEventArgs : EventArgs

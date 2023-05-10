@@ -18,6 +18,7 @@ If not, see <https://www.gnu.org/licenses/>.
 '''
 
 import pymel.core as pm
+import maya.mel as mel
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 import os
@@ -30,7 +31,7 @@ from v1_shared.shared_utils import get_first_or_default, get_index_or_default, g
 from maya_utils.decorators import undoable
 
 from v1_core.py_helpers import Freeform_Enum
-from metadata.network_core import MetaNode, CharacterCore, JointsCore
+from metadata.network_core import MetaNode, CharacterCore, JointsCore, ComponentCore
 from metadata.network_registry import Property_Registry, Property_Meta
 from metadata import meta_network_utils, meta_property_utils
 
@@ -402,6 +403,20 @@ class HIKProperty(CommonProperty):
     def get_hik_properties(self):
         return self.get_hik_node().propertyState.get()
 
+    def delete(self):
+        '''
+        Delete the scene network node
+        '''
+        hik_node = self.get_hik_node()
+
+        mel.eval('hikSetCurrentCharacter("{0}");'.format(hik_node.name()))
+        mel.eval('refreshAllCharacterLists();')
+
+        mel.eval('hikDeleteDefinition();')
+
+        if self.node.exists():
+            pm.delete(self.node)
+
     def on_add(self, obj, **kwargs):
         hik_character = kwargs.get('hik_character')
 
@@ -482,7 +497,7 @@ class ControlProperty(RigProperty):
                                               zero_translate = ([0,0,0], 'double3'), zero_rotate = ([0,0,0], 'double3'), locked = (False, 'bool'), **kwargs)
 
     def get_control_info(self):
-        component_network = meta_network_utils.get_first_network_entry(self.get_connections()[0], network_core.ComponentCore)
+        component_network = meta_network_utils.get_first_network_entry(self.get_connections()[0], ComponentCore)
         return rigging.rig_base.ControlInfo(side=component_network.get("side"), region=component_network.get("region"), control_type=self.get("control_type"), ordered_index=self.get("ordered_index"));
 
 #endregion

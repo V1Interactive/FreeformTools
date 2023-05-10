@@ -147,12 +147,19 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                 <MenuItem Header="Open in Explorer" 
                                                           Command="{Binding Data.OpenFileExplorerCommand, Source={StaticResource dataContextProxy}}"
                                                           CommandParameter="{Binding}"/>
+                                                <MenuItem Header="Exported Selected" 
+                                                          Command="{Binding Data.ExportSelectedCommand, Source={StaticResource dataContextProxy}}" 
+                                                          CommandParameter="{Binding ItemPath}"
+                                                          Visibility="{Binding Data.IsFBX, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
+                                                          IsEnabled="{Binding Data.IsMaya, Source={StaticResource dataContextProxy}}"/>
                                                 <MenuItem Header="Import and Combine" 
                                                           Command="{Binding Data.ImportCombineCommand, Source={StaticResource dataContextProxy}}" 
                                                           Visibility="{Binding Data.IsFBX, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
                                                           IsEnabled="{Binding Data.IsMaya, Source={StaticResource dataContextProxy}}"/>
-                                                <MenuItem Header="Exported Selected" 
-                                                          Command="{Binding Data.ExportSelectedCommand, Source={StaticResource dataContextProxy}}" 
+                                                <Separator Margin="0,4" 
+                                                           Visibility="{Binding Data.IsFBX, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"/>
+                                                <MenuItem Header="Retarget Animation" 
+                                                          Command="{Binding Data.ImportRetargetCommand, Source={StaticResource dataContextProxy}}" 
                                                           CommandParameter="{Binding ItemPath}"
                                                           Visibility="{Binding Data.IsFBX, Source={StaticResource contentContextProxy}, Converter={StaticResource booleanToVisibilityConverter}}"
                                                           IsEnabled="{Binding Data.IsMaya, Source={StaticResource dataContextProxy}}"/>

@@ -29,6 +29,7 @@ class ContentBrowser(object):
             self.launch_program = "Maya"
             self.vm.OpenFileHandler += self.launch_in_maya
             self.vm.ImportCombineHandler += self.import_and_combine
+            self.vm.ImportRetargetHandler += self.import_and_retarget
             self.vm.ExportSelectedHandler += self.export_selected
         if "3dsmax" in self.process.ToString():
             self.launch_program = "3dsMax"
@@ -116,7 +117,7 @@ class ContentBrowser(object):
         mesh_group = None
         settings_path = None
         if character_network is not None:
-            settings_path = rigging.file_ops.get_first_settings_file(character_network)
+            settings_path = rigging.file_ops.get_first_settings_file_from_character(character_network)
             joints_network = character_network.get_downstream(JointsCore)
             if joints_network:
                 skeleton_list = joints_network.get_connections()
@@ -139,3 +140,25 @@ class ContentBrowser(object):
             joint_list = root_joint.listRelatives(ad=True, type='joint')
 
         combine_mesh = rigging.skeleton.import_and_combine(path_list, skeleton_list, base_mesh, mesh_group, (character_network, settings_path))
+
+
+    @csharp_error_catcher
+    def import_and_retarget(self, vm, event_args):
+        '''
+        If this runs from the wrong program it will error on importing maya modules
+        '''
+        import scene_tools
+        import freeform_utils
+
+        get_method_name = 'rigger_get_active_character'
+        return_dict = scene_tools.scene_manager.SceneManager().run_by_string(get_method_name)
+        character_network = None
+        for method_name, return_value in return_dict.items():
+            if (get_method_name in method_name):
+                character_network = return_value
+
+        if character_network is not None:
+            freeform_utils.character_utils.retarget_anim_to_character(character_network.node, event_args.FilePath)
+        else:
+            message = "You will need to open the Rigger tool and select a character to transfer to."
+            v1_shared.usertools.message_dialogue.open_dialogue(message, "No Character Selected")

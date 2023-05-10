@@ -40,7 +40,7 @@ import freeform_utils.materials # redundant import for sphynx autodoc
 import freeform_utils.character_utils
 
 from metadata.joint_properties import RigMarkupProperty
-from metadata.meta_properties import ControlProperty
+from metadata.meta_properties import ControlProperty, HIKProperty
 from metadata.network_core import AddonControls, AddonCore, AttachmentJoints, ControlJoints, CharacterCore, ComponentCore, OverDrivenControl, JointsCore, RigCore, RiggingJoints, RigComponent, SkeletonJoints
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
@@ -249,6 +249,11 @@ class Component_Base(object, metaclass=Component_Meta):
         '''
         character_network = metadata.meta_network_utils.create_from_node( character_node )
         character_group = character_network.group
+
+        # Delete any Character Properties
+        hik_property = metadata.meta_property_utils.get_property(character_node, HIKProperty)
+        if (hik_property != None):
+            hik_property.delete()
 
         # Disconnect character from any export groups
         character_root = character_network.get_downstream(JointsCore).root

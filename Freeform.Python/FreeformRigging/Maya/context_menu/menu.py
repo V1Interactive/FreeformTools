@@ -29,6 +29,7 @@ from rigging.rig_components.fk import FK
 from rigging.rig_components.ik import IK
 import freeform_utils
 import metadata
+import maya_utils
 
 from metadata.meta_properties import ControlProperty, CommonProperty, ModelProperty
 from metadata.joint_properties import JointProperty
@@ -137,8 +138,14 @@ class V1_Context_Menu(object, metaclass=Singleton):
         rig_menu = pm.menuItem(label='Rig Commands', parent=self.menu, subMenu=True, rp="S")
         component.create_menu(rig_menu, self.node)
 
-        lj_method, lj_args, lj_kwargs = v1_core.v1_logging.logging_wrapper(rigging.file_ops.load_from_json_with_dialog, "Context Menu", character_network)
-        rig_menu = pm.menuItem(label='Load File...', parent=self.menu, rp="W", command = lambda _: lj_method(*lj_args, **lj_kwargs))
+        rotate_order_menu = pm.menuItem(label = "Change Rotate Order", subMenu=True, rp="W", parent=self.menu)
+        # Order of this list needs to match Maya rotate order dropdown on joints
+        for i, rot_order in enumerate(['xyz', 'yzx', 'zxy', 'xzy', 'yxz', 'zyx']):
+            com = (lambda i: lambda _: maya_utils.node_utils.change_rotate_order(self.node, i))(i)
+            pm.menuItem(label=rot_order, parent=rotate_order_menu, command = com)
+
+        #lj_method, lj_args, lj_kwargs = v1_core.v1_logging.logging_wrapper(rigging.file_ops.load_from_json_with_dialog, "Context Menu", character_network)
+        #rig_menu = pm.menuItem(label='Load File...', parent=self.menu, rp="W", command = lambda _: lj_method(*lj_args, **lj_kwargs))
 
         if type(component_network) == ComponentCore:
             sa_method, sa_args, sa_kwargs = v1_core.v1_logging.logging_wrapper(component.bake_and_remove, "Context Menu", baking_queue = None)

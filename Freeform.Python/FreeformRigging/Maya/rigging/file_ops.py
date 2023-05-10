@@ -116,34 +116,46 @@ def get_rig_file(directory_path):
     rig_path = rig_file_list[0] if rig_file_list else None
     return rig_path
 
-def get_character_rig_profiles(character_network):
+def get_general_rigging_folder():
     '''
-    Finds all rigging files in the character folder and populates the UI menu with them
+    Get the common rigging folder for the project
     '''
     config_manager = v1_core.global_settings.ConfigManager()
     character_folder = config_manager.get_character_directory()
     rigging_folder = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("RigFolder")
-    general_rigging_folder = os.path.join(character_folder, rigging_folder)
+    return os.path.join(character_folder, rigging_folder)
+
+def get_character_rig_profiles(character_network):
+    '''
+    Finds all rigging files in the character folder and populates the UI menu with them
+    '''
+    general_rigging_folder = get_general_rigging_folder()
 
     folder_path_list = character_network.character_folders
     folder_path_list.append(general_rigging_folder)
     folder_path_list = [x for x in folder_path_list if os.path.exists(x)]
     file_path_list = []
     for folder in folder_path_list:
-        for file in [x for x in os.listdir(folder) if x.endswith(".json") and "settings" not in x.lower() and "skin" not in x.lower()]:
+        for file in [x for x in os.listdir(folder) if x.endswith(".json")]:
             full_path = os.path.join(folder, file)
-            file_path_list.append(full_path)
+            json_data = v1_core.json_utils.read_json_first_level(full_path, ['rigging'])
+            if (json_data.get('rigging') != None):
+                file_path_list.append(full_path)
 
     return file_path_list
 
 #region settings file ops
-def get_settings_files(directory_path, type, varient = None):
+def get_settings_files(directory_path, subtype_str, varient = None, search_parents = False):
     '''
-    Get settings file by type (rig, ue4, model) from a provided directory
+    Get settings file by type from a provided directory
+
+    valid types = rig, engine, model, character properties
 
     Args:
         directory_path (string): Full file path to a directory to look in for json settings files
-        type (string): Type of settings file to match, compared against subtype of the json file
+        subtype_str (string): Type of settings file to match, compared against subtype of the json file
+        varient (string): The character varient to get files for
+        search_parents (bool): Whether or not to search all parent directories
 
     Returns:
         list<string>.  List of full file paths to the found settings file/s
@@ -157,17 +169,43 @@ def get_settings_files(directory_path, type, varient = None):
             file_path = os.path.join(directory_path, json_file)
             json_data = v1_core.json_utils.read_json_first_level(file_path, ['filetype', 'subtype', 'varient'])
             varient_data = None if json_data.get('varient') == "" else json_data.get('varient')
-            if json_data.get('filetype') == "settings" and json_data.get('subtype') == type and varient_data == varient:
-                return_path_list.append(json_file)
+            if json_data.get('filetype') == "settings" and json_data.get('subtype') == subtype_str and varient_data == varient:
+                return_path_list.append(os.path.join(directory_path, json_file))
+
+    if not return_path_list and search_parents:
+        parent_directory = os.path.dirname(directory_path)
+        if (parent_directory != directory_path):
+            return_path_list = get_settings_files(parent_directory, subtype_str, varient, search_parents)
 
     return return_path_list
 
-def get_first_settings_file(character_network):
+def get_first_settings_file(directory_path, subtype_str, varient = None, search_parents = False):
+    '''
+    Get the first settings file by type from a provided directory
+
+    valid types = rig, engine, model, character properties
+
+    Args:
+        directory_path (string): Full file path to a directory to look in for json settings files
+        subtype_str (string): Type of settings file to match, compared against subtype of the json file
+        varient (string): The character varient to get files for
+        search_parents (bool): Whether or not to search all parent directories
+
+    Returns:
+        string. The first full file path found
+    '''
+
+    return get_first_or_default( get_settings_files(directory_path, subtype_str, varient, search_parents) )
+
+def get_first_settings_file_from_character(character_network, subtype_str = "rig", varient = None, search_parents = False):
     '''
     Get the first settings file path from a character
 
     Args:
         character_network (PyNode): The Maya scene character network node for the character to save
+        subtype_str (string): Type of settings file to match, compared against subtype of the json file
+        varient (string): The character varient to get files for
+        search_parents (bool): Whether or not to search all parent directories
 
     Returns:
         string. Full file path to the first settings file found
@@ -177,9 +215,8 @@ def get_first_settings_file(character_network):
 
     directory_path = rig_base.Component_Base.get_character_root_directory(character_network.group)
     if not settings_file_path and directory_path:
-        settings_list = get_settings_files(directory_path, "rig")
-        first_settings_file = get_first_or_default(settings_list)
-        settings_file_path = os.path.join(directory_path, first_settings_file) if first_settings_file else None
+        settings_list = get_settings_files(directory_path, subtype_str, varient, search_parents)
+        settings_file_path = get_first_or_default(settings_list)
 
     return settings_file_path
 
@@ -360,7 +397,7 @@ def load_settings_from_json_with_dialog(character_grp, binding_list = Binding_Se
     if load_path:
         load_settings_from_json(character_grp, get_first_or_default(load_path), binding_list)
 
-def load_settings_from_json(character_grp, file_path, binding_list = Binding_Sets.ALL.value):
+def load_settings_from_json(character_grp, file_path, binding_list = Binding_Sets.ALL.value, display_dialogues = True):
     '''
     Loads a character settings json file onto a character
 
@@ -371,6 +408,10 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
     '''
     autokey_state = pm.autoKeyframe(q=True, state=True)
     pm.autoKeyframe(state=False)
+
+    initial_dialogue_display = v1_shared.usertools.message_dialogue.get_dialogue_display()
+    if not display_dialogues:
+        v1_shared.usertools.message_dialogue.set_dialogue_display(False)
 
     character_network = metadata.meta_network_utils.get_first_network_entry(character_grp, CharacterCore)
 
@@ -439,6 +480,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
         skeleton.remove_invalid_rig_markup(load_jnt)
 
     pm.autoKeyframe(state=autokey_state)
+    v1_shared.usertools.message_dialogue.set_dialogue_display(initial_dialogue_display)
 
 def save_to_json_with_dialog(character_network):
     '''

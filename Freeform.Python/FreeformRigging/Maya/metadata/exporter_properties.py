@@ -436,12 +436,13 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
                 export_skele = self.setup_export_skeleton(skele_root, export_namespace)
                 export_root = rigging.skeleton.get_root_joint( get_first_or_default(export_skele) )
+                mocap_root = rigging.skeleton.get_mocap_root(export_root)
                 self.bake_export_skeleton(export_skele, True)
                 
                 export_start_time, export_end_time = self.set_export_frame_range(definition_node)
                 self.pre_export(asset_namespace, export_skele, export_start_time, export_namespace)
 
-                self.run_properties(c_asset, event_args, ExportStageEnum.During.value, [asset_node, definition_node], export_asset_list = [export_root])
+                self.run_properties(c_asset, event_args, ExportStageEnum.During.value, [asset_node, definition_node], export_asset_list = [export_root, mocap_root])
 
                 export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), True)
                 self.fbx_export(export_path, export_root)
