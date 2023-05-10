@@ -62,8 +62,12 @@ def set_current_frame():
     # Weird issue, turning off cycle check here prevents warnings of a meaningless cycle
     cycle_check = pm.cycleCheck(q=True, e=True)
     pm.cycleCheck(e=False)
-    pm.currentTime(pm.currentTime())
+    
     pm.cycleCheck(e=cycle_check)
+
+
+def set_current_frame_to_timerange_start():
+    pm.currentTime(get_scene_times()[0])
 
 def get_scene_times():
     '''
@@ -108,6 +112,18 @@ def get_scene_fps():
         return 60.0
     else:
         print(time)
+
+def set_playback_rate(playback_string):
+    '''
+    Set the Animation playback rate
+    '''
+    pm.currentUnit(t=playback_string)
+
+def get_playback_rate():
+    '''
+    Get the Animation playback rate
+    '''
+    return pm.currentUnit(q=True, t=True)
 
 def remove_empty_namespaces():
     '''
@@ -310,7 +326,7 @@ def clean_reference_cameras():
         except:
             continue
 
-def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, **kwargs):
+def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_scene_time = True, **kwargs):
     '''
     Import FBX files or Maya files safely, and with the ability to return import nodes.
     
@@ -326,7 +342,7 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, **kwargs
     '''
     scene_time_tuple = get_scene_times()
     current_time = pm.currentTime()
-    current_fps = pm.currentUnit(q=True, t=True)
+    current_playback = get_playback_rate()
 
     import_return = None
     pre_import_list = pm.ls(assemblies = True)
@@ -348,9 +364,10 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, **kwargs
             v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2]) 
     finally:
         fbx_wrapper.FBXImportMode(v = current_import_mode)
-        pm.currentUnit(t=current_fps)
-        set_scene_times(scene_time_tuple)
-        pm.currentTime(current_time)
+        set_playback_rate(current_playback)
+        if (keep_scene_time):
+            set_scene_times(scene_time_tuple)
+            pm.currentTime(current_time)
 
     if not import_return and kwargs['returnNewNodes'] == True:
         post_import_list = pm.ls(assemblies = True)

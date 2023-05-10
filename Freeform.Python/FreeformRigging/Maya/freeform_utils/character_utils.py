@@ -185,6 +185,9 @@ def characterize_with_zeroing(jnt = None):
 
 
 def remove_existing_rigging(has_attachment, joint_chain, force_remove = False):
+    '''
+    Remove all rigging from the given joint chain
+    '''
     local_bake_queue = maya_utils.baking.BakeQueue("Remove Existing Queue")
     character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
     if character_category.remove_existing or force_remove:
@@ -198,28 +201,71 @@ def remove_existing_rigging(has_attachment, joint_chain, force_remove = False):
         local_bake_queue.run_queue()
 
 
-def transfer_ue_anim_to_character(character_node, ue4_animation_path):
+def transfer_engine_anim_to_character(character_node, engine_animation_path):
+    '''
+    Load an FBX animation with all rotation values on rotation channels and transfer it to a character with zero'd rotation channels
+
+    Args:
+        character_node (PyNode): Scene node for the character network
+        engine_animation_path (string): File path to the .fbx file to load
+    '''
     character_network = metadata.meta_network_utils.create_from_node(character_node)
     character_skeleton = character_network.get_downstream(JointsCore).get_connections()
 
-    ue_settings_path = None
+    engine_settings_path = None
     for directory_path in character_network.character_folders:
-        ue_settings_list = rigging.file_ops.get_settings_files(directory_path, "ue4", character_network.get('varient'))
-        if ue_settings_list:
-            ue_settings_path = os.path.join(directory_path, ue_settings_list[0])
+        engine_settings_path = rigging.file_ops.get_first_settings_file(directory_path, "engine", character_network.get('varient'))
 
-    if ue_settings_path:
-        imported_node_list = maya_utils.scene_utils.import_file_safe(ue4_animation_path, returnNewNodes = True, force=True)
-        ue4_import_skeleton = pm.ls(imported_node_list, type='joint')
-        ue_character_network = characterize_skeleton(ue4_import_skeleton[0], "UE4_Transfer")
-        ue_character_network.set('root_path', character_network.get('root_path'))
+    if engine_settings_path:
+        imported_node_list = maya_utils.scene_utils.import_file_safe(engine_animation_path, keep_scene_time=False, returnNewNodes = True, force=True)
+        engine_import_skeleton = pm.ls(imported_node_list, type='joint')
+        engine_character_network = characterize_skeleton(engine_import_skeleton[0], "Engine_Transfer")
+        engine_character_network.set('root_path', character_network.get('root_path'))
 
-        rigging.file_ops.load_settings_from_json(ue_character_network.group, ue_settings_path)
+        rigging.file_ops.load_settings_from_json(engine_character_network.group, engine_settings_path, display_dialogues = False)
         rigging.skeleton.zero_skeleton_joints(character_skeleton)
-        rigging.skeleton.zero_skeleton_joints(ue4_import_skeleton)
+        rigging.skeleton.zero_skeleton_joints(engine_import_skeleton)
 
-        rigging.skeleton.joint_transfer_animations(ue_character_network.node, character_node)
-        rigging.rig_base.Component_Base.delete_character(ue_character_network.node)
+        rigging.skeleton.joint_transfer_animations(engine_character_network.node, character_node)
+        rigging.rig_base.Component_Base.delete_character(engine_character_network.node)
+
+def retarget_anim_to_character(character_node, retarget_anim_path):
+    '''
+    Load an FBX animation file and retarget it onto the given character
+
+    Args:
+        character_node (PyNode): Scene node for the character network
+        retarget_anim_path (string): File path to the .fbx file to load
+    '''
+    retarget_character_network = import_retarget_animation(retarget_anim_path)
+
+    if (retarget_character_network):
+        rigging.skeleton.hik_transfer_animations(retarget_character_network.node, character_node)
+        rigging.rig_base.Component_Base.delete_character(retarget_character_network.node)
+        scene_tools.scene_manager.SceneManager().run_by_string('UpdateRiggerInPlace')
+
+def import_retarget_animation(retarget_anim_path):
+    '''
+    Import an FBX animation file and find the first settings file within it's parent directories to load onto it
+
+    Args:
+        retarget_anim_path (string): File path to the .fbx file to load
+
+    Returns:
+        MetaNode. metadata network object for a chacater
+    '''
+    imported_node_list = maya_utils.scene_utils.import_file_safe(retarget_anim_path, keep_scene_time=False, returnNewNodes = True, force=True)
+    retarget_import_skeleton = pm.ls(imported_node_list, type='joint')
+    retarget_character_network = characterize_skeleton(retarget_import_skeleton[0], "Retarget_Transfer")
+
+    settings_file_path = rigging.file_ops.get_first_settings_file(os.path.dirname(retarget_anim_path), "rig", search_parents = True)
+
+    if(settings_file_path):
+        rigging.file_ops.load_settings_from_json(retarget_character_network.group, settings_file_path, display_dialogues = False)
+        return retarget_character_network
+    else:
+        pm.delete(imported_node_list)
+    return None
 
 def update_rig_file():
     '''
@@ -241,7 +287,7 @@ def update_rig_file():
     settings_file_dict = {}
     for folder in folder_path_list:
         for file in rigging.file_ops.get_settings_files(folder, "rig"):
-            settings_file_dict[file] = (os.path.join(folder, file))
+            settings_file_dict[os.path.basename(file)] = (file)
 
     settings_file = None
     if len(settings_file_dict) == 1:
@@ -268,7 +314,7 @@ def update_rig_file():
         new_root = rigging.skeleton.get_root_joint(new_joint)
 
         updated_character_network = characterize_skeleton(new_root, name = character_name)
-        rigging.file_ops.load_settings_from_json(updated_character_network.group, settings_file)
+        rigging.file_ops.load_settings_from_json(updated_character_network.group, settings_file, display_dialogues = False)
         rigging.rig_base.Component_Base.delete_character(current_character_network.node)
 
         updated_character_network.node.root_path.set(character_root_path)

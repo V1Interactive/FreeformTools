@@ -229,11 +229,70 @@ class JointRetargetProperty(JointProperty):
     _do_register = True
 
     def __init__(self, node_name = 'joint_retarget_property', node = None, namespace = "", **kwargs):
-        return super(JointRetargetProperty, self).__init__(node_name, node, namespace, constraint_type = (" ", 'string'))
+        return super(JointRetargetProperty, self).__init__(node_name, node, namespace, constraint_type = (" ", 'string'), tag = (" ", 'string'))
 
     def act(self):
         '''
         JointRetargetProperty defines how the joint should be constrained when transfering animation to it.
+
+        Returns:
+            (boolean). True
+        '''
+        return True
+
+class BakedToWorldSpaceProperty(JointProperty):
+    '''
+    Property that tags a joint that has been baked to a world space locator so it can be re-stored. 
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+    '''
+    _do_register = True
+
+    @property
+    def is_baked(self):
+        '''
+        Transform node for the connected mesh
+        '''
+        return True if len(self.get_connections()) == 2 else False
+
+    def __init__(self, node_name = 'baked_to_world_space_property', node = None, namespace = "", **kwargs):
+        return super(BakedToWorldSpaceProperty, self).__init__(node_name, node, namespace)
+
+    def get_world_locator(self):
+        world_locator = None
+        if self.is_baked:
+            world_locator = get_first_or_default([x for x in self.get_connections() if type(x) != pm.nt.Joint])
+
+        return world_locator
+
+    def get_joint(self):
+        jnt = get_first_or_default([x for x in self.get_connections() if type(x) == pm.nt.Joint])
+        return jnt
+
+    def restore_animation(self):
+        jnt = self.get_joint()
+        world_locator = self.get_world_locator()
+
+        bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
+        user_bake_settings = bake_settings.force_bake_key_range()
+
+        temp_const = pm.parentConstraint(world_locator, jnt, mo=False)
+        maya_utils.baking.bake_objects([jnt], True, True, True, simulation=False)
+        pm.delete([temp_const, world_locator])
+
+        bake_settings.restore_bake_settings(user_bake_settings)
+        self.delete()
+
+    def act(self):
+        '''
+        BakedToWorldSpaceProperty tags a joint that has been baked to a world space locator so it can be re-stored. 
 
         Returns:
             (boolean). True

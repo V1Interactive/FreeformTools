@@ -20,6 +20,7 @@ If not, see <https://www.gnu.org/licenses/>.
 import Freeform.Rigging.DCCAssetExporter as DCCAssetExporter
 
 import pymel.core as pm
+import math
 
 import rigging
 import freeform_utils
@@ -320,13 +321,13 @@ class RemoveRootAnimationProperty(ExporterProperty):
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")
         v1_core.v1_logging.get_logger().info("RemoveRootAnimationProperty acting on {0}".format(export_asset_list))
+        export_root = get_first_or_default(export_asset_list)
 
-        for obj in export_asset_list:
-            transform_attr_list = ['translate', 'tx', 'ty', 'tz', 'rotate', 'rx', 'ry', 'rz', 'scale', 'sx', 'sy', 'sz']
-            for attr in transform_attr_list:
-                getattr(obj, attr).disconnect()
-            obj.translate.set(obj.bind_translate.get())
-            obj.rotate.set(obj.bind_rotate.get())
+        transform_attr_list = ['translate', 'tx', 'ty', 'tz', 'rotate', 'rx', 'ry', 'rz', 'scale', 'sx', 'sy', 'sz']
+        for attr in transform_attr_list:
+            getattr(export_root, attr).disconnect()
+        export_root.translate.set(export_root.bind_translate.get())
+        export_root.rotate.set(export_root.bind_rotate.get())
 
 
 class ZeroCharacterProperty(ExporterProperty):
@@ -431,3 +432,88 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         maya_utils.baking.bake_objects([export_root], True, True, True, use_settings = False, simulation=False)
         pm.delete(temp_const)
         pm.delete(offset_loc)
+
+
+
+class ZeroMocapProperty(ExporterProperty):
+    '''
+    Export Property to handle baking the mocap root to world zero and oriented to the provided Y world rotation.
+    Shifts all animation to start at 0
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+        export_stage (ExportStageEnum): When this property should be run in the export process
+    '''
+    _do_register = True
+    export_stage = ExportStageEnum.During.value
+    priority = -1
+
+    @classmethod
+    def create_c_property(self, property_network, *args, **kwargs):
+        '''
+        Creates a C# ZeroMocapProperty from a scene network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.ZeroMocapProperty). The created ExporterProperty
+        '''
+        zero_mocap_property = DCCAssetExporter.ZeroMocapProperty(property_network.get('guid'), property_network.node.longName(), 
+                                                                 property_network.get('rotate_value', 'short'))
+
+        if 'attribute_changed' in kwargs:
+            zero_mocap_property.AttributeChangedHandler += kwargs['attribute_changed']
+
+
+        return zero_mocap_property
+
+    def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
+        super(ZeroMocapProperty, self).__init__(node_name, node, namespace, rotate_value = (0, 'short'), **kwargs)
+
+    def act(self, c_asset, event_args, **kwargs):
+        export_asset_list = kwargs.get("export_asset_list")
+        v1_core.v1_logging.get_logger().info("ZeroMocapProperty acting on {0}".format(export_asset_list))
+
+        maya_utils.scene_utils.set_current_frame_to_timerange_start()
+
+        export_root = get_first_or_default(export_asset_list)
+        mocap_root = get_last_or_default(export_asset_list)
+
+        pm.keyframe(mocap_root.tx, r=True, vc=-mocap_root.tx.get())
+        pm.keyframe(mocap_root.tz, r=True, vc=-mocap_root.tz.get())
+
+        baked_property = maya_utils.node_utils.create_world_space_locator(mocap_root)
+        baked_loc = baked_property.get_world_locator()
+        offset_loc = pm.spaceLocator(name='helix_exporter_root_rotate_offset')
+
+        base_offset = pm.xform(mocap_root, q=True, ws=True, ro=True)[1]
+
+        base_rad = math.radians(base_offset)
+        base_vector = [math.cos(base_rad), math.sin(base_rad)]
+
+        zero_angle = self.get('rotate_value', 'short')
+        zero_rad = math.radians(zero_angle)
+        zero_vector = [math.cos(zero_rad), math.sin(zero_rad)]
+
+        offset_angle = sum([i*j for (i, j) in zip(base_vector, zero_vector)])
+        offset_rot = math.degrees(math.acos(offset_angle))
+
+        baked_loc.setParent(offset_loc)
+        offset_loc.ry.set(-offset_rot)
+
+        baked_property.restore_animation()
+        pm.delete(offset_loc)
+
+        scene_times = maya_utils.scene_utils.get_scene_times()
+        export_skeleton_list = [export_root] + export_root.listRelatives(ad=True)
+        maya_utils.keyframe_utils.move_keyframes(export_skeleton_list, -scene_times[0])
+
+        zero_scene_times = tuple([x-scene_times[0] for x in scene_times])
+        maya_utils.scene_utils.set_scene_times(zero_scene_times)

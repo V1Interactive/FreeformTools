@@ -153,6 +153,8 @@ class Aim_Constraint_Dialogue(object):
         pm.delete(bake_constraint_list)
 
         aim_constraint = rigging.constraints.aim_constraint(aim_space, target, up_object, roll_object=roll_object, mo=False)
+        pm.cutKey(aim_space.rotate)
+        aim_space.rotate.set([0,0,0])
 
         pm.select(aim_space, r=True)
         pm.autoKeyframe(state=autokey_state)

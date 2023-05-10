@@ -53,6 +53,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public event EventHandler ZeroCharacterHandler;
         public event EventHandler ZeroCharacterRotateHandler;
         public event EventHandler RotationCurveHandler;
+        public event EventHandler ZeroMocapHandler;
         public event EventHandler CreateNewAssetHandler;
         public event EventHandler RemoveDefinitionHandler;
         public event EventHandler RemovePropertyHandler;
@@ -73,6 +74,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public RelayCommand ZeroCharacterCommand { get; set; }
         public RelayCommand ZeroCharacterRotateCommand { get; set; }
         public RelayCommand RotationCurveCommand { get; set; }
+        public RelayCommand ZeroMocapCommand { get; set; }
         public RelayCommand RemovePropertyCommand { get; set; }
         public RelayCommand CreateNewAssetCommand { get; set; }
         public RelayCommand RemoveDefinitionCommand { get; set; }
@@ -282,6 +284,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             ZeroCharacterCommand = new RelayCommand(ZeroCharacterCall);
             ZeroCharacterRotateCommand = new RelayCommand(ZeroCharacterRotateCall);
             RotationCurveCommand = new RelayCommand(RotationCurveCall);
+            ZeroMocapCommand = new RelayCommand(ZeroMocapCall);
             RemovePropertyCommand = new RelayCommand(RemoveExportPropertyCall);
             CreateNewAssetCommand = new RelayCommand(CreateNewAssetCall);
             RemoveDefinitionCommand = new RelayCommand(RemoveDefinitionCall);
@@ -471,6 +474,12 @@ namespace Freeform.Rigging.DCCAssetExporter
         {
             var asset = sender as ExportAsset;
             CreateProperty(asset, RotationCurveHandler);
+        }
+
+        public void ZeroMocapCall(object sender)
+        {
+            var asset = sender as ExportAsset;
+            CreateProperty(asset, ZeroMocapHandler);
         }
 
         public void CreateProperty(ExportObject exportObject, EventHandler handler)

@@ -399,6 +399,22 @@ def get_root_joint(jnt):
     '''
     return maya_utils.node_utils.get_root_node(jnt, 'joint')
 
+def get_mocap_root(jnt):
+    root_joint = get_root_joint(jnt)
+    skeleton_list = [root_joint] + root_joint.listRelatives(ad=True)
+    # listRelatives(ad=True) lists grand-children before children, so reverse the list to search children up
+    skeleton_list.reverse()
+    mocap_root = None
+    for obj in skeleton_list:
+        retarget_property = metadata.meta_property_utils.get_property(obj, JointRetargetProperty)
+        if retarget_property:
+            retarget_tag = retarget_property.get('tag', 'string')
+            if retarget_tag == "mocap_root":
+                mocap_root = obj
+                break
+
+    return mocap_root
+
 
 def is_joint_below_hierarchy(jnt, find_joint):
     '''
@@ -1416,7 +1432,7 @@ def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_g
     # If there's a character in the scene load onto the first one
     character_network = metadata.meta_network_utils.get_first_network_entry(jnt, CharacterCore)
     if character_network:
-        settings_path = file_ops.get_first_settings_file(character_network)
+        settings_path = file_ops.get_first_settings_file_from_character(character_network)
         if not any(settings_data) and character_network is not None and settings_path is not None:
             settings_data = (character_network, settings_path)
 
@@ -1664,7 +1680,7 @@ def create_hik_definition(character_name, skeleton_dict, hik_map = None):
                     ordered_chain = sort_chain_by_hierarchy(skeleton_chain)
                     ordered_chain.reverse()
                     for i, hik_index in enumerate(index_list):
-                        if hik_index != -1:
+                        if hik_index != -1 and len(ordered_chain) > i:
                             mel.eval('setCharacterObject("{0}", "{1}",{2},0);'.format(ordered_chain[i].name(), character_name, hik_index))
                 else:
                     missing_markup.append((side,region))

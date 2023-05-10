@@ -162,6 +162,40 @@ namespace Freeform.Rigging.DCCAssetExporter
         }
     }
 
+    public class ZeroMocapProperty : ExportProperty
+    {
+        public event EventHandler AttributeChangedHandler;
+
+        private float _rotateValue;
+        public float RotateValue
+        {
+            get { return _rotateValue; }
+            set
+            {
+                if (_rotateValue != value)
+                {
+                    _rotateValue = value;
+                    RaisePropertyChanged("RotateValue");
+
+                    AttributeFloatEventArgs eventArgs = new AttributeFloatEventArgs()
+                    {
+                        NodeName = NodeName,
+                        Attribute = "rotate_value",
+                        Value = RotateValue
+                    };
+                    AttributeChangedHandler?.Invoke(this, eventArgs);
+                }
+            }
+        }
+
+        public ZeroMocapProperty(string guid, string nodeName, float rotateValue) : base(guid, nodeName)
+        {
+            _propertyType = "Zero Mocap";
+            Icon = "../../Resources/zero_rig.ico";
+            RotateValue = rotateValue;
+        }
+    }
+
 
     public class AnimCurveExporterProperty : ExportProperty
     {

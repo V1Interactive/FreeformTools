@@ -32,7 +32,8 @@ import rigging
 import scene_tools
 
 from metadata.exporter_properties import ExportDefinition, CharacterAnimationAsset, ExportAssetProperty
-from metadata.export_modify_properties import ExporterProperty, ZeroCharacterProperty, ZeroCharacterRotateProperty, RemoveRootAnimationProperty, AnimCurveProperties, RotationCurveProperties
+from metadata.export_modify_properties import ExporterProperty, ZeroCharacterProperty, ZeroCharacterRotateProperty
+from metadata.export_modify_properties import RemoveRootAnimationProperty, AnimCurveProperties, RotationCurveProperties, ZeroMocapProperty
 
 import v1_core
 
@@ -40,6 +41,45 @@ from v1_shared.decorators import csharp_error_catcher
 from maya_utils.decorators import undoable
 
 
+
+def create_exporter_hud():
+    def internal_set_scene_time(*args):
+        set_time = args[0]
+
+        # If Shift is held expand the time range to include the min and max of both current time and passed in time
+        if maya_utils.input_utils.shift_down():
+            current_time = maya_utils.scene_utils.get_scene_times()
+            new_time = []  
+            for i, (x, y) in enumerate(zip(set_time, current_time)):
+                if i == 0 or i == 1:
+                    new_value = x if x < y else y
+                    new_time.append(new_value)
+                else:
+                    new_value = x if x > y else y
+                    new_time.append(new_value)
+            set_time = tuple(new_time)
+
+        maya_utils.scene_utils.set_scene_times(set_time)
+
+    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(ExportDefinition)
+
+    for export_def in export_definition_list:
+        start_frame = export_def.start_frame.get()
+        end_frame = export_def.end_frame.get()
+        scene_time = (start_frame, start_frame, end_frame, end_frame)
+        name = export_def.definition_name.get()
+    
+        free_block = pm.headsUpDisplay(nfb=9)
+        com = (lambda scene_time: lambda : internal_set_scene_time(scene_time))(scene_time)
+        pm.hudButton(name, section=9, block=free_block, visible=True, label=name, buttonWidth=100, buttonShape='roundRectangle', releaseCommand=com)
+
+
+def remove_exporter_hud():
+    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(ExportDefinition)
+
+    for export_def in export_definition_list:
+        name = export_def.definition_name.get()
+        pm.headsUpDisplay(name, remove=True)
 
 
 class HelixExporter(object):
@@ -162,6 +202,7 @@ class HelixExporter(object):
         self.vm.ZeroCharacterHandler += self.new_zero_character
         self.vm.ZeroCharacterRotateHandler += self.new_zero_character_rotate
         self.vm.RotationCurveHandler += self.new_rotation_curve
+        self.vm.ZeroMocapHandler += self.new_zero_mocap
         self.vm.RemovePropertyHandler += self.remove_property
         self.vm.AssetSelectedHandler += self.asset_selected
         self.vm.CreateNewDefinitionHandler += self.create_new_export_definition
@@ -213,6 +254,7 @@ class HelixExporter(object):
         self.vm.RemoveRootAnimationHandler -= self.new_remove_root_animation
         self.vm.ZeroCharacterHandler -= self.new_zero_character
         self.vm.RotationCurveHandler -= self.new_rotation_curve
+        self.vm.ZeroMocapHandler -= self.new_zero_mocap
         self.vm.RemovePropertyHandler -= self.remove_property
         self.vm.AssetSelectedHandler -= self.asset_selected
         self.vm.CreateNewDefinitionHandler -= self.create_new_export_definition
@@ -491,6 +533,24 @@ class HelixExporter(object):
         c_rotation_curve = RotationCurveProperties.create_c_property(rotate_curve_network, 
                                                                      attribute_changed=metadata.meta_property_utils.attribute_changed)
         event_args.Object = c_rotation_curve
+
+    @csharp_error_catcher
+    def new_zero_mocap(self, vm, event_args):
+        '''
+        new_zero_mocap(self, vm, event_args)
+        Event method that handles creating a new ZeroMocapProperty and connecting it to the given ExportAsset
+
+        Args:
+            vm (DCCExporterVM): The C# DCCExporterVM calling the event
+            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportAsset's PyNode
+        '''
+        zero_mocap_network = ZeroMocapProperty()
+        
+        asset_node = pm.PyNode(event_args.NodeName)
+        zero_mocap_network.connect_node(asset_node)
+
+        c_remove_root = ZeroMocapProperty.create_c_property(zero_mocap_network)
+        event_args.Object = c_remove_root
 
     @csharp_error_catcher
     def new_remove_root_animation(self, vm, event_args):

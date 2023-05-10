@@ -122,6 +122,10 @@
     <Compile Include="MessageDialogue\View\MessageDialogue.xaml.cs">
       <DependentUpon>MessageDialogue.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MocapCleanupDialogue\ViewModel\MocapCleanupDialogueVM.cs" />
+    <Compile Include="MocapCleanupDialogue\View\MocapCleanupDialogue.xaml.cs">
+      <DependentUpon>MocapCleanupDialogue.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ParticleConstraintDialogue\ViewModel\ParticleConstraintDialogueVM.cs" />
     <Compile Include="ParticleConstraintDialogue\View\ParticleConstraintDialogue.xaml.cs">
       <DependentUpon>ParticleConstraintDialogue.xaml</DependentUpon>
@@ -244,6 +248,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MessageDialogue\View\MessageDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MocapCleanupDialogue\View\MocapCleanupDialogue.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

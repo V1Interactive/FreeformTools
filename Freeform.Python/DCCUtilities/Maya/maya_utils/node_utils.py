@@ -24,9 +24,11 @@ import v1_core
 import metadata
 
 from metadata.meta_properties import ControlProperty
+from metadata.joint_properties import BakedToWorldSpaceProperty
 
 import v1_shared
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
+from maya_utils import baking
 
 
 TRANSFORM_ATTRS = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
@@ -232,7 +234,7 @@ def flip_if_world(control_obj, axis, flip_method):
         axis (str): String name for the axis to flip on, 'x', 'y', or 'z'
         flip_method (method): Should be either flip_attribute_keys or flip_transforms
     '''
-    control_property = metadata.meta_property_utils.get_property(control_obj, metadataControlProperty)
+    control_property = metadata.meta_property_utils.get_property(control_obj, ControlProperty)
     is_world = control_property.get('world_space', 'bool') if control_property else False
     if is_world:
         flip_method(control_obj, v1_shared.shared_utils.get_mirror_attributes(axis))
@@ -512,3 +514,31 @@ def get_live_references_from_group(node):
         active_reference_list.append(live_reference)
 
     return active_reference_list
+
+
+def create_world_space_locator(node):
+    bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
+    user_bake_settings = bake_settings.force_bake_key_range()
+
+    world_locator = pm.spaceLocator(name='{0}_freeform_world_space'.format(node.name()))
+    temp_const = pm.parentConstraint(node, world_locator, mo=False)
+    baking.bake_objects([world_locator], True, True, True, simulation=False)
+    pm.delete(temp_const)
+
+    bake_settings.restore_bake_settings(user_bake_settings)
+
+    baked_property = metadata.meta_property_utils.add_property(node, BakedToWorldSpaceProperty)
+    baked_property.connect_node(world_locator)
+
+    return baked_property
+
+
+def restore_world_space_anim(node):
+    baked_property = metadata.meta_property_utils.get_property(node, BakedToWorldSpaceProperty)
+    if baked_property != None:
+        baked_property.restore_animation()
+
+def change_rotate_order(node, rotate_order):
+    baked_property = create_world_space_locator(node)
+    node.rotateOrder.set(rotate_order)
+    baked_property.restore_animation()

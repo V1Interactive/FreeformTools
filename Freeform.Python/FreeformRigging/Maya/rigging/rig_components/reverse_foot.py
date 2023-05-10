@@ -387,7 +387,4 @@ class ReverseFoot(Rig_Component):
         return method_dict
 
     def create_menu(self, parent_menu, control):
-        logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(rigging.usertools.heel_fixer.HeelFixer, "Context Menu (Reverse Foot)", self)
-        pm.menuItem(label="Fix Heel", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs).show())
-        pm.menuItem(divider=True, parent=parent_menu)
         super(ReverseFoot, self).create_menu(parent_menu, control)

@@ -37,6 +37,8 @@
     <Compile Include="Maya\maya_utils\baking.py" />
     <Compile Include="Maya\maya_utils\decorators.py" />
     <Compile Include="Maya\maya_utils\fbx_wrapper.py" />
+    <Compile Include="Maya\maya_utils\input_utils.py" />
+    <Compile Include="Maya\maya_utils\keyframe_utils.py" />
     <Compile Include="Maya\maya_utils\node_utils.py" />
     <Compile Include="Maya\maya_utils\scene_utils.py" />
     <Compile Include="Maya\maya_utils\usertools\aim_constraint_dialogue.py">
@@ -45,6 +47,7 @@
     <Compile Include="Maya\maya_utils\usertools\frame_range_dialogue.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Maya\maya_utils\usertools\mocap_cleanup_dialogue.py" />
     <Compile Include="Maya\maya_utils\usertools\particle_constraint_dialogue.py">
       <SubType>Code</SubType>
     </Compile>
