@@ -91,7 +91,7 @@ class ReverseFoot(Rig_Component):
                 break
 
         if will_attach:
-            self.bake_non_attach_joints()
+            self.bake_non_attach_joints(baking_queue = baking_queue)
         else:
             self.bake_joints(baking_queue = baking_queue)
 

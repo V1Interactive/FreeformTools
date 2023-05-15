@@ -203,10 +203,15 @@ class IK(Rig_Component):
             settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
             frame_range = maya_utils.baking.get_bake_time_range(target_chain, settings)
 
-            self.set_pv_frame(pv_control, target_chain, pm.currentTime())
-
             thigh_joint = get_last_or_default(skeleton.sort_chain_by_hierarchy(target_chain))
+            local_translate_offset = maya_utils.node_utils.get_local_translation(thigh_joint, pv_control)
+            local_rotate_offset = maya_utils.node_utils.get_local_translation(thigh_joint, pv_control)
+
             temp_constraint = pm.parentConstraint(thigh_joint, pv_control, mo=True)
+            # Force local offset on the parent constraint based on Character Zero PV location
+            temp_constraint.target[0].targetOffsetTranslate.set(local_translate_offset)
+            temp_constraint.target[0].targetOffsetRotate.set(local_rotate_offset)
+
             maya_utils.baking.bake_objects([pv_control], True, False, False, False, None, frame_range)
             pm.delete(temp_constraint)
 

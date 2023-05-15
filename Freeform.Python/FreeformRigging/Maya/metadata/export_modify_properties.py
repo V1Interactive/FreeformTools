@@ -474,7 +474,7 @@ class ZeroMocapProperty(ExporterProperty):
 
         return zero_mocap_property
 
-    def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
+    def __init__(self, node_name = 'zero_mocap_property', node = None, namespace = "", **kwargs):
         super(ZeroMocapProperty, self).__init__(node_name, node, namespace, rotate_value = (0, 'short'), **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):

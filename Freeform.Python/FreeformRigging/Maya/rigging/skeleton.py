@@ -1068,7 +1068,8 @@ def joint_transfer_animations(source_node, dest_node, keep_offset = True, joint_
         if pm.objExists(new_name):
             new_node = pm.PyNode(new_name)
             # ignore twist joints, any joints with a unitConversion input on rotate x
-            if not 'unitConversion' in [x.type() for x in jnt.rx.listConnections(s=True, d=False)]:
+            has_connected_property = 'unitConversion' in [x.type() for x in jnt.rx.listConnections(s=True, d=False)]
+            if not has_connected_property and not is_rigged(jnt):
                 retarget_property = metadata.meta_property_utils.get_property(jnt, JointRetargetProperty)
                 if retarget_property is not None:
                     constraint_name = retarget_property.get('constraint_type')
