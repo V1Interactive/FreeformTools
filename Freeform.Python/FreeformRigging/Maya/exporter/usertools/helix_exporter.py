@@ -66,7 +66,7 @@ def create_exporter_hud():
     for export_def in export_definition_list:
         start_frame = export_def.start_frame.get()
         end_frame = export_def.end_frame.get()
-        scene_time = (start_frame, start_frame, end_frame, end_frame)
+        scene_time = (start_frame, start_frame, end_frame+1, end_frame+1)
         name = export_def.definition_name.get()
     
         free_block = pm.headsUpDisplay(nfb=9)
@@ -549,7 +549,7 @@ class HelixExporter(object):
         asset_node = pm.PyNode(event_args.NodeName)
         zero_mocap_network.connect_node(asset_node)
 
-        c_remove_root = ZeroMocapProperty.create_c_property(zero_mocap_network)
+        c_remove_root = ZeroMocapProperty.create_c_property(zero_mocap_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
         event_args.Object = c_remove_root
 
     @csharp_error_catcher

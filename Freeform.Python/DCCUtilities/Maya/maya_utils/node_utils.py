@@ -18,6 +18,7 @@ If not, see <https://www.gnu.org/licenses/>.
 '''
 
 import pymel.core as pm
+import maya.api.OpenMaya as OpenMaya
 
 import v1_core
 
@@ -147,10 +148,47 @@ def get_distance(obj_start, obj_end):
     '''
     Get the world space distance between two objects
     '''
+    length = get_world_offset(obj_start, obj_end).length()
+    return convert_scene_units(length)
+
+def get_world_offset(obj_start, obj_end):
+    '''
+    Get the world space vector between two objects
+    '''
     end_ws = pm.dt.Vector(pm.xform(obj_end, q=True, ws=True, t=True))
     start_ws = pm.dt.Vector(pm.xform(obj_start, q=True, ws=True, t=True))
-    length = (end_ws - start_ws).length()
-    return convert_scene_units(length)
+    offset = end_ws - start_ws
+    return offset
+
+def get_local_translation(obj_start, obj_end):
+    '''
+    Get the local space translation between two objects
+    '''
+    start_matrix = OpenMaya.MMatrix(pm.xform(obj_start, q=True, m=True, ws=True))
+    end_world_matrix = OpenMaya.MMatrix(pm.xform(obj_end, q=True, m=True, ws=True))
+
+    offset_matrix = start_matrix * end_world_matrix.inverse()
+    transform_matrix = OpenMaya.MTransformationMatrix(offset_matrix)
+    translation_offset = transform_matrix.translation(OpenMaya.MSpace.kObject) * -1
+
+    # rotation_offset = [OpenMaya.MAngle(x).asDegrees() for x in transform_matrix.rotation()]
+    # scale_offset = transform_matrix.scale(OpenMaya.MSpace.kObject)
+    # shear_offset = transform_matrix.shear(OpenMaya.MSpace.kObject)
+
+    return translation_offset
+
+def get_local_rotation(obj_start, obj_end):
+    '''
+    Get the local space rotation between two objects
+    '''
+    start_matrix = OpenMaya.MMatrix(pm.xform(obj_start, q=True, m=True, ws=True))
+    end_world_matrix = OpenMaya.MMatrix(pm.xform(obj_end, q=True, m=True, ws=True))
+
+    offset_matrix = start_matrix * end_world_matrix.inverse()
+    transform_matrix = OpenMaya.MTransformationMatrix(offset_matrix)
+    rotation_offset = [OpenMaya.MAngle(x).asDegrees() for x in transform_matrix.rotation()]
+
+    return rotation_offset
 
 def get_world_space_position_at_time(obj, frame):
     '''
