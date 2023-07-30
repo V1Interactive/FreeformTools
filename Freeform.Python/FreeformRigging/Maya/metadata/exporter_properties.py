@@ -76,13 +76,15 @@ class ExportDefinition(DependentNode):
         start_frame (int): Start frame for this export
         end_frame (int): End frame for this export
         frame_range (boolean): True to use the start and end frame, False to use maya timeslider range
+        folder_path (string): Folder path/s to append to the Asset's path
     '''
     _do_register = True
     dependent_node = ExportCore
 
     def __init__(self, parent = None, node_name = 'v1_export_definition', node = None, namespace = ""):
         super(ExportDefinition, self).__init__(parent, node_name, node, namespace, ui_index = (0, 'short'), definition_name = ("", 'string'), start_frame = (0, 'short'), 
-                                               end_frame = (0, 'short'), frame_range = (False, 'bool'), use_scene_name = (False, 'bool'), do_export = (True, 'bool'))
+                                               end_frame = (0, 'short'), frame_range = (False, 'bool'), use_scene_name = (False, 'bool'), do_export = (True, 'bool'),
+                                               folder_path = ("", 'string'))
         if not node:
             self.node.definition_name.set("New_Export_Definition")
 
@@ -242,7 +244,7 @@ class StaticAsset(ExportAssetProperty):
         if c_asset.ZeroExport:
             reset_dict = self.zero_asset(export_geo)
 
-        export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), False)
+        export_path = c_asset.GetExportPath(event_args.Definition, str(pm.sceneName()), False)
         export_directory = get_first_or_default(export_path.rsplit(os.sep, 1))
         if not os.path.exists(export_directory):
             os.makedirs(export_directory)
@@ -339,7 +341,7 @@ class CharacterAsset(ExportAssetProperty):
 
         export_skeleton = [x for x in export_skeleton if x.exists()]
 
-        export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), False)
+        export_path = c_asset.GetExportPath(event_args.Definition, str(pm.sceneName()), False)
         export_directory = get_first_or_default(export_path.rsplit(os.sep, 1))
         if not os.path.exists(export_directory):
             os.makedirs(export_directory)
@@ -458,7 +460,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
                 self.run_properties(c_asset, event_args, ExportStageEnum.During.value, [asset_node, definition_node], export_asset_list = [export_root, mocap_root])
 
-                export_path = c_asset.GetExportPath(event_args.Definition.Name, str(pm.sceneName()), True)
+                export_path = c_asset.GetExportPath(event_args.Definition, str(pm.sceneName()), True)
                 self.fbx_export(export_path, export_root)
                 v1_core.v1_logging.get_logger().info("Exporter - File Exported to {0}".format(export_path))
 
