@@ -162,6 +162,15 @@ namespace Freeform.Rigging.DCCAssetExporter
         }
     }
 
+    public class ZeroAnimCurvesProperty : ExportProperty
+    {
+        public ZeroAnimCurvesProperty(string guid, string nodeName) : base(guid, nodeName)
+        {
+            _propertyType = "Zero Animation Curves";
+            Icon = "../../Resources/zero_rig.ico";
+        }
+    }
+
     public class ZeroMocapProperty : ExportProperty
     {
         public event EventHandler AttributeChangedHandler;

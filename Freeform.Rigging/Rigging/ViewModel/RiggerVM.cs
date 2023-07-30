@@ -770,6 +770,21 @@ namespace Freeform.Rigging
             }
         }
 
+        bool _bakeNewLayer;
+        public bool BakeNewLayer
+        {
+            get { return _bakeNewLayer; }
+            set
+            {
+                if (_bakeNewLayer != value)
+                {
+                    _bakeNewLayer = value;
+                    RaisePropertyChanged("BakeNewLayer");
+                    SaveSettingHandler?.Invoke(this, new SaveBoolEventArgs() { name = "bake_new_layer", value = _bakeNewLayer, category = "BakeSettings" });
+                }
+            }
+        }
+
 
         public RiggerVM()
         {

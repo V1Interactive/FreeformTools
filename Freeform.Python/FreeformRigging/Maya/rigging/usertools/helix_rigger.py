@@ -93,7 +93,7 @@ class HelixRigger:
         self.create_rig_buttons()
         self.load_quick_search_buttons()
 
-        # Initialize UI from Globaly Settings
+        # Initialize UI from Global Settings
         bake_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
         self.vm.StartFrame = bake_category.start_frame
         self.vm.EndFrame = bake_category.end_frame
@@ -101,6 +101,7 @@ class HelixRigger:
         self.vm.BakeRange = [bake_category.time_range, bake_category.current_frame, bake_category.frame_range, bake_category.key_range]
         self.vm.FrameRangeEnabled = bake_category.frame_range
         self.vm.SmartBake = bake_category.smart_bake
+        self.vm.BakeNewLayer = bake_category.bake_new_layer
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         self.vm.LightweigntRigging = character_category.lightweight_rigging

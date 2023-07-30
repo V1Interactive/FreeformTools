@@ -40,6 +40,7 @@ def does_attr_exist(obj, attr_name):
     fullName = "{0}.{1}".format(obj, attr_name)
     return pm.objExists(fullName)
 
+
 def create_float_attr(obj, attr_name):
     '''
     Create's a float attribute with the given name on the given object
@@ -51,6 +52,7 @@ def create_float_attr(obj, attr_name):
     if(does_attr_exist(obj, attr_name) == False):
         pm.addAttr(obj, longName=attr_name, at='float', storable=True, keyable=True)
         
+
 def remove_attr(obj, attr_name):
     '''
     Remove an attribute from an object by name
@@ -62,6 +64,7 @@ def remove_attr(obj, attr_name):
     if(does_attr_exist(obj, attr_name) == True):
         pm.deleteAttr(obj, at=attr_name)
 
+
 def set_attr_key(obj, attr_name, a_value):
     '''
     Set a key on an object by name
@@ -72,6 +75,7 @@ def set_attr_key(obj, attr_name, a_value):
     '''
     if(does_attr_exist(obj, attr_name) == True):
         pm.setKeyframe(obj, at=attr_name, v=a_value)
+
 
 def find_first_keyframe(obj):
     '''
@@ -85,6 +89,7 @@ def find_first_keyframe(obj):
     '''
     return min(pm.keyframe(obj, query=True))
 
+
 def find_last_keyframe(obj):
     '''
     Find the last keyed frame on the given object
@@ -96,6 +101,7 @@ def find_last_keyframe(obj):
         float. The last keyed frame
     '''
     return max(pm.keyframe(obj, query=True))
+
 
 def get_key_range(obj, start_frame = None, end_frame = None):
     '''
@@ -128,6 +134,7 @@ def get_key_range(obj, start_frame = None, end_frame = None):
 
     return (start_frame, end_frame)
 
+
 def find_timeline_start():
     '''
     Gets the minTime of the scene time range
@@ -136,6 +143,7 @@ def find_timeline_start():
         float. The minTime value
     '''
     return pm.playbackOptions(minTime=True, query=True)
+
 
 def find_timeline_end():
     '''
@@ -146,13 +154,22 @@ def find_timeline_end():
     '''
     return pm.playbackOptions(maxTime=True, query=True)
 
-def set_mute_on_parent_anim_layer(obj, a_mute):
+
+def get_angle_from_euler(x, y, z):
+    '''
+    Gets an angle in degrees from a euler angle.
+    '''
+    quat = v1_math.rotation.euler_degrees_to_quaternion(x, y, z)
+    return v1_math.rotation.angle_of_quaternion_degree(quat[0], quat[1], quat[2], quat[3])
+
+
+def set_mute_on_parent_anim_layer(obj, value):
     '''
     Set lock and mute of the parent animation layer for the given object
 
     Args:
         obj (PyNode): Object to query anim layers from
-        a_mute (bool): Value to set mute and lock to
+        value (bool): Value to set mute and lock to
     '''
     pm.select(obj)
     parentLayers = pm.animLayer(query=True, afl=True)
@@ -161,13 +178,42 @@ def set_mute_on_parent_anim_layer(obj, a_mute):
         for layer in parentLayers:
             if (layer == root_layer):
                 continue
-            pm.animLayer(layer, edit=True, mute=a_mute, lock=a_mute)
+            pm.animLayer(layer, edit=True, mute=value, lock=value)
 
     pm.select( clear=True )
 
-def get_angle_from_euler(x, y, z):
+
+def get_all_anim_layers(include_root = True):
     '''
-    Gets an angle in degrees from a euler angle.
+    Get all animation layers in the scene by starting with the root and recursively adding children
     '''
-    quat = v1_math.rotation.euler_degrees_to_quaternion(x, y, z)
-    return v1_math.rotation.angle_of_quaternion_degree(quat[0], quat[1], quat[2], quat[3])
+    root_layer = pm.animLayer(query=True, root=True)
+    anim_layer_list = []
+    if root_layer:
+        if include_root:
+            anim_layer_list.append(root_layer)
+        get_children_anim_layers(root_layer, anim_layer_list)
+    
+    return anim_layer_list
+
+
+def get_children_anim_layers(anim_layer, anim_layer_list):
+    '''
+    Recursive method to fill anim_layer_list with all animation layers
+    '''
+    child_list = pm.animLayer(anim_layer, q=True, c=True)
+    anim_layer_list.extend(child_list)
+    for child in child_list:
+        get_children_anim_layers(child, anim_layer_list)
+    
+
+def get_selected_anim_layer():
+    '''
+    Return the selected animation layer
+    '''
+    selected_list = []
+    for anim_layer in get_all_anim_layers():
+        if pm.animLayer(anim_layer, q=True, selected=True):
+            selected_list.append(anim_layer)
+
+    return selected_list

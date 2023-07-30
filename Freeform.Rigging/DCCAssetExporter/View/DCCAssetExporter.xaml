@@ -51,6 +51,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Grid.Resources>
@@ -224,6 +225,47 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                Margin="10,2"/>
                         </Grid>
                         <TextBlock Text="Character Animation will start Oriented to world space" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:ZeroAnimCurvesProperty}">
+                <Grid Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+                        <TextBlock Text="Character Animation will start from Frame 0" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
 
                         <Grid.ContextMenu>
                             <ContextMenu>
@@ -934,6 +976,10 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                                         Command="{Binding Data.RotationCurveCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
                                                         Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
+                                            <MenuItem Header="Zero Animation Curves" 
+                                                        Command="{Binding Data.ZeroAnimCurvesCommand, Source={StaticResource dataContextProxy}}" 
+                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
                                             <MenuItem Header="Zero Mocap" 
                                                         Command="{Binding Data.ZeroMocapCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
@@ -1059,9 +1105,45 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </ScrollViewer>
         </Expander>
 
+        <Expander Header="Export Layers" 
+                  HorizontalAlignment="Stretch" 
+                  HorizontalContentAlignment="Stretch" 
+                  IsExpanded="True" 
+                  ExpandDirection="Down" 
+                  MaxHeight="120" 
+                  Tag="export_layers"
+                  Grid.Row="3">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Vertical">
+                    <ItemsControl ItemsSource="{Binding ExportLayerList}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource HighlightTextBlock}"
+                                        Text="{Binding NodeName}" 
+                                        Height="24" 
+                                        Margin="4,0" 
+                                        Grid.Column="0"/>
+                                    <CheckBox Content="Export" 
+                                              IsChecked="{Binding Export}" 
+                                              Height="24" 
+                                              Margin="4,0" 
+                                              Grid.Column="1"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Expander>
+
         <Grid Height="34" 
               Tag="exporter_run"
-              Grid.Row="3">
+              Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>

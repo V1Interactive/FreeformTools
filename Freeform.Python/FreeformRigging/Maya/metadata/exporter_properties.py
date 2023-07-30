@@ -408,18 +408,32 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
         config_manager = v1_core.global_settings.ConfigManager()
         
-        # Get autokey and base animation layer locked states to reset to user settings after export runs
         autokey_state = pm.autoKeyframe(q=True, state=True)
         pm.autoKeyframe(state=False)
-        if pm.animLayer('BaseAnimation', q=True, exists=True):
-            base_anim_lock_state = pm.animLayer('BaseAnimation', q=True, l=True)
-            pm.animLayer('BaseAnimation', e=True, l=False)
+        # Get animation layers lock, solo, and mute states to reset to user settings after export runs
+        anim_layer_list = maya_utils.anim_attr_utils.get_all_anim_layers()
+        layer_state_dict = {}
+        for anim_layer in anim_layer_list:
+            lock_state = pm.animLayer(anim_layer, q=True, lock=True)
+            solo_state = pm.animLayer(anim_layer, q=True, solo=True)
+            mute_state = pm.animLayer(anim_layer, q=True, mute=True)
+            layer_state_dict[anim_layer] = (lock_state, solo_state, mute_state)
+        if anim_layer_list:
+            pm.animLayer(anim_layer_list[0], e=True, lock=False)
+            pm.animLayer(anim_layer_list[0], e=True, solo=False)
 
         start_time = pm.playbackOptions(q = True, ast = True)
         end_time = pm.playbackOptions(q = True, aet = True)
 
         asset_node = pm.PyNode(event_args.Asset.NodeName)
         definition_node = pm.PyNode(event_args.Definition.NodeName)
+        definition_network = meta_network_utils.create_from_node(definition_node)
+
+        export_layer_list = definition_network.get_connections(pm.nt.AnimLayer)
+        for anim_layer in anim_layer_list[1:]:
+            mute_layer = anim_layer not in export_layer_list
+            pm.animLayer(anim_layer, e=True, mute=mute_layer)
+
         bake_start_time, bake_end_time = self.set_bake_frame_range(definition_node)
 
         export_namespace = config_manager.get(v1_core.global_settings.ConfigKey.EXPORTER.value).get("ExportNamespace")
@@ -458,8 +472,9 @@ class CharacterAnimationAsset(ExportAssetProperty):
                 pm.delete(pm.namespaceInfo(export_namespace, ls=True))
                 pm.namespace(removeNamespace = export_namespace)
             pm.autoKeyframe(state=autokey_state)
-            if pm.animLayer('BaseAnimation', q=True, exists=True):
-                pm.animLayer('BaseAnimation', e=True, l=base_anim_lock_state)
+            for anim_layer in anim_layer_list:
+                state_list = layer_state_dict[anim_layer]
+                pm.animLayer(anim_layer, e=True, lock=state_list[0], solo=state_list[1], mute=state_list[2])
             v1_core.v1_logging.get_logger().info("Exporter - Finished in {0} seconds".format(time.perf_counter() - export_start))
 
 

@@ -767,7 +767,7 @@ class Component_Base(object, metaclass=Component_Meta):
         '''
         control_list = self.network['controls'].get_connections()
         control_list = [x for x in control_list if x in pm.ls(sl=True)]
-        maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = True, simulation = simulation)
+        maya_utils.baking.bake_objects(control_list, translate, rotate, scale, use_settings = True, simulation = simulation, bake_on_override = True)
         for obj in control_list:
             pm.delete(obj.listRelatives(type='constraint'))
 
@@ -1173,10 +1173,14 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
             orient_constraint = get_first_or_default(target.listRelatives(type='orientConstraint'))
             rest_rotate = orient_constraint.restRotate.get() if orient_constraint else None
 
+        # Delete constraints before loading animation
         pm.delete([x for x in [point_constraint, orient_constraint] if x])
 
+        # Add-on's must revert or bake new animation and can't leave the overdriven control without animation
+        # So revert the animation here and bake later if we want to over-write it
         self.load_animation()
 
+        # Re-apply constraints
         if point_constraint != None and not translate_locked:
             point_constraint = pm.pointConstraint(overdriver_control, target, mo=False)
             point_constraint.restTranslate.set(rest_translate)
@@ -1192,8 +1196,9 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
         revert_animation = character_settings.revert_animation
 
+        # Animation is reverted via load_animations(), so don't bake if we want to keep the revert
         if do_bake and not revert_animation:
-            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self._simulated)
+            maya_utils.baking.bake_objects(overdriven_control_list, self.translate, self.rotate, self.scale, use_settings = True, simulation = self._simulated, bake_on_override = True)
         pm.delete(overdriver_control.listRelatives(type='constraint'))
 
         self.network['addon'].delete_all()
