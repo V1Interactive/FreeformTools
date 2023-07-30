@@ -17,6 +17,7 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+from multiprocessing import Event
 import pymel.core as pm
 
 import System
@@ -125,7 +126,7 @@ class Mocap_Cleanup_Dialogue(object):
             vm (Freeform.Rigging.MocapCleanupDialogue.MocapCleanupDialogueVM): C# view model object sending the command
             event_args (CleanEventArgs): EventArgs to store the weight, smoothness, and frame offset for the constraint
         '''
-        maya_utils.keyframe_utils.expand_selected_keyframes()
+        maya_utils.keyframe_utils.expand_selected_keyframes(event_args.Shift)
 
     @csharp_error_catcher
     @undoable

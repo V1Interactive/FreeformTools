@@ -338,6 +338,7 @@ class BakeSettings(SettingsCategory):
         BakeSettings.property_list.append(SettingsProperty("frame_range", False))
         BakeSettings.property_list.append(SettingsProperty("key_range", False))
         BakeSettings.property_list.append(SettingsProperty("smart_bake", False))
+        BakeSettings.property_list.append(SettingsProperty("bake_new_layer", False))
 
         super(BakeSettings, self).__init__(settings_data)
 

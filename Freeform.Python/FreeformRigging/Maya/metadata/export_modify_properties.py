@@ -434,6 +434,54 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         pm.delete(offset_loc)
 
 
+class ZeroAnimCurvesProperty(ExporterProperty):
+    '''
+    Export Property to handle baking the export root to be rotated to 0 world
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+        export_stage (ExportStageEnum): When this property should be run in the export process
+    '''
+    _do_register = True
+    export_stage = ExportStageEnum.During.value
+    priority = -1
+
+    @classmethod
+    def create_c_property(self, property_network, *args, **kwargs):
+        '''
+        Creates a C# ZeroAnimCurvesProperty from a scene network node.
+
+        Args:
+            property_network (nt.Network): Network node that stores export property information in the scene
+
+        Returns:
+            (DCCAssetExporter.ZeroAnimCurvesProperty). The created ExporterProperty
+        '''
+        zero_character_property = DCCAssetExporter.ZeroAnimCurvesProperty(property_network.get('guid'), property_network.node.longName())
+
+        return zero_character_property
+
+    def __init__(self, node_name = 'zero_anim_curves_property', node = None, namespace = "", **kwargs):
+        super(ZeroAnimCurvesProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
+
+    def act(self, c_asset, event_args, **kwargs):
+        export_asset_list = kwargs.get("export_asset_list")
+        v1_core.v1_logging.get_logger().info("ZeroAnimCurvesProperty acting on {0}".format(export_asset_list))
+        export_root = get_first_or_default(export_asset_list)
+
+        scene_times = maya_utils.scene_utils.get_scene_times()
+        export_skeleton_list = [export_root] + export_root.listRelatives(ad=True)
+        maya_utils.keyframe_utils.move_keyframes(export_skeleton_list, -scene_times[0])
+
+        zero_scene_times = tuple([x-scene_times[0] for x in scene_times])
+        maya_utils.scene_utils.set_scene_times(zero_scene_times)
+
 
 class ZeroMocapProperty(ExporterProperty):
     '''

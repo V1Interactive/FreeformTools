@@ -8,6 +8,7 @@
     using System.Numerics;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Windows.Forms;
     using System.Windows.Media.Media3D;
     using static Freeform.Rigging.AimConstraintDialogue.AimConstraintDialogueVM;
 
@@ -89,8 +90,8 @@
             {
                 Threshold = Threshold,
                 MinFrames = BlendFrames,
-                Reverse = ReverseBlend
-
+                Reverse = ReverseBlend,
+                Shift = Control.ModifierKeys == Keys.Shift
             };
             BlendCurvesHandler?.Invoke(this, eventArgs);
         }
@@ -101,15 +102,22 @@
             {
                 Threshold = Threshold,
                 MinFrames = BlendFrames,
-                Reverse = ReverseBlend
-
+                Reverse = ReverseBlend,
+                Shift = Control.ModifierKeys == Keys.Shift
             };
             OffsetCurvesHandler?.Invoke(this, eventArgs);
         }
 
         public void ExpandSelectionCall(object sender)
         {
-            ExpandSelectionHandler?.Invoke(this, null);
+            CleanEventArgs eventArgs = new CleanEventArgs()
+            {
+                Threshold = Threshold,
+                MinFrames = BlendFrames,
+                Reverse = ReverseBlend,
+                Shift = Control.ModifierKeys == Keys.Shift
+            };
+            ExpandSelectionHandler?.Invoke(this, eventArgs);
         }
 
         public void FlattenCurvesCall(object sender)
@@ -118,8 +126,8 @@
             {
                 Threshold = Threshold,
                 MinFrames = BlendFrames,
-                Reverse = ReverseBlend
-
+                Reverse = ReverseBlend,
+                Shift = Control.ModifierKeys == Keys.Shift
             };
             FlattenCurvesHandler?.Invoke(this, eventArgs);
         }
@@ -135,8 +143,8 @@
             {
                 Threshold = Threshold,
                 MinFrames = BlendFrames,
-                Reverse = ReverseBlend
-
+                Reverse = ReverseBlend,
+                Shift = Control.ModifierKeys == Keys.Shift
             };
             CleanCurvesHandler?.Invoke(this, eventArgs);
         }
@@ -146,6 +154,7 @@
             public float Threshold = 0.001f;
             public int MinFrames = 7;
             public bool Reverse = false;
+            public bool Shift = false;
         }
     }
 }

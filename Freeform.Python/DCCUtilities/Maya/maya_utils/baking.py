@@ -280,11 +280,16 @@ def bake_objects(obj_list, translate, rotate, scale, use_settings = True, custom
         v1_core.v1_logging.get_logger().info("Baking {0} \n Use Settings: {1}, over range {2}\nBake Attrs: {3}\nBakeSettings: {4}".format(obj_list, use_settings, time_range, attr_list, kwargs))
 
         bake_start = time.perf_counter()
+
+        bake_on_override = False
+        if kwargs.get("bake_on_override") != None:
+            bake_on_override = bake_settings.bake_new_layer
+            kwargs.pop("bake_on_override")
         # Baking is stupidly slower if you pass in a value to smart bake(sr), even if it's False, so we split out the command
         if bake_settings.smart_bake:
-            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, sr=True, preserveOutsideKeys = True, **kwargs)
+            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, sr=True, preserveOutsideKeys = True, bakeOnOverrideLayer = bake_on_override, **kwargs)
         else:
-            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, preserveOutsideKeys = True, **kwargs)
+            pm.bakeResults(obj_list, at=attr_list, t=time_range, sb=sample, preserveOutsideKeys = True, bakeOnOverrideLayer = bake_on_override, **kwargs)
         v1_core.v1_logging.get_logger().info("Bake Command Completed in {0} Seconds".format(time.perf_counter() - bake_start))
 
         pm.setKeyframe(obj_list, t=-1010, at='rotate', v=0)

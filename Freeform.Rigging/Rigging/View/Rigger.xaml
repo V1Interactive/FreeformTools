@@ -911,10 +911,12 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox Text="{Binding SampleBy}" Margin="4,2" Grid.Column="0"/>
                             <TextBlock Text="Sample By" Margin="4,2" Grid.Column="1"/>
                             <CheckBox Content="Smart Bake" Margin="10,2" IsChecked="{Binding SmartBake}" Grid.Column="2"/>
+                            <CheckBox Content="Bake New Layer" Margin="10,2" IsChecked="{Binding BakeNewLayer}" Grid.Column="3"/>
                         </Grid>
 
                         <Grid Tag="user_settings__character_settings" 

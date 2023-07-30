@@ -130,7 +130,7 @@ class IK(Rig_Component):
 
         if skeleton.is_animated(skeleton_chain):
             self.attach_and_bake(self.skeleton_dict, baking_queue)
-        
+
         if baking_queue:
             if not additive:
                 baking_queue.add_post_process(self.save_animation, {})

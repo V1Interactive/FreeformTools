@@ -22,6 +22,7 @@ import pymel.core as pm
 import v1_shared
 
 from maya_utils import scene_utils 
+from maya_utils import input_utils
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 
@@ -34,11 +35,16 @@ def get_selected_keyframes():
     return selected_key_list
 
 
-def expand_selected_keyframes():
+def expand_selected_keyframes(shift_down = False):
     selected_attrs = get_selected_keyframe_attributes()
     scene_times = scene_utils.get_scene_times()
 
-    time_range = (int(scene_times[0]+1), int(scene_times[-1]-1))
+    if not shift_down:
+        shift_down = input_utils.shift_down()
+
+    # if shift is down include the upper/lower bounds, else remove them
+    bounds_adjust = 0 if shift_down else 1
+    time_range = (int(scene_times[0] + bounds_adjust), int(scene_times[-1] - bounds_adjust))
     pm.selectKey(selected_attrs, k=True, t=time_range)
 
 

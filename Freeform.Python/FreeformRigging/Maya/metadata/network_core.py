@@ -741,6 +741,8 @@ class RigComponent(DependentNode):
             pm.addAttr(self.node, ln="scale_save", multi=True, type='double')
 
     def save_animation(self, joint_list, channel_list):
+        invalid_type_list = [pm.nt.AnimLayer]
+
         for j, joint in enumerate(joint_list):
             offset_index = j * 3
             for i, attr in enumerate(['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']):
@@ -757,10 +759,14 @@ class RigComponent(DependentNode):
                 
                 connect_attr = getattr(joint, attr)
                 connection_list = connect_attr.listConnections(p=True, c=True, d=True, s=True)
-                if not connect_attr.isLocked() and connection_list:
-                    transform_attr, anim_curve_attr = connection_list[0]
-                    anim_curve_attr // transform_attr
-                    anim_curve_attr >> network_attr[index]
+
+                if not connect_attr.isLocked():
+                    for transform_attr, anim_curve_attr in connection_list:
+                        if type(anim_curve_attr.node()) in invalid_type_list:
+                            continue
+                        anim_curve_attr // transform_attr
+                        anim_curve_attr >> network_attr[index]
+                        break
 
     def load_animation(self, joint_list, channel_list):
         for j, joint in enumerate(joint_list):

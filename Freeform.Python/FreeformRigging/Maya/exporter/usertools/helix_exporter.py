@@ -32,7 +32,7 @@ import rigging
 import scene_tools
 
 from metadata.exporter_properties import ExportDefinition, CharacterAnimationAsset, ExportAssetProperty
-from metadata.export_modify_properties import ExporterProperty, ZeroCharacterProperty, ZeroCharacterRotateProperty
+from metadata.export_modify_properties import ExporterProperty, ZeroCharacterProperty, ZeroCharacterRotateProperty, ZeroAnimCurvesProperty
 from metadata.export_modify_properties import RemoveRootAnimationProperty, AnimCurveProperties, RotationCurveProperties, ZeroMocapProperty
 
 import v1_core
@@ -59,6 +59,10 @@ def create_exporter_hud():
                     new_time.append(new_value)
             set_time = tuple(new_time)
 
+        if maya_utils.input_utils.ctrl_down():
+            # add 1 to end frames
+            set_time = set_time[:2] + (set_time[2] + 1, set_time[3] + 1)
+
         maya_utils.scene_utils.set_scene_times(set_time)
 
     export_definition_list = metadata.meta_network_utils.get_all_network_nodes(ExportDefinition)
@@ -66,20 +70,20 @@ def create_exporter_hud():
     for export_def in export_definition_list:
         start_frame = export_def.start_frame.get()
         end_frame = export_def.end_frame.get()
-        scene_time = (start_frame, start_frame, end_frame+1, end_frame+1)
+        
+        scene_time = (start_frame, start_frame, end_frame, end_frame)
         name = export_def.definition_name.get()
     
         free_block = pm.headsUpDisplay(nfb=9)
         com = (lambda scene_time: lambda : internal_set_scene_time(scene_time))(scene_time)
-        pm.hudButton(name, section=9, block=free_block, visible=True, label=name, buttonWidth=100, buttonShape='roundRectangle', releaseCommand=com)
+        pm.hudButton("FREEFORM" + name, section=9, block=free_block, visible=True, label=name, buttonWidth=100, buttonShape='roundRectangle', releaseCommand=com)
 
 
 def remove_exporter_hud():
-    export_definition_list = metadata.meta_network_utils.get_all_network_nodes(ExportDefinition)
-
-    for export_def in export_definition_list:
-        name = export_def.definition_name.get()
-        pm.headsUpDisplay(name, remove=True)
+    hud_name_list = [x for x in pm.headsUpDisplay(lh=True) if "FREEFORM" in x]
+    for hud_name in hud_name_list:
+        if pm.headsUpDisplay(hud_name, exists=True):
+            pm.headsUpDisplay(hud_name, remove=True)
 
 
 class HelixExporter(object):
@@ -203,6 +207,7 @@ class HelixExporter(object):
         self.vm.ZeroCharacterRotateHandler += self.new_zero_character_rotate
         self.vm.RotationCurveHandler += self.new_rotation_curve
         self.vm.ZeroMocapHandler += self.new_zero_mocap
+        self.vm.ZeroAnimCurvesHandler += self.new_zero_animation_curves
         self.vm.RemovePropertyHandler += self.remove_property
         self.vm.AssetSelectedHandler += self.asset_selected
         self.vm.CreateNewDefinitionHandler += self.create_new_export_definition
@@ -255,6 +260,7 @@ class HelixExporter(object):
         self.vm.ZeroCharacterHandler -= self.new_zero_character
         self.vm.RotationCurveHandler -= self.new_rotation_curve
         self.vm.ZeroMocapHandler -= self.new_zero_mocap
+        self.vm.ZeroAnimCurvesHandler -= self.new_zero_animation_curves
         self.vm.RemovePropertyHandler -= self.remove_property
         self.vm.AssetSelectedHandler -= self.asset_selected
         self.vm.CreateNewDefinitionHandler -= self.create_new_export_definition
@@ -289,6 +295,12 @@ class HelixExporter(object):
         for asset_node in asset_list:
             asset = HelixExporter.create_asset(asset_node, metadata.meta_property_utils.attribute_changed, self.asset_export_toggle)
             self.vm.AddExportAsset(asset)
+
+        anim_layer_list = maya_utils.anim_attr_utils.get_all_anim_layers(False)
+        for anim_layer in anim_layer_list:
+            c_export_layer = DCCAssetExporter.ExportLayer(anim_layer.longName())
+            c_export_layer.ToggleExportHandler += self.layer_export_toggle;
+            self.vm.ExportLayerList.Add(c_export_layer)
 
         # Check for the old remove_root_animation attribute on assets and flag remove_anim if found and True
         remove_anim = False
@@ -415,16 +427,26 @@ class HelixExporter(object):
         if event_args.Object:
             definition_node = pm.PyNode(event_args.Object.NodeName)
             definition_network = metadata.meta_network_utils.create_from_node(definition_node)
-            export_node_list = list(set(definition_network.get_connections()))
+            export_node_list = list(set(definition_network.get_connections(pm.nt.Network)))
             for asset in self.vm.AssetList:
                 asset_node = pm.PyNode(asset.NodeName)
                 if asset_node in export_node_list:
                     asset.AssetExport = True
                 else:
                     asset.AssetExport = False
+
+            anim_layer_list = list(set(definition_network.get_connections(pm.nt.AnimLayer)))
+            for export_layer in self.vm.ExportLayerList:
+                export_layer_node = pm.PyNode(export_layer.NodeName)
+                if export_layer_node in anim_layer_list:
+                    export_layer.Export = True
+                else:
+                    export_layer.Export = False
         else:
             for asset in self.vm.AssetList:
                 asset.AssetExport = False
+            for anim_layer in self.vm.ExportLayerList:
+                anim_layer.Export = False
 
 
     @csharp_error_catcher
@@ -551,6 +573,26 @@ class HelixExporter(object):
 
         c_remove_root = ZeroMocapProperty.create_c_property(zero_mocap_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
         event_args.Object = c_remove_root
+
+
+    @csharp_error_catcher
+    def new_zero_animation_curves(self, vm, event_args):
+        '''
+        new_zero_animation_curves(self, vm, event_args)
+        Event method that handles creating a new ZeroAnimCurvesProperty and connecting it to the given ExportAsset
+
+        Args:
+            vm (DCCExporterVM): The C# DCCExporterVM calling the event
+            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportAsset's PyNode
+        '''
+        zero_anim_network = ZeroAnimCurvesProperty()
+        
+        asset_node = pm.PyNode(event_args.NodeName)
+        zero_anim_network.connect_node(asset_node)
+
+        c_remove_root = ZeroAnimCurvesProperty.create_c_property(zero_anim_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
+        event_args.Object = c_remove_root
+        
 
     @csharp_error_catcher
     def new_remove_root_animation(self, vm, event_args):
@@ -688,6 +730,33 @@ class HelixExporter(object):
                         input_definition_list = affected_by_attr.listConnections(s=True, d=False)
                         if definition_node in input_definition_list:
                             definition_node.message // affected_by_attr
+
+    @csharp_error_catcher
+    def layer_export_toggle(self, c_asset, event_args):
+        '''
+        layer_export_toggle(self, c_asset, event_args)
+        Event method that handles toggling the export checkbox of an ExportLayer.  Re-wires the network node of
+        the selected ExportDefinition to or disconnects from the Animation Layer
+
+        Args:
+            c_asset (ExportLayer): The C# object calling the event
+            event_args (ExportToggleEventArgs): C# Object with the node name, attribute name, and value.
+        '''
+        if c_asset and self.vm.SelectedDefinition:
+            #if event_args.Value and not self.vm.SelectedDefinition.ExportAssetList.Contains(c_asset):
+            #    self.vm.SelectedDefinition.ExportAssetList.Add(c_asset)
+            #elif not event_args.Value and self.vm.SelectedDefinition.ExportAssetList.Contains(c_asset):
+            #    self.vm.SelectedDefinition.ExportAssetList.Remove(c_asset)
+
+            if c_asset.Export != event_args.Value:
+                layer_node = pm.PyNode(c_asset.NodeName)
+                definition_node = pm.PyNode(self.vm.SelectedDefinition.NodeName)
+                definition_network = metadata.meta_network_utils.create_from_node(definition_node)
+            
+                if event_args.Value and layer_node not in definition_network.get_connections():
+                    definition_network.connect_node(layer_node)
+                elif not event_args.Value and layer_node in definition_network.get_connections():
+                    definition_network.disconnect_node(layer_node)
 
     @csharp_error_catcher
     def save_setting(self, vm, event_args):

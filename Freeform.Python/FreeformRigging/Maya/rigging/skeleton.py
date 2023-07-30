@@ -1587,6 +1587,9 @@ def hik_transfer_animations(source_node, dest_node):
     full_skeleton = root_joint.listRelatives(ad=True)
     missed_joint_list = [x for x in full_skeleton if x not in character_joint_list]
 
+    # HIK may translate legs/arms off of their authored size but not place keyframes.
+    zero_skeleton_joints(full_skeleton)
+
     pm.autoKeyframe(state=autokey_state)
 
     return (root_joint, missed_joint_list)
