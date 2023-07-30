@@ -531,6 +531,13 @@ class HelixRigger:
         new_button.Tooltip = "Saves control shapes to character's Control_Shapes.fbx file"
         misc_category.AddButton(new_button)
 
+        new_button = Freeform.Rigging.RigBarButton()
+        new_button.CommandHandler += self.merge_anim_layers
+        new_button.Name = "Merge Animation Layers"
+        new_button.ImagePath = "../../Resources/merge_down.png"
+        new_button.Tooltip = "Merge Animation Layers Down, preserving networks"
+        misc_category.AddButton(new_button)
+        
 
         v1_core.global_settings.GlobalSettings().create_category(self.ToolVisibilityCategory)
         settings_dict = v1_core.global_settings.GlobalSettings().get_settings()
@@ -2720,6 +2727,18 @@ class HelixRigger:
             event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
         '''
         rigging.rig_base.Component_Base.save_control_shapes()
+
+    @csharp_error_catcher
+    def merge_anim_layers(self, c_rig_button, event_args):
+        '''
+        merge_anim_layers(self, c_rig_button, event_args)
+        Wrapper for C# to call merge_selected_anim_layers
+
+        Args:
+            c_rig_button (Rigging.RigBarButton): C# view model object sending the command
+            event_args (CharacterEventArgs): CharacterEventArgs containting the ActiveCharacter from the UI
+        '''
+        maya_utils.anim_attr_utils.merge_selected_anim_layers()
 
     @csharp_error_catcher
     def mirror_control_shapes(self, c_rig_button, event_args):

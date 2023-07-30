@@ -241,8 +241,31 @@ namespace Freeform.Rigging.DCCAssetExporter
             }
         }
 
+        string _folderPath;
+        public string FolderPath
+        {
+            get { return _folderPath; }
+            set
+            {
+                if (_folderPath != value)
+                {
+                    _folderPath = value;
+                    RaisePropertyChanged("FolderPath");
 
-        public ExportDefinition(string guid, int index, string nodeName, string name, int startFrame, int endFrame, bool useFrameRange, bool useSceneName) : base(guid, nodeName)
+                    AttributeStringEventArgs eventArgs = new AttributeStringEventArgs()
+                    {
+                        Guid = Guid.ToString(),
+                        NodeName = NodeName,
+                        Attribute = "folder_path",
+                        Value = FolderPath
+                    };
+                    OnAttributeChanged(eventArgs);
+                }
+            }
+        }
+
+
+        public ExportDefinition(string guid, int index, string nodeName, string name, int startFrame, int endFrame, bool useFrameRange, bool useSceneName, string folderPath) : base(guid, nodeName)
         {
             Name = name;
             Index = index;
@@ -250,6 +273,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             EndFrame = endFrame;
             UseFrameRange = useFrameRange;
             UseSceneName = useSceneName;
+            FolderPath = folderPath;
 
             DoExport = true;
             GridStyle = "V1Grid";

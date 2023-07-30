@@ -604,6 +604,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                 <Grid Style="{StaticResource SubGrid}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="26"/>
+                        <RowDefinition Height="26"/>
                     </Grid.RowDefinitions>
 
                     <Grid Margin="0,0,0,3" Grid.Row="0">
@@ -684,6 +685,22 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 <TextBlock Text="Will use current time range if not enabled."/>
                             </CheckBox.ToolTip>
                         </CheckBox>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,3" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="260"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Folder Path:" 
+                                   VerticalAlignment="Center"
+                                   Margin="10,2,0,2" 
+                                   Grid.Column="0"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedDefinition.FolderPath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                 Margin="4,2,10,2"
+                                 Grid.Column="1"/>
                     </Grid>
                 </Grid>
             </ControlTemplate>

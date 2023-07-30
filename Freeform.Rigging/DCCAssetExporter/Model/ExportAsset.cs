@@ -252,7 +252,7 @@ namespace Freeform.Rigging.DCCAssetExporter
             ExportEventHandler?.Invoke(this, eventArgs);
         }
 
-        public string GetExportPath(string definitionName, string scenePath, bool is_animation)
+        public string GetExportPath(ExportDefinition definition, string scenePath, bool is_animation)
         {
             ExporterConfig exporterConfig = (ExporterConfig)new ConfigManager().GetCategory(SettingsCategories.EXPORTER);
             ProjectConfig projectConfig = (ProjectConfig)new ConfigManager().GetCategory(SettingsCategories.PROJECT);
@@ -356,10 +356,13 @@ namespace Freeform.Rigging.DCCAssetExporter
                 }
             }
             // Add the ExportDirectory to the end
+            if (definition.FolderPath != string.Empty){
+                returnDirectory = Path.Combine(returnDirectory, definition.FolderPath);
+            }
             returnDirectory = Path.Combine(returnDirectory, exporterConfig.ExportDirectory);
 
             string fileNamePattern = exporterConfig.FileNamePattern;
-            string animationExportName = fileNamePattern.Replace("<Asset>", Name).Replace("<Definition>", definitionName);
+            string animationExportName = fileNamePattern.Replace("<Asset>", Name).Replace("<Definition>", definition.Name);
             string exportName = is_animation ? (animationExportName + ".fbx") : (Name + ".fbx");
 
             return Path.Combine(returnDirectory, exportName).ToString().Replace("/", sep_char.ToString());

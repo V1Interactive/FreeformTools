@@ -23,6 +23,7 @@ import v1_math
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
+from metadata import meta_network_utils
 
 
 
@@ -207,7 +208,7 @@ def get_children_anim_layers(anim_layer, anim_layer_list):
         get_children_anim_layers(child, anim_layer_list)
     
 
-def get_selected_anim_layer():
+def get_selected_anim_layers():
     '''
     Return the selected animation layer
     '''
@@ -217,3 +218,26 @@ def get_selected_anim_layer():
             selected_list.append(anim_layer)
 
     return selected_list
+
+
+def merge_selected_anim_layers():
+    '''
+    Merge selected animation layers while preserving network connections and keeping
+    the bottom layer's name
+    '''
+    all_anim_layers = get_all_anim_layers()
+    selected_anim_layers = get_selected_anim_layers()
+    connected_network_list = []
+    for anim_layer in selected_anim_layers:
+        connected_network_list.extend(meta_network_utils.get_network_entries(anim_layer))
+
+    mel_layer_array = str([x.longName() for x in selected_anim_layers]).replace('[','{').replace(']','}').replace('\'', '\"')
+    pm.mel.eval("animLayerMerge {0}".format(mel_layer_array))
+
+    post_anim_layers = get_all_anim_layers()
+    new_layer_list = [x for x in post_anim_layers if x not in all_anim_layers]
+    new_layer = get_first_or_default(new_layer_list)
+    new_layer.rename(selected_anim_layers[0].name())
+
+    for connected_network in connected_network_list:
+        connected_network.connect_node(new_layer)

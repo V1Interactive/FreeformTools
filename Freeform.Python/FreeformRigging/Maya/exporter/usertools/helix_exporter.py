@@ -147,7 +147,8 @@ class HelixExporter(object):
         definition_network = metadata.meta_network_utils.create_from_node(definition_node)
         new_definition = DCCAssetExporter.ExportDefinition(definition_network.get('guid'), definition_network.get('ui_index', 'short'), definition_network.node.longName(), 
                                                             definition_network.get('definition_name'), definition_network.get('start_frame'), definition_network.get('end_frame'), 
-                                                            definition_network.get('frame_range', 'bool'), definition_network.get('use_scene_name', 'bool'))
+                                                            definition_network.get('frame_range', 'bool'), definition_network.get('use_scene_name', 'bool'), 
+                                                            definition_network.get('folder_path'))
         if attribute_changed:
             new_definition.AttributeChangedHandler += attribute_changed
         if set_frame:

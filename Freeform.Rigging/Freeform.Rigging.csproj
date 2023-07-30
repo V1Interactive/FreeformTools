@@ -460,7 +460,9 @@
   <ItemGroup>
     <Resource Include="Resources\center_of_mass.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Resources\merge_down.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets" Condition="Exists('..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
