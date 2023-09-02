@@ -91,6 +91,9 @@ class ExportDefinition(DependentNode):
     def set_time_range(self):
         if self.node.frame_range.get():
             pm.playbackOptions(ast = self.node.start_frame.get(), min = self.node.start_frame.get(), aet = self.node.end_frame.get(), max = self.node.end_frame.get())
+
+    def get_time_range(self):
+        if self.node.frame_range.get():
             return (self.node.start_frame.get(), self.node.end_frame.get())
         else:
             return (pm.playbackOptions(q = True, ast = True), pm.playbackOptions(q = True, aet = True))
@@ -462,6 +465,8 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
                 export_path = c_asset.GetExportPath(event_args.Definition, str(pm.sceneName()), True)
                 self.fbx_export(export_path, export_root)
+
+                self.run_properties(c_asset, event_args, ExportStageEnum.Post.value, [asset_node, definition_node], export_asset_list = [export_root, mocap_root])
                 v1_core.v1_logging.get_logger().info("Exporter - File Exported to {0}".format(export_path))
 
         except Exception as e:
@@ -485,7 +490,8 @@ class CharacterAnimationAsset(ExportAssetProperty):
         Set the bake time range from an export definition node
         '''
         definition_network = meta_network_utils.create_from_node(definition_node)
-        bake_start_time, bake_end_time = definition_network.set_time_range()
+        definition_network.set_time_range()
+        bake_start_time, bake_end_time = definition_network.get_time_range()
 
         return bake_start_time, bake_end_time
 
@@ -582,7 +588,8 @@ class CharacterAnimationAsset(ExportAssetProperty):
         Set the export frame range from an export definition node
         '''
         definition_network = meta_network_utils.create_from_node(definition_node)
-        export_start_time, export_end_time = definition_network.set_time_range()
+        definition_network.set_time_range()
+        export_start_time, export_end_time = definition_network.get_time_range()
 
         return export_start_time, export_end_time
 
@@ -636,7 +643,8 @@ class DynamicAnimationAsset(CharacterAnimationAsset):
 
     def set_bake_frame_range(self, definition_node):
         definition_network = meta_network_utils.create_from_node(definition_node)
-        bake_start_time, bake_end_time = definition_network.set_time_range()
+        definition_network.set_time_range()
+        bake_start_time, bake_end_time = definition_network.get_time_range()
         bake_start_time -= self.bake_offset
 
         pm.playbackOptions(ast = bake_start_time, min = bake_start_time, aet = bake_end_time, max = bake_end_time)

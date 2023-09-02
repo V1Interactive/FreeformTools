@@ -1277,7 +1277,7 @@ class HelixRigger:
                 out_of_date = True
 
             if missmatch_joint_list:
-                missing_joints_message += "Missing Joints:"
+                missing_joints_message = "Missing Joints:"
                 for miss_matched_joint in missmatch_joint_list:
                     missing_joints_message += "\n" +  miss_matched_joint
 

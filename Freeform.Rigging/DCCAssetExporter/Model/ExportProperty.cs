@@ -197,11 +197,34 @@ namespace Freeform.Rigging.DCCAssetExporter
             }
         }
 
-        public ZeroMocapProperty(string guid, string nodeName, float rotateValue) : base(guid, nodeName)
+        private float _alignKeyframe;
+        public float AlignKeyframe
+        {
+            get { return _alignKeyframe; }
+            set
+            {
+                if (_alignKeyframe != value)
+                {
+                    _alignKeyframe = value;
+                    RaisePropertyChanged("AlignKeyframe");
+
+                    AttributeFloatEventArgs eventArgs = new AttributeFloatEventArgs()
+                    {
+                        NodeName = NodeName,
+                        Attribute = "align_keyframe",
+                        Value = AlignKeyframe
+                    };
+                    AttributeChangedHandler?.Invoke(this, eventArgs);
+                }
+            }
+        }
+
+        public ZeroMocapProperty(string guid, string nodeName, float rotateValue, int alignKeyframe) : base(guid, nodeName)
         {
             _propertyType = "Zero Mocap";
             Icon = "../../Resources/zero_rig.ico";
             RotateValue = rotateValue;
+            AlignKeyframe = alignKeyframe;
         }
     }
 

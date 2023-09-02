@@ -83,21 +83,21 @@ class AnimCurveProperties(ExporterProperty):
             (DCCAssetExporter.AnimCurveExporterProperty). The created ExporterProperty
         '''
         #property_network.refresh_names()
-        anim_curves_property = DCCAssetExporter.AnimCurveExporterProperty(property_network.get('guid'), property_network.node.longName(), property_network.get('control_name'), 
+        c_anim_curves_property = DCCAssetExporter.AnimCurveExporterProperty(property_network.get('guid'), property_network.node.longName(), property_network.get('control_name'), 
                                                                         property_network.get('target_name'), property_network.get('use_speed_curve'), property_network.get('from_zero'), 
                                                                         property_network.get('start_frame', 'short'), property_network.get('end_frame', 'short'), 
                                                                         property_network.get('frame_range', 'bool'))
         if 'attribute_changed' in kwargs:
-            anim_curves_property.AttributeChangedHandler += kwargs['attribute_changed']
+            c_anim_curves_property.AttributeChangedHandler += kwargs['attribute_changed']
         if 'set_frame' in kwargs:
-            anim_curves_property.SetFrameHandler += kwargs['set_frame']
+            c_anim_curves_property.SetFrameHandler += kwargs['set_frame']
         if 'get_frame' in kwargs:
-            anim_curves_property.GetCurrentFrameHandler += kwargs['get_frame']
+            c_anim_curves_property.GetCurrentFrameHandler += kwargs['get_frame']
 
-        anim_curves_property.PickControlHandler += property_network.pick_control
-        anim_curves_property.RefreshNamesHandler += property_network.refresh_names
+        c_anim_curves_property.PickControlHandler += property_network.pick_control
+        c_anim_curves_property.RefreshNamesHandler += property_network.refresh_names
 
-        return anim_curves_property
+        return c_anim_curves_property
 
     def __init__(self, node_name = 'anim_curve_property', node = None, namespace = "", **kwargs):
         super(AnimCurveProperties, self).__init__(node_name, node, namespace, use_speed_curve = (False, 'bool'), joint_data = ("", 'string'), target_name = ("", 'string'), 
@@ -214,15 +214,15 @@ class RotationCurveProperties(ExporterProperty):
         Returns:
             (DCCAssetExporter.RotationExporterProperty). The created ExporterProperty
         '''
-        barrel_rotate_property = DCCAssetExporter.RotationExporterProperty(property_network.get('guid'), property_network.node.longName(), 
+        c_barrel_rotate_property = DCCAssetExporter.RotationExporterProperty(property_network.get('guid'), property_network.node.longName(), 
                                                                             property_network.get('attribute_name'), property_network.get('target_name'), 
                                                                             property_network.get('axis'), property_network.get('rotate_value', 'short'))
         if 'attribute_changed' in kwargs:
-            barrel_rotate_property.AttributeChangedHandler += kwargs['attribute_changed']
+            c_barrel_rotate_property.AttributeChangedHandler += kwargs['attribute_changed']
 
-        barrel_rotate_property.PickControlHandler += property_network.pick_control
+        c_barrel_rotate_property.PickControlHandler += property_network.pick_control
 
-        return barrel_rotate_property
+        return c_barrel_rotate_property
 
     def __init__(self, node_name = 'barrel_rotate_curve_property', node = None, namespace = "", **kwargs):
         super(RotationCurveProperties, self).__init__(node_name, node, namespace, attribute_name = ("BarrelRotationPercent", 'string'), 
@@ -311,9 +311,9 @@ class RemoveRootAnimationProperty(ExporterProperty):
         Returns:
             (DCCAssetExporter.RemoveRootAnimProperty). The created ExporterProperty
         '''
-        remove_root_anim_property = DCCAssetExporter.RemoveRootAnimProperty(property_network.get('guid'), property_network.node.longName())
+        c_remove_root_anim_property = DCCAssetExporter.RemoveRootAnimProperty(property_network.get('guid'), property_network.node.longName())
 
-        return remove_root_anim_property
+        return c_remove_root_anim_property
 
     def __init__(self, node_name = 'remove_root_anim_property', node = None, namespace = "", **kwargs):
         super(RemoveRootAnimationProperty, self).__init__(node_name, node, namespace, **kwargs)
@@ -358,9 +358,9 @@ class ZeroCharacterProperty(ExporterProperty):
         Returns:
             (DCCAssetExporter.ZeroCharacterProperty). The created ExporterProperty
         '''
-        zero_character_property = DCCAssetExporter.ZeroCharacterProperty(property_network.get('guid'), property_network.node.longName())
+        c_zero_character_property = DCCAssetExporter.ZeroCharacterProperty(property_network.get('guid'), property_network.node.longName())
 
-        return zero_character_property
+        return c_zero_character_property
 
     def __init__(self, node_name = 'zero_character_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
@@ -405,9 +405,9 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         Returns:
             (DCCAssetExporter.ZeroCharacterRotateProperty). The created ExporterProperty
         '''
-        zero_character_property = DCCAssetExporter.ZeroCharacterRotateProperty(property_network.get('guid'), property_network.node.longName())
+        c_zero_character_property = DCCAssetExporter.ZeroCharacterRotateProperty(property_network.get('guid'), property_network.node.longName())
 
-        return zero_character_property
+        return c_zero_character_property
 
     def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
         super(ZeroCharacterRotateProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
@@ -463,9 +463,9 @@ class ZeroAnimCurvesProperty(ExporterProperty):
         Returns:
             (DCCAssetExporter.ZeroAnimCurvesProperty). The created ExporterProperty
         '''
-        zero_character_property = DCCAssetExporter.ZeroAnimCurvesProperty(property_network.get('guid'), property_network.node.longName())
+        c_zero_character_property = DCCAssetExporter.ZeroAnimCurvesProperty(property_network.get('guid'), property_network.node.longName())
 
-        return zero_character_property
+        return c_zero_character_property
 
     def __init__(self, node_name = 'zero_anim_curves_property', node = None, namespace = "", **kwargs):
         super(ZeroAnimCurvesProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
@@ -513,21 +513,25 @@ class ZeroMocapProperty(ExporterProperty):
         Returns:
             (DCCAssetExporter.ZeroMocapProperty). The created ExporterProperty
         '''
-        zero_mocap_property = DCCAssetExporter.ZeroMocapProperty(property_network.get('guid'), property_network.node.longName(), 
-                                                                 property_network.get('rotate_value', 'short'))
+        c_zero_mocap_property = DCCAssetExporter.ZeroMocapProperty(property_network.get('guid'), property_network.node.longName(), 
+                                                                   property_network.get('rotate_value', 'short'),
+                                                                   property_network.get('align_keyframe', 'short'))
 
         if 'attribute_changed' in kwargs:
-            zero_mocap_property.AttributeChangedHandler += kwargs['attribute_changed']
+            c_zero_mocap_property.AttributeChangedHandler += kwargs['attribute_changed']
 
 
-        return zero_mocap_property
+        return c_zero_mocap_property
 
     def __init__(self, node_name = 'zero_mocap_property', node = None, namespace = "", **kwargs):
-        super(ZeroMocapProperty, self).__init__(node_name, node, namespace, rotate_value = (0, 'short'), **kwargs)
+        super(ZeroMocapProperty, self).__init__(node_name, node, namespace, rotate_value = (0, 'short'), align_keyframe = (0, 'short'), **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")
         v1_core.v1_logging.get_logger().info("ZeroMocapProperty acting on {0}".format(export_asset_list))
+
+        definition_node = pm.PyNode(event_args.Definition.NodeName)
+        definition_network = meta_network_utils.create_from_node(definition_node)
 
         maya_utils.scene_utils.set_current_frame_to_timerange_start()
 
@@ -541,20 +545,32 @@ class ZeroMocapProperty(ExporterProperty):
         baked_loc = baked_property.get_world_locator()
         offset_loc = pm.spaceLocator(name='helix_exporter_root_rotate_offset')
 
-        base_offset = pm.xform(mocap_root, q=True, ws=True, ro=True)[1]
+        rotate_value = self.get('rotate_value', 'short')
+        align_keyframe = self.get('align_keyframe', 'short')
+        bake_start_time, bake_end_time = definition_network.get_time_range()
+        align_keyframe = bake_end_time if align_keyframe == 0 else align_keyframe
 
-        base_rad = math.radians(base_offset)
-        base_vector = [math.cos(base_rad), math.sin(base_rad)]
+        start_position = pm.getAttr(mocap_root.translate, t=bake_start_time)
+        start_position.y = 0
+        end_position = pm.getAttr(mocap_root.translate, t=align_keyframe)
+        end_position.y = 0
 
-        zero_angle = self.get('rotate_value', 'short')
-        zero_rad = math.radians(zero_angle)
-        zero_vector = [math.cos(zero_rad), math.sin(zero_rad)]
+        # larger of the offsets tells us if motion is generally along X or Z axis
+        x_offset = end_position.x - start_position.x
+        z_offset = end_position.z - start_position.z
 
-        offset_angle = sum([i*j for (i, j) in zip(base_vector, zero_vector)])
-        offset_rot = math.degrees(math.acos(offset_angle))
+        corner_position = pm.dt.Vector(end_position.x, 0, start_position.z) if x_offset > z_offset else pm.dt.Vector(start_position.x, 0, end_position.z)
+        angle_sign = math.copysign(1, z_offset if x_offset > z_offset else x_offset)
 
+        side_a = (end_position - start_position).length()
+        side_b = (corner_position - start_position).length()
+        side_c = (corner_position - end_position).length()
+
+        offset_angle = math.degrees(math.acos((side_a * side_a + side_b * side_b - side_c * side_c)/(2.0 * side_a * side_b)))
+        offset_angle *= angle_sign
+        offset_rot = offset_angle - rotate_value
         baked_loc.setParent(offset_loc)
-        offset_loc.ry.set(-offset_rot)
+        offset_loc.ry.set(offset_rot)
 
         baked_property.restore_animation()
         pm.delete(offset_loc)
