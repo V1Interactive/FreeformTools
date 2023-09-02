@@ -572,8 +572,8 @@ class HelixExporter(object):
         asset_node = pm.PyNode(event_args.NodeName)
         zero_mocap_network.connect_node(asset_node)
 
-        c_remove_root = ZeroMocapProperty.create_c_property(zero_mocap_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
-        event_args.Object = c_remove_root
+        c_zero_mocap = ZeroMocapProperty.create_c_property(zero_mocap_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
+        event_args.Object = c_zero_mocap
 
 
     @csharp_error_catcher
