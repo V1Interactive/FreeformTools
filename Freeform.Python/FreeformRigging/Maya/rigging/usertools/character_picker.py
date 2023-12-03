@@ -161,7 +161,7 @@ class RigSwapper(CharacterPicker):
         source_node (PyNode): Maya scene character network node for the rig we will swap
     '''
     def __init__(self, character_search, source_character_node):
-        super(RigSwapper, self).__init__(character_search)
+        super().__init__(character_search)
 
         self.source_node = source_character_node
 
@@ -210,7 +210,7 @@ class RigSwapper(CharacterPicker):
         pm.namespace(rename=[source_namespace, source_namespace[:-1]+"_temp"])
 
         playback_values = maya_utils.node_utils.get_playback()
-        super(RigSwapper, self).import_rigs(rig_path_list, do_update)
+        super().import_rigs(rig_path_list, do_update)
         maya_utils.node_utils.set_playback(playback_values)
 
         character_core_module, character_core_name = v1_shared.shared_utils.get_class_info(str(CharacterCore))
@@ -472,7 +472,7 @@ class RigChooser(CharacterPicker):
         source_node (PyNode): Maya scene character network node for the rig we will swap
     '''
     def __init__(self, rig_list):
-        super(RigChooser, self).__init__(rig_list = rig_list)
+        super().__init__(rig_list = rig_list)
 
         self.vm.WindowTitle = "Choose Rig"
         self.vm.ImportText = "Import Rig"

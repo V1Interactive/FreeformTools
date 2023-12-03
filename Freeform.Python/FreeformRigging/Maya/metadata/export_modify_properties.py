@@ -47,7 +47,7 @@ class ExporterProperty(PropertyNode):
         return None
 
     def __init__(self, node_name = 'property_node_temp', node = None, namespace = "", **kwargs):
-        super(ExporterProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
 
 class AnimCurveProperties(ExporterProperty):
@@ -100,7 +100,7 @@ class AnimCurveProperties(ExporterProperty):
         return c_anim_curves_property
 
     def __init__(self, node_name = 'anim_curve_property', node = None, namespace = "", **kwargs):
-        super(AnimCurveProperties, self).__init__(node_name, node, namespace, use_speed_curve = (False, 'bool'), joint_data = ("", 'string'), target_name = ("", 'string'), 
+        super().__init__(node_name, node, namespace, use_speed_curve = (False, 'bool'), joint_data = ("", 'string'), target_name = ("", 'string'), 
                                                   from_zero = (True, 'bool'), start_frame = (0, 'short'), end_frame = (0, 'short'), frame_range = (False, 'bool'), 
                                                   **kwargs)
 
@@ -225,7 +225,7 @@ class RotationCurveProperties(ExporterProperty):
         return c_barrel_rotate_property
 
     def __init__(self, node_name = 'barrel_rotate_curve_property', node = None, namespace = "", **kwargs):
-        super(RotationCurveProperties, self).__init__(node_name, node, namespace, attribute_name = ("BarrelRotationPercent", 'string'), 
+        super().__init__(node_name, node, namespace, attribute_name = ("BarrelRotationPercent", 'string'), 
                                                           target_name = ("", 'string'), axis = ("ry", 'string'), rotate_value = (90, 'short'), **kwargs)
 
         return
@@ -316,7 +316,7 @@ class RemoveRootAnimationProperty(ExporterProperty):
         return c_remove_root_anim_property
 
     def __init__(self, node_name = 'remove_root_anim_property', node = None, namespace = "", **kwargs):
-        super(RemoveRootAnimationProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")
@@ -363,7 +363,7 @@ class ZeroCharacterProperty(ExporterProperty):
         return c_zero_character_property
 
     def __init__(self, node_name = 'zero_character_property', node = None, namespace = "", **kwargs):
-        super(ZeroCharacterProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
+        super().__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")
@@ -410,7 +410,7 @@ class ZeroCharacterRotateProperty(ExporterProperty):
         return c_zero_character_property
 
     def __init__(self, node_name = 'zero_character_rotate_property', node = None, namespace = "", **kwargs):
-        super(ZeroCharacterRotateProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
+        super().__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")
@@ -468,7 +468,7 @@ class ZeroAnimCurvesProperty(ExporterProperty):
         return c_zero_character_property
 
     def __init__(self, node_name = 'zero_anim_curves_property', node = None, namespace = "", **kwargs):
-        super(ZeroAnimCurvesProperty, self).__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
+        super().__init__(node_name, node, namespace, export_loc = ("", 'string'), **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")
@@ -524,7 +524,7 @@ class ZeroMocapProperty(ExporterProperty):
         return c_zero_mocap_property
 
     def __init__(self, node_name = 'zero_mocap_property', node = None, namespace = "", **kwargs):
-        super(ZeroMocapProperty, self).__init__(node_name, node, namespace, rotate_value = (0, 'short'), align_keyframe = (0, 'short'), **kwargs)
+        super().__init__(node_name, node, namespace, rotate_value = (0, 'short'), align_keyframe = (0, 'short'), **kwargs)
 
     def act(self, c_asset, event_args, **kwargs):
         export_asset_list = kwargs.get("export_asset_list")

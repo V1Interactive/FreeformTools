@@ -89,7 +89,7 @@ class Channel_Overdriver(Addon_Component):
 
 
     def __init__(self):
-        super(Channel_Overdriver, self).__init__()
+        super().__init__()
         self.prefix = "ChannelOverdriver"
 
     @undoable
@@ -98,7 +98,7 @@ class Channel_Overdriver(Addon_Component):
         # Disable queue for this type
         baking_queue = None
 
-        if not super(Channel_Overdriver, self).rig(component_node, control, object_space, baking_queue = baking_queue, **kwargs):
+        if not super().rig(component_node, control, object_space, baking_queue = baking_queue, **kwargs):
             return False
 
         object_space = get_last_or_default(object_space)
@@ -172,7 +172,7 @@ class Channel_Overdriver(Addon_Component):
         return channel_list
 
     def create_json_dictionary(self, rig_component):
-        addon_dict = super(Channel_Overdriver, self).create_json_dictionary(rig_component)
+        addon_dict = super().create_json_dictionary(rig_component)
         addon_dict['channels'] = self.get_driven_channels()
 
         return addon_dict

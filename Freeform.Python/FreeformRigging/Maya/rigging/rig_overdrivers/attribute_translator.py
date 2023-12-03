@@ -78,7 +78,7 @@ class Attribute_Translator(Addon_Component):
 
 
     def __init__(self):
-        super(Attribute_Translator, self).__init__()
+        super().__init__()
         self.prefix = "AttributeTranslator"
 
     @undoable
@@ -92,7 +92,7 @@ class Attribute_Translator(Addon_Component):
         # Disable queue for this type
         baking_queue = None
 
-        if not super(Attribute_Translator, self).rig(component_node, control, object_space_list, baking_queue = baking_queue, **kwargs):
+        if not super().rig(component_node, control, object_space_list, baking_queue = baking_queue, **kwargs):
             return False
 
         object_space = get_first_or_default(object_space_list)
@@ -199,7 +199,7 @@ class Attribute_Translator(Addon_Component):
 
     def create_json_dictionary(self, rig_component):
         if self.get_control_info(self.get_driver_object()):
-            addon_dict = super(Attribute_Translator, self).create_json_dictionary(rig_component)
+            addon_dict = super().create_json_dictionary(rig_component)
         else:
             addon_node = self.network['addon'].node
             addon_info = v1_shared.shared_utils.get_class_info(addon_node.component_type.get())

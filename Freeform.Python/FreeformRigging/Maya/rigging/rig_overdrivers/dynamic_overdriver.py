@@ -48,7 +48,7 @@ class Dynamic_Driver(Overdriver):
     _simulated = True
 
     def __init__(self, translate = False, rotate = True):
-        super(Dynamic_Driver, self).__init__(translate, rotate)
+        super().__init__(translate, rotate)
         self.prefix = "Dynamic"
         self.hold_constraint = None
         self.maintain_offset = False
@@ -61,7 +61,7 @@ class Dynamic_Driver(Overdriver):
         bake_dynamics = False if baking_queue else True
         baking_queue = None
 
-        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, baking_queue, **kwargs):
+        if not super().rig(component_node, control, object_space, False, default_space, baking_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space)
@@ -92,7 +92,7 @@ class Aim(Dynamic_Driver):
     _icon = "../../Resources/overdriver_aim.png"
 
     def __init__(self, translate = False, rotate = True):
-        super(Aim, self).__init__(translate, rotate)
+        super().__init__(translate, rotate)
         self.prefix = "AimDynamic"
         self.space_constraint = pm.pointConstraint
         self.hold_constraint = pm.pointConstraint
@@ -141,7 +141,7 @@ class Pendulum(Aim):
     _icon = "../../Resources/pendulum.png"
 
     def __init__(self, translate=False, rotate=True):
-        super(Pendulum, self).__init__(translate=translate, rotate=rotate)
+        super().__init__(translate=translate, rotate=rotate)
         self.prefix = "PendulumDynamic"
         self.maintain_offset = False
 
@@ -177,7 +177,7 @@ class Pendulum(Aim):
 
         self.reset_pendulum(object_space)
 
-        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, baking_queue=baking_queue, **kwargs):
+        if not super().rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, baking_queue=baking_queue, **kwargs):
             return False
         
         driver_control = self.network['controls'].get_first_connection()

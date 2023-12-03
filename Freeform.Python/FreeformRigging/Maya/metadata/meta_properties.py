@@ -39,7 +39,7 @@ class NamespaceError(Exception):
     """Exception to call to inform user that non-integers were found in the bake range"""
     def __init__(self):
         message = "There is no namespace on the rig and no namespace defined for the export.  One of these needs a namespace"
-        super(NamespaceError, self).__init__(message)
+        super().__init__(message)
 
 class ExportStageEnum(Freeform_Enum):
     '''
@@ -84,7 +84,7 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
 
 
     def __init__(self, node_name = 'property_node_temp', node = None, namespace = "", **kwargs):
-        super(PropertyNode, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
     def compare(self, data):
         '''
@@ -159,7 +159,7 @@ class ModelProperty(PropertyNode):
         return ModelProperty.__subclasses__()
 
     def __init__(self, node_name = 'model_property_temp', node = None, namespace = "", **kwargs):
-        super(ModelProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
 
 class PartialModelProperty(ModelProperty):
@@ -196,7 +196,7 @@ class PartialModelProperty(ModelProperty):
 
 
     def __init__(self, node_name = 'partial_model_property', node = None, namespace = "", **kwargs):
-        super(ModelProperty, self).__init__(node_name, node, namespace, vertex_indicies = ("", 'string'), **kwargs)
+        super().__init__(node_name, node, namespace, vertex_indicies = ("", 'string'), **kwargs)
 
 
     def select(self):
@@ -282,7 +282,7 @@ class EditUVProperty(ModelProperty):
     _do_register = True
 
     def __init__(self, node_name = 'edit_uv_property', node = None, namespace = "", **kwargs):
-        super(EditUVProperty, self).__init__(node_name, node, namespace, pivotU = (0, 'float'), pivotV = (0, 'float'), 
+        super().__init__(node_name, node, namespace, pivotU = (0, 'float'), pivotV = (0, 'float'), 
                                              scaleU = (1.0, 'float'), scaleV = (1.0, 'float'), material_name = ("", 'string'), **kwargs)
 
     def act(self):
@@ -338,7 +338,7 @@ class CommonProperty(PropertyNode):
         return CommonProperty.__subclasses__()
 
     def __init__(self, node_name = 'common_property_temp', node = None, namespace = "", **kwargs):
-        super(CommonProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
 class ExportProperty(CommonProperty):
     '''
@@ -360,7 +360,7 @@ class ExportProperty(CommonProperty):
     _do_register = True
 
     def __init__(self, node_name = 'export_property', node = None, namespace = "", **kwargs):
-        super(ExportProperty, self).__init__(node_name, node, namespace, export = (True, 'bool'), **kwargs)
+        super().__init__(node_name, node, namespace, export = (True, 'bool'), **kwargs)
 
     def act(self):
         '''
@@ -394,7 +394,7 @@ class HIKProperty(CommonProperty):
     _do_register = True
 
     def __init__(self, node_name = 'hik_property', node = None, namespace = "", **kwargs):
-        super(HIKProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
     def get_hik_node(self):
         hik_node = self.get_first_connection(node_type=pm.nt.HIKCharacterNode)
@@ -469,7 +469,7 @@ class RigProperty(PropertyNode):
         return RigProperty.__subclasses__()
 
     def __init__(self, node_name = 'rig_property_temp', node = None, namespace = "", **kwargs):
-        super(RigProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
 class ControlProperty(RigProperty):
     '''
@@ -493,7 +493,7 @@ class ControlProperty(RigProperty):
     multi_allowed = True
 
     def __init__(self, node_name = 'control_property', node = None, namespace = "", **kwargs):
-        super(ControlProperty, self).__init__(node_name, node, namespace, control_type = ("", 'string'), ordered_index = (0, 'short'), 
+        super().__init__(node_name, node, namespace, control_type = ("", 'string'), ordered_index = (0, 'short'), 
                                               zero_translate = ([0,0,0], 'double3'), zero_rotate = ([0,0,0], 'double3'), locked = (False, 'bool'), **kwargs)
 
     def get_control_info(self):

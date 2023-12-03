@@ -25,7 +25,7 @@ class Network_Registry(v1_core.py_helpers.Freeform_Registry):
     Central registry for gathering all available network objects
     '''
     def __init__(self):
-        super(Network_Registry, self).__init__()
+        super().__init__()
 
 
 class Network_Meta(type):
@@ -44,7 +44,7 @@ class Property_Registry(v1_core.py_helpers.Freeform_Registry):
     Central registry for gathering all available property objects
     '''
     def __init__(self):
-        super(Property_Registry, self).__init__()
+        super().__init__()
 
 
 class Property_Meta(Network_Meta):

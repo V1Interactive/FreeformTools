@@ -59,7 +59,7 @@ class JointProperty(PropertyNode):
         return JointProperty.__subclasses__()
 
     def __init__(self, node_name = 'joint_property_temp', node = None, namespace = "", **kwargs):
-        super(JointProperty, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
 class RigMarkupProperty(JointProperty):
     '''
@@ -86,7 +86,7 @@ class RigMarkupProperty(JointProperty):
     multi_allowed = True
 
     def __init__(self, node_name = 'rig_markup_property', node = None, namespace = ""):
-        super(RigMarkupProperty, self).__init__(node_name, node, namespace, side = ("", 'string'), region = ("", 'string'), 
+        super().__init__(node_name, node, namespace, side = ("", 'string'), region = ("", 'string'), 
                                                 tag = ("", 'string'), group = ("", 'string'), temporary = (False, 'bool'), locked_list = ("", 'string'),
                                                 com_weight = (0.0, 'float'), com_region = ("", 'string'), com_object = ("", 'string'))
 
@@ -137,7 +137,7 @@ class RigSwitchProperty(JointProperty):
     multi_allowed = True
 
     def __init__(self, node_name = 'rig_switch_property', node = None, namespace = ""):
-        super(RigSwitchProperty, self).__init__(node_name, node, namespace, side = ("", 'string'), region = ("", 'string'), 
+        super().__init__(node_name, node, namespace, side = ("", 'string'), region = ("", 'string'), 
                                                 switch_side = ("", 'string'), switch_region = ("", 'string'), 
                                                 switch_type = ("", 'string'), from_type = ("", 'string'))
 
@@ -165,7 +165,7 @@ class RemoveAnimationProperty(JointProperty):
     _do_register = True
 
     def __init__(self, node_name = 'remove_animation_property', node = None, namespace = "", **kwargs):
-        return super(RemoveAnimationProperty, self).__init__(node_name, node, namespace, **kwargs)
+        return super().__init__(node_name, node, namespace, **kwargs)
 
     def act(self):
         '''
@@ -202,7 +202,7 @@ class PropAttachProperty(JointProperty):
     _do_register = True
 
     def __init__(self, node_name = 'prop_attach_property', node = None, namespace = "", **kwargs):
-        return super(PropAttachProperty, self).__init__(node_name, node, namespace, attached_file = (" ", 'string'))
+        return super().__init__(node_name, node, namespace, attached_file = (" ", 'string'))
 
     def act(self):
         '''
@@ -229,7 +229,7 @@ class JointRetargetProperty(JointProperty):
     _do_register = True
 
     def __init__(self, node_name = 'joint_retarget_property', node = None, namespace = "", **kwargs):
-        return super(JointRetargetProperty, self).__init__(node_name, node, namespace, constraint_type = (" ", 'string'), tag = (" ", 'string'))
+        return super().__init__(node_name, node, namespace, constraint_type = (" ", 'string'), tag = (" ", 'string'))
 
     def act(self):
         '''
@@ -263,7 +263,7 @@ class BakedToWorldSpaceProperty(JointProperty):
         return True if len(self.get_connections()) == 2 else False
 
     def __init__(self, node_name = 'baked_to_world_space_property', node = None, namespace = "", **kwargs):
-        return super(BakedToWorldSpaceProperty, self).__init__(node_name, node, namespace)
+        return super().__init__(node_name, node, namespace)
 
     def get_world_locator(self):
         world_locator = None

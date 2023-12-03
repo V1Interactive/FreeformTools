@@ -442,7 +442,7 @@ class Core(MetaNode):
     _do_register = True
 
     def __init__(self, node_name = 'network_core', node = None, namespace = "", **kwargs):
-        super(Core, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
 
 
 class DependentNode(MetaNode):
@@ -471,7 +471,7 @@ class DependentNode(MetaNode):
         return self.get_first_connection(node_type = 'transform')
 
     def __init__(self, parent = None, node_name = 'dependent_node', node = None, namespace = "", **kwargs):
-        super(DependentNode, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
         if not node:
             parent_node = parent if parent else meta_network_utils.get_network_core()
             parent_network = meta_network_utils.create_from_node(parent_node)
@@ -500,7 +500,7 @@ class ImportedCore(DependentNode):
     dependent_node = Core
 
     def __init__(self, parent = None, node_name = 'imported_core', node = None, namespace = ""):
-        super(ImportedCore, self).__init__(parent, node_name, node, namespace, import_path = ("", 'string'))
+        super().__init__(parent, node_name, node, namespace, import_path = ("", 'string'))
 
 class CharacterCore(DependentNode):
     '''
@@ -556,7 +556,7 @@ class CharacterCore(DependentNode):
     
 
     def __init__(self, parent = None, node_name = 'character_core', node = None, namespace = ""):
-        super(CharacterCore, self).__init__(parent, node_name, node, namespace, version = (1, 'short'), character_name = ("", 'string'), 
+        super().__init__(parent, node_name, node, namespace, version = (1, 'short'), character_name = ("", 'string'), 
                                             root_path = ("", 'string'), sub_paths = ("", 'string'), rig_file_path = ("", 'string'), 
                                             settings_file_path = ("", 'string'), color_set = ("", 'string'), scalar = (1.0, 'float'))
         if not node:
@@ -592,7 +592,7 @@ class SkeletonCore(DependentNode):
     dependent_node = CharacterCore
 
     def __init__(self, parent = None, node_name = 'skeleton_core', node = None, namespace = ""):
-        super(SkeletonCore, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 class JointsCore(DependentNode):
     '''
@@ -625,7 +625,7 @@ class JointsCore(DependentNode):
         return return_root
 
     def __init__(self, parent = None, node_name = 'joints_core', node = None, namespace = "", root_jnt = None):
-        super(JointsCore, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
         # root_joint attr has to be added here and not with kwargs to prevent an issue where connections to the attribute remove themselves.
         self.add_attr("root_joint", 'message')
         if not node:
@@ -650,7 +650,7 @@ class RegionsCore(DependentNode):
     dependent_node = CharacterCore
 
     def __init__(self, parent = None, node_name = 'regions_core', node = None, namespace = ""):
-        super(RegionsCore, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 class MeshesCore(DependentNode):
     '''
@@ -676,7 +676,7 @@ class MeshesCore(DependentNode):
         return return_node
 
     def __init__(self, parent = None, node_name = 'meshes_core', node = None, namespace = "", meshes_group = None):
-        super(MeshesCore, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
         if not node:
             self.connect_node(meshes_group)
 
@@ -711,7 +711,7 @@ class RigCore(DependentNode):
         return return_node
 
     def __init__(self, parent = None, node_name = 'rig_core', node = None, namespace = "", character_group = None):
-        super(RigCore, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
         if not node:
             pm.select(None)
             rig_grp = pm.group(empty = True, name = "Rigging_Components", parent = character_group)
@@ -733,7 +733,7 @@ class RigComponent(DependentNode):
     dependent_node = None
 
     def __init__(self, parent = None, node_name = 'rig_component', node = None, namespace = "", **kwargs):
-        super(RigComponent, self).__init__(parent, node_name, node, namespace, **kwargs)
+        super().__init__(parent, node_name, node, namespace, **kwargs)
         if not node:
             # Auto add attributes doesn't allow adding multi type attributes, so we add them here
             pm.addAttr(self.node, ln="translate_save", multi=True, type='double')
@@ -811,7 +811,7 @@ class ComponentCore(RigComponent):
     dependent_node = RigCore
 
     def __init__(self, parent = None, node_name = 'component_core', node = None, namespace = ""):
-        super(ComponentCore, self).__init__(parent, node_name, node, namespace, component_type = ("", 'string'), side = ("", 'string'), region = ("", 'string'), 
+        super().__init__(parent, node_name, node, namespace, component_type = ("", 'string'), side = ("", 'string'), region = ("", 'string'), 
                                             group_name = ("", 'string'), selection_lock = ("", 'string'), overdrive_space = ("", 'message'), hold_space = ("", 'message'))
         if not node:
             pass
@@ -836,7 +836,7 @@ class ControlJoints(DependentNode):
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'control_joints', node = None, namespace = ""):
-        super(ControlJoints, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 class RiggingJoints(DependentNode):
     '''
@@ -853,7 +853,7 @@ class RiggingJoints(DependentNode):
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'rigging_joints', node = None, namespace = ""):
-        super(RiggingJoints, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 class AttachmentJoints(DependentNode):
     '''
@@ -870,7 +870,7 @@ class AttachmentJoints(DependentNode):
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'attachment_joints', node = None, namespace = ""):
-        super(AttachmentJoints, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 class SkeletonJoints(DependentNode):
     '''
@@ -887,7 +887,7 @@ class SkeletonJoints(DependentNode):
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'skeleton_joints', node = None, namespace = ""):
-        super(SkeletonJoints, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
     def delete(self):
         if self.node.exists():
@@ -918,7 +918,7 @@ class AddonCore(RigComponent):
     dependent_node = ComponentCore
 
     def __init__(self, parent = None, node_name = 'addon_core', node = None, namespace = ""):
-        super(AddonCore, self).__init__(parent, node_name, node, namespace, component_type = ("", 'string'), target_type = ("", 'string'), 
+        super().__init__(parent, node_name, node, namespace, component_type = ("", 'string'), target_type = ("", 'string'), 
                                         target_data = ("", 'string'), target_weight = ("", 'string'))
         if not node:
             addon_grp = pm.group(empty=True, name= namespace + node_name.replace("_core", "_grp"))
@@ -948,7 +948,7 @@ class AddonControls(DependentNode):
     dependent_node = AddonCore
 
     def __init__(self, parent = None, node_name = 'addon_controls', node = None, namespace = ""):
-        super(AddonControls, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 class OverDrivenControl(DependentNode):
     '''
@@ -965,6 +965,6 @@ class OverDrivenControl(DependentNode):
     dependent_node = AddonCore
 
     def __init__(self, parent = None, node_name = 'overdriven_control', node = None, namespace = ""):
-        super(OverDrivenControl, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
 
 #endregion

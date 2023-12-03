@@ -25,7 +25,7 @@ class Component_Registry(v1_core.py_helpers.Freeform_Registry):
     Central registry for gathering all available rigging components
     '''
     def __init__(self):
-        super(Component_Registry, self).__init__()
+        super().__init__()
 
 class Component_Meta(type):
     def __new__(cls, cls_name, bases, attr_dct):
@@ -43,7 +43,7 @@ class Addon_Registry(v1_core.py_helpers.Freeform_Registry):
     Central registry for gathering all available rigging components
     '''
     def __init__(self):
-        super(Addon_Registry, self).__init__()
+        super().__init__()
 
 class Addon_Meta(Component_Meta):
     def __new__(cls, cls_name, bases, attr_dct):

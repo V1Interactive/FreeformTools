@@ -56,7 +56,20 @@ class ExportCore(DependentNode):
     dependent_node = Core
 
     def __init__(self, parent = None, node_name = 'v1_export_core', node = None, namespace = ""):
-        super(ExportCore, self).__init__(parent, node_name, node, namespace)
+        super().__init__(parent, node_name, node, namespace)
+
+class Validation_Hub_Test(DependentNode):
+    _do_register = True
+    dependent_node = Core
+
+    def __init__(self, parent = None, node_name = 'validation_hub', node = None, namespace = ""):
+        super().__init__()
+        if not node:
+            # Initialize a fresh metadata network node
+            pass
+        else:
+            # We are initializing from a node that exists in the scene
+            pass
 
 class ExportDefinition(DependentNode):
     '''
@@ -82,7 +95,7 @@ class ExportDefinition(DependentNode):
     dependent_node = ExportCore
 
     def __init__(self, parent = None, node_name = 'v1_export_definition', node = None, namespace = ""):
-        super(ExportDefinition, self).__init__(parent, node_name, node, namespace, ui_index = (0, 'short'), definition_name = ("", 'string'), start_frame = (0, 'short'), 
+        super().__init__(parent, node_name, node, namespace, ui_index = (0, 'short'), definition_name = ("", 'string'), start_frame = (0, 'short'), 
                                                end_frame = (0, 'short'), frame_range = (False, 'bool'), use_scene_name = (False, 'bool'), do_export = (True, 'bool'),
                                                folder_path = ("", 'string'))
         if not node:
@@ -138,7 +151,7 @@ class ExportAssetProperty(PropertyNode):
 
     def __init__(self, node_name = 'asset_property', node = None, namespace = "", **kwargs):
         #string guid, string name, string type, string exportName, string exportPath, bool useExportPath
-        super(ExportAssetProperty, self).__init__(node_name, node, namespace, ui_index = (0, 'short'), asset_name = ("", 'string'), asset_type = ("", 'string'), 
+        super().__init__(node_name, node, namespace, ui_index = (0, 'short'), asset_name = ("", 'string'), asset_type = ("", 'string'), 
                                                   export_path = ("", 'string'), zero_export = (False, 'bool'), use_export_path = (False, 'bool'), **kwargs)
         if not node:
             self.set('asset_name', "New_Asset")
@@ -224,7 +237,7 @@ class StaticAsset(ExportAssetProperty):
 
 
     def __init__(self, node_name = 'static_asset', node = None, namespace = "", **kwargs):
-        super(StaticAsset, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
         if not node:
             self.set('asset_type', StaticAsset.asset_type)
 
@@ -309,7 +322,7 @@ class CharacterAsset(ExportAssetProperty):
 
 
     def __init__(self, node_name = 'character_asset', node = None, namespace = "", **kwargs):
-        super(CharacterAsset, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
         if not node:
             self.set('asset_type', CharacterAsset.asset_type)
 
@@ -394,7 +407,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
 
     def __init__(self, node_name = 'character_animation_asset', node = None, namespace = "", **kwargs):
-        super(CharacterAnimationAsset, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
         if not node:
             self.set('asset_type', CharacterAnimationAsset.asset_type)
 
@@ -636,7 +649,7 @@ class DynamicAnimationAsset(CharacterAnimationAsset):
     asset_type = "Dynamic Animation"
 
     def __init__(self, node_name = 'dynamic_animation_asset', node = None, namespace = "", **kwargs):
-        super(DynamicAnimationAsset, self).__init__(node_name, node, namespace, **kwargs)
+        super().__init__(node_name, node, namespace, **kwargs)
         self.bake_offset = 100
         if not node:
             self.set('asset_type', DynamicAnimationAsset.asset_type)
@@ -652,7 +665,7 @@ class DynamicAnimationAsset(CharacterAnimationAsset):
         return bake_start_time, bake_end_time
 
     def bake_export_skeleton(self, export_skele, bake_simulation):
-        super(DynamicAnimationAsset, self).bake_export_skeleton(export_skele, True)
+        super().bake_export_skeleton(export_skele, True)
         export_root = rigging.skeleton.get_root_joint( get_first_or_default(export_skele) )
         start_time = pm.playbackOptions(q = True, ast = True)
         pm.cutKey(export_skele, t=(start_time, start_time + self.bake_offset - 1))

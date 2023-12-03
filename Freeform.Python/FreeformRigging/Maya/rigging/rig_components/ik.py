@@ -51,13 +51,13 @@ class IK(Rig_Component):
     _icon = "../../Resources/ik_icon.ico"
 
     def __init__(self):
-        super(IK, self).__init__()
+        super().__init__()
         self.prefix = 'ik_rig' # Can't be named ik due to node name conflict with UE4 necessary joints ik_foot_l and ik_foot_r
 
 
 
     def bake_controls(self, translate = True, rotate = True, scale = False, simulation = True):
-        super(IK, self).bake_controls(translate, rotate, scale, simulation)
+        super().bake_controls(translate, rotate, scale, simulation)
 
 
     @undoable
@@ -70,7 +70,7 @@ class IK(Rig_Component):
 
         # Start Component Creation
         do_zero_character = False if baking_queue else True
-        super(IK, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
+        super().rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
@@ -175,7 +175,7 @@ class IK(Rig_Component):
         Returns:
             dictionary. json dictionary for all Rig Component information
         '''
-        class_info_dict = super(IK, self).create_json_dictionary()
+        class_info_dict = super().create_json_dictionary()
         class_info_dict['ik_local_orient'] = self.network['component'].get('ik_local_orient', 'bool')
         return class_info_dict
 
@@ -319,4 +319,4 @@ class IK(Rig_Component):
         logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_fk, "Context Menu (IK)", None, None)
         pm.menuItem(label="Switch To FK", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs))
         pm.menuItem(divider=True, parent=parent_menu)
-        super(IK, self).create_menu(parent_menu, control)
+        super().create_menu(parent_menu, control)
