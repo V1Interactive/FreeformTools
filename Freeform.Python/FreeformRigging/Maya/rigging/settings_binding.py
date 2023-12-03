@@ -37,7 +37,7 @@ class Binding_Registry(v1_core.py_helpers.Freeform_Registry):
     Central registry for gathering all available network objects
     '''
     def __init__(self):
-        super(Binding_Registry, self).__init__()
+        super().__init__()
 
 class Binding_Meta(type):
     def __new__(cls, cls_name, bases, attr_dct):
@@ -116,7 +116,7 @@ class XForm_Binding(Binding):
             sub_cls().get_subclass_strings(class_list)
 
     def __init__(self):
-        super(XForm_Binding, self).__init__()
+        super().__init__()
         self.category = 'xform'
 
     def save_data(self, data, obj, *args):
@@ -156,7 +156,7 @@ class Translate(XForm_Binding):
     Binding to save or load the tx, ty, and tz channels of the translate attribute to json
     '''
     def __init__(self):
-        super(Translate, self).__init__()
+        super().__init__()
         self.attribute = 'translate'
         self.binding = ['tx', 'ty', 'tz']
 
@@ -165,7 +165,7 @@ class Rotate(XForm_Binding):
     Binding to save or load the rx, ry, and rz channels of the rotate attribute to json
     '''
     def __init__(self):
-        super(Rotate, self).__init__()
+        super().__init__()
         self.attribute = 'rotate'
         self.binding = ['rx', 'ry', 'rz']
 
@@ -174,7 +174,7 @@ class Scale(XForm_Binding):
     Binding to save or load the sx, sy, and sz channels of the scale attribute to json
     '''
     def __init__(self):
-        super(Scale, self).__init__()
+        super().__init__()
         self.attribute = 'scale'
         self.binding = ['sx', 'sy', 'sz']
 
@@ -183,7 +183,7 @@ class Joint_Orient(XForm_Binding):
     Binding to save or load the jointOrientX, jointOrientY, and jointOrientZ channels of the jointOrient attribute to json
     '''
     def __init__(self):
-        super(Joint_Orient, self).__init__()
+        super().__init__()
         self.attribute = 'jointOrient'
         self.binding = ['jointOrientX', 'jointOrientY', 'jointOrientZ']
 
@@ -192,7 +192,7 @@ class Rotate_Order(XForm_Binding):
     Binding to save or load the rotateOrder attribute to json
     '''
     def __init__(self):
-        super(Rotate_Order, self).__init__()
+        super().__init__()
         self.attribute = 'rotateOrder'
         self.binding = ['rotateOrder']
 #endregion
@@ -211,7 +211,7 @@ class BindPose_Binding(XForm_Binding):
     _do_register = False
 
     def __init__(self):
-        super(BindPose_Binding, self).__init__()
+        super().__init__()
         self.category = 'bind_xform'
         self.sub_attr = None
 
@@ -236,7 +236,7 @@ class Bind_Translate(BindPose_Binding):
     _do_register = True
 
     def __init__(self):
-        super(Bind_Translate, self).__init__()
+        super().__init__()
         self.attribute = 'bind_translate'
         self.binding = ['bindTX', 'bindTY', 'bindTZ']
         self.sub_attr = ['x', 'y', 'z']
@@ -248,7 +248,7 @@ class Bind_Rotate(BindPose_Binding):
     _do_register = True
 
     def __init__(self):
-        super(Bind_Rotate, self).__init__()
+        super().__init__()
         self.attribute = 'bind_rotate'
         self.binding = ['bindRX', 'bindRY', 'bindRZ']
         self.sub_attr = ['x', 'y', 'z']
@@ -262,7 +262,7 @@ class Parent_Binding(Binding):
     _do_register = True
 
     def __init__(self):
-        super(Parent_Binding, self).__init__()
+        super().__init__()
 
     def save_data(self, data, obj, *args):
         '''
@@ -296,7 +296,7 @@ class Properties_Binding(Binding):
     _do_register = True
 
     def __init__(self):
-        super(Properties_Binding, self).__init__()
+        super().__init__()
         self.category = 'properties'
 
     def save_data(self, data, obj, *args):
@@ -380,6 +380,7 @@ class Binding_Sets(Freeform_Enum):
     ALL = [Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order(), Bind_Translate(), Bind_Rotate(), Parent_Binding(), Properties_Binding()]
     SKELETON = [Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order(), Bind_Translate(), Bind_Rotate(), Parent_Binding()]
     TRANSFORMS = [Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order()]
+    BIND_POSE = [Bind_Translate(), Bind_Rotate()]
     NEW_JOINT = [Parent_Binding(), Translate(), Rotate(), Scale(), Joint_Orient(), Rotate_Order()]
     TRANSLATE = [Translate(), Bind_Translate()]
     ROTATE = [Rotate(), Joint_Orient(), Rotate_Order(), Bind_Rotate()]

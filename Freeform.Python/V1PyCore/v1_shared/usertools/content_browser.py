@@ -83,6 +83,7 @@ class ContentBrowser(object):
         import maya_utils
 
         if os.path.exists(event_args.FilePath) and pm.ls(sl=True):
+            pm.select(hierarchy=True)
             config_manager = v1_core.global_settings.ConfigManager()
             check_perforce = config_manager.get("Perforce").get("Enabled")
 

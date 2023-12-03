@@ -1398,6 +1398,8 @@ def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_g
     '''
     mesh_name = "Combined_Mesh"
     existing_joint_list = skeleton_list if skeleton_list else pm.ls(type='joint')
+    
+    character_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
     import_dict = {}
     for path in path_list:
@@ -1463,10 +1465,11 @@ def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_g
             if (mesh_skin_cluster is not None):
                 dupe_mesh = duplicate_for_combine(mesh, mesh_skin_cluster, combine_skeleton_list)
 
-                property_dict = metadata.meta_property_utils.load_properties_from_obj(dupe_mesh)
-                edit_uv_property = get_first_or_default(property_dict.get(Property_Registry().get(EditUVProperty.__name__)))
-                if edit_uv_property:
-                    edit_uv_property.act()
+                if character_settings.run_import_properties:
+                    property_dict = metadata.meta_property_utils.load_properties_from_obj(dupe_mesh)
+                    edit_uv_property = get_first_or_default(property_dict.get(Property_Registry().get(EditUVProperty.__name__)))
+                    if edit_uv_property:
+                        edit_uv_property.act()
 
                 pm.select(dupe_mesh, replace=True)
                 pm.bakePartialHistory(prePostDeformers=True)

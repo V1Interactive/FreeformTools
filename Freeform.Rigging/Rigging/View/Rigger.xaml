@@ -83,6 +83,8 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             </MenuItem.ItemContainerStyle>
                         </MenuItem>
                         <MenuItem Header="Load Section">
+                            <CheckBox Content="Only Selected"
+                                      IsChecked="{Binding Data.OnlySelected, Source={StaticResource dataContextProxy}}"/>
                             <ComboBox VerticalAlignment="Bottom" 
                                       Height="20"
                                       ItemsSource="{Binding Data.SettingsPresetList, Source={StaticResource dataContextProxy}}" 

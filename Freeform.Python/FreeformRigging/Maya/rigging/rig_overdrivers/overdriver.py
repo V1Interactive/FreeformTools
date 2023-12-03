@@ -63,7 +63,7 @@ class Overdriver(Addon_Component):
         return class_list
 
     def __init__(self, translate = True, rotate = True):
-        super(Overdriver, self).__init__()
+        super().__init__()
         self.prefix = "Overdriver"
         self.translate = translate
         self.rotate = rotate
@@ -80,7 +80,7 @@ class Overdriver(Addon_Component):
         if bake_controls:
             bake_controls = not character_settings.no_bake_overdrivers
 
-        if not super(Overdriver, self).rig(component_node, control, object_space_list, bake_controls, baking_queue = baking_queue, **kwargs):
+        if not super().rig(component_node, control, object_space_list, bake_controls, baking_queue = baking_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space_list, bake_controls, default_space)
@@ -341,7 +341,7 @@ class Overdriver(Addon_Component):
             for attr in attr_list:
                 attr.set(1)
 
-        super(Overdriver, self).zero_control(control)
+        super().zero_control(control)
 
 
     def get_rigger_methods(self):
@@ -376,7 +376,7 @@ class Overdriver(Addon_Component):
         sel_target_method, sel_target_args, sel_target_kwargs = v1_core.v1_logging.logging_wrapper(self.select_target_control, "Context Menu (Overdriver)", None, None)
         pm.menuItem(label="Select Target Control", parent=parent_menu, command=lambda _: sel_target_method(*sel_target_args, **sel_target_kwargs))
         pm.menuItem(divider=True, parent=parent_menu)
-        super(Overdriver, self).create_menu(parent_menu, control)
+        super().create_menu(parent_menu, control)
 
 
 class Position_Overdriver(Overdriver):
@@ -384,7 +384,7 @@ class Position_Overdriver(Overdriver):
     _save_channel_list = ['tx', 'ty', 'tz']
     
     def __init__(self, translate = True, rotate = False):
-        super(Position_Overdriver, self).__init__(translate, rotate)
+        super().__init__(translate, rotate)
         self.prefix = "PosOverdriver"
         self.space_constraint = pm.pointConstraint
         self.hold_constraint = pm.orientConstraint
@@ -395,7 +395,7 @@ class Rotation_Overdriver(Overdriver):
     _save_channel_list = ['rx', 'ry', 'rz']
 
     def __init__(self, translate = False, rotate = True):
-        super(Rotation_Overdriver, self).__init__(translate, rotate)
+        super().__init__(translate, rotate)
         self.prefix = "RotOverdriver"
         self.space_constraint = pm.orientConstraint
         self.hold_constraint = pm.pointConstraint
@@ -406,7 +406,7 @@ class Dynamic_Driver(Overdriver):
     _simulated = True
 
     def __init__(self, translate = False, rotate = True):
-        super(Dynamic_Driver, self).__init__(translate, rotate)
+        super().__init__(translate, rotate)
         self.prefix = "Dynamic"
         self.hold_constraint = None
         self.maintain_offset = False
@@ -418,7 +418,7 @@ class Dynamic_Driver(Overdriver):
         bake_dynamics = False if baking_queue else True
         baking_queue = None
 
-        if not super(Overdriver, self).rig(component_node, control, object_space, False, default_space, baking_queue, **kwargs):
+        if not super().rig(component_node, control, object_space, False, default_space, baking_queue, **kwargs):
             return False
 
         driver_control = self.rig_setup(control, object_space)
@@ -449,7 +449,7 @@ class Aim(Dynamic_Driver):
     _icon = "../../Resources/overdriver_aim.png"
 
     def __init__(self, translate = False, rotate = True):
-        super(Aim, self).__init__(translate, rotate)
+        super().__init__(translate, rotate)
         self.prefix = "AimDynamic"
         self.space_constraint = pm.pointConstraint
         self.hold_constraint = pm.pointConstraint
@@ -498,7 +498,7 @@ class Pendulum(Aim):
     _icon = "../../Resources/pendulum.png"
 
     def __init__(self, translate=False, rotate=True):
-        super(Pendulum, self).__init__(translate=translate, rotate=rotate)
+        super().__init__(translate=translate, rotate=rotate)
         self.prefix = "PendulumDynamic"
         self.maintain_offset = False
 
@@ -534,7 +534,7 @@ class Pendulum(Aim):
 
         self.reset_pendulum(object_space)
 
-        if not super(Pendulum, self).rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, baking_queue=baking_queue, **kwargs):
+        if not super().rig(component_node, control, [object_space], bake_controls=bake_controls, default_space=default_space, baking_queue=baking_queue, **kwargs):
             return False
         
         driver_control = self.network['controls'].get_first_connection()

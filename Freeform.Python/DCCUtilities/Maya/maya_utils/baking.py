@@ -41,7 +41,7 @@ class BakeRangeError(Exception):
     """Exception to call to inform user that non-integers were found in the bake range"""
     def __init__(self):
         message = "Bake Range must be 2 integer values.  Non integers found."
-        super(BakeRangeError, self).__init__(message)
+        super().__init__(message)
 
 class Global_Bake_Queue(object, metaclass=Singleton):
     '''

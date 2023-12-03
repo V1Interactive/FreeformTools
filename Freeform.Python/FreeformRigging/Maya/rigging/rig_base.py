@@ -690,14 +690,14 @@ class Component_Base(object, metaclass=Component_Meta):
         Replacement for the __init__ for this class
         Note: Can't use __init__ for this because error in instantiating FK running the inheritance chain.
         FK()
-        # Error: super(type, obj): obj must be an instance or subtype of type
+        # Error: super(): obj must be an instance or subtype of type
         # Traceback (most recent call last):
         #   File "<maya console>", line 1, in <module>
         #   File "D:\Helix\V1.Python\Maya\rigging\fk.py", line 24, in __init__
-        #     super(FK, self).__init__(*args, **kwargs)
+        #     super().__init__(*args, **kwargs)
         #   File "D:\Helix\V1.Python\Maya\rigging\rig_base.py", line 682, in __init__
-        #     super(Rig_Component, self).__init__(*args, **kwargs)
-        # TypeError: super(type, obj): obj must be an instance or subtype of type # 
+        #     super().__init__(*args, **kwargs)
+        # TypeError: super(): obj must be an instance or subtype of type # 
         '''
         self.namespace = ":"
         self.prefix = 'BROKEN'

@@ -341,7 +341,21 @@ namespace Freeform.Rigging
             }
         }
 
-    bool _removeExisting;
+        bool _onlySelected;
+        public bool OnlySelected
+        {
+            get { return _onlySelected; }
+            set
+            {
+                if (_onlySelected != value)
+                {
+                    _onlySelected = value;
+                    RaisePropertyChanged("OnlySelected");
+                }
+            }
+        }
+
+        bool _removeExisting;
         public bool RemoveExisting
         {
             get { return _removeExisting; }
@@ -1427,7 +1441,8 @@ namespace Freeform.Rigging
             SettingsEventArgs eventArgs = new SettingsEventArgs()
             {
                 character = (Character)sender,
-                preset = SelectedPreset.ToUpper()
+                preset = SelectedPreset.ToUpper(),
+                onlySelected = OnlySelected
             };
             LoadSettingsHandler?.Invoke(this, eventArgs);
         }
@@ -1543,6 +1558,7 @@ namespace Freeform.Rigging
             public Character character = null;
             public string preset = "";
             public bool incrementVersion = false;
+            public bool onlySelected = false;
         }
 
         public class BakeRangeEventArgs : EventArgs

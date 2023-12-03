@@ -382,7 +382,7 @@ def save_character_settings_to_json(jnt, file_path, binding_list = Binding_Sets.
     v1_core.json_utils.save_json(file_path, save_data)
 
 
-def load_settings_from_json_with_dialog(character_grp, binding_list = Binding_Sets.ALL.value):
+def load_settings_from_json_with_dialog(character_grp, binding_list = Binding_Sets.ALL.value, only_selected = False):
     '''
     Loads a character settings json file onto a character with a file picker dialog to choose the json file
 
@@ -395,9 +395,9 @@ def load_settings_from_json_with_dialog(character_grp, binding_list = Binding_Se
     start_dir = relative_path if (relative_path and os.path.exists(relative_path)) else v1_core.global_settings.GlobalSettings.get_user_freeform_folder()
     load_path = pm.fileDialog2(ds = 1, fm = 1, ff = "JSON - .json (*.json)", dir = start_dir, cap = "Load Character Settings")
     if load_path:
-        load_settings_from_json(character_grp, get_first_or_default(load_path), binding_list)
+        load_settings_from_json(character_grp, get_first_or_default(load_path), binding_list, only_selected=only_selected)
 
-def load_settings_from_json(character_grp, file_path, binding_list = Binding_Sets.ALL.value, display_dialogues = True):
+def load_settings_from_json(character_grp, file_path, binding_list = Binding_Sets.ALL.value, display_dialogues = True, only_selected = False):
     '''
     Loads a character settings json file onto a character
 
@@ -408,6 +408,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
     '''
     autokey_state = pm.autoKeyframe(q=True, state=True)
     pm.autoKeyframe(state=False)
+    selection_list = pm.ls(sl=True)
 
     initial_dialogue_display = v1_shared.usertools.message_dialogue.get_dialogue_display()
     if not display_dialogues:
@@ -429,10 +430,10 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
     joints_network = character_network.get_downstream(JointsCore)
     target_namespace = character_grp.namespace()
 
-    # Create any missing joints, parented to world so we know to fill them in next
     if binding_list != Binding_Sets.PROPERTIES.value:
         for jnt_name, data in load_skeleton_data.items():
-            if not pm.objExists( target_namespace + jnt_name ):
+            # Create any missing joints, parented to world so we know to fill them in next
+            if only_selected == False and not pm.objExists(target_namespace + jnt_name):
                 v1_core.v1_logging.get_logger().info("Creating Joint - {0}".format(jnt_name))
                 pm.select(None) # Clear selection before making joints so no auto-parenting happens
                 new_jnt = pm.joint(name = target_namespace + jnt_name)
@@ -443,23 +444,27 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
                 Bind_Rotate().load_data(data, new_jnt)
 
                 joints_network.connect_node(new_jnt)
+            # Load Xform Bindings onto existing joints
             else:
                 jnt = get_first_or_default(pm.ls(target_namespace + jnt_name, type='joint'), default = pm.PyNode(target_namespace + jnt_name))
                 target_parent_name = target_namespace + data['parent']
                 target_parent = pm.PyNode(target_parent_name) if pm.objExists(target_parent_name) else None
-                if jnt.getParent() != None and (jnt.getParent() == target_parent or jnt.getParent() == character_grp):
-                    xform_binding_list = []
-                    for binding_object in binding_list:
-                        if binding_object.type_name in XForm_Binding.get_inherited_class_strings():
-                            xform_binding_list.append(binding_object)
+                if only_selected:
+                    jnt = jnt if jnt in selection_list else None
+                if jnt and jnt.getParent() != None and (jnt.getParent() == target_parent or jnt.getParent() == character_grp):
+                    xform_binding_list = Binding_Sets.TRANSFORMS.value + Binding_Sets.BIND_POSE.value
+                    binding_type_list = [Binding_Registry().get(x.type_name) for x in binding_list]
+                    xform_binding_list = [x for x in xform_binding_list if Binding_Registry().get(x.type_name) in binding_type_list]
                     for xform_binding in xform_binding_list:
                         xform_binding.load_data(data, jnt, target_namespace)
 
     load_property_jnt = None
+    # Load Properties
     for jnt_name, data in load_skeleton_data.items():
         load_property_jnt = pm.PyNode(target_namespace + jnt_name) if pm.objExists(target_namespace + jnt_name) else None
         joint_list = pm.ls(target_namespace + jnt_name, type='joint')
         load_property_jnt = get_first_or_default(joint_list, default = load_property_jnt)
+        
         # If the joint from the settings file exists in the skeleton
         if load_property_jnt:
             # Joints we just made above should be the only ones without a parent
@@ -472,7 +477,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
                 Properties_Binding().load_data(data, load_property_jnt)
 
     character_data = load_settings_data.get('character')
-    if character_data:
+    if character_data and only_selected == False:
         for binding in Binding_Sets.PROPERTIES.value:
             binding.load_data(character_data, character_network.node)
 

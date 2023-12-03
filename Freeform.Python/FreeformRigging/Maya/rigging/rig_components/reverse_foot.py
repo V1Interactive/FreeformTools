@@ -49,7 +49,7 @@ class ReverseFoot(Rig_Component):
     _hasattachment = "root"
 
     def __init__(self):
-        super(ReverseFoot, self).__init__()
+        super().__init__()
         self.prefix = 'reverse'
 
 
@@ -64,17 +64,17 @@ class ReverseFoot(Rig_Component):
             maya_utils.baking.bake_objects(joint_list, translate, rotate, scale)
 
     def queue_bake_controls(self, post_process_kwargs, translate = True, rotate = True, scale = False, simulation = True, baking_queue = maya_utils.baking.Global_Bake_Queue()):
-        super(ReverseFoot, self).queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation, baking_queue)
+        super().queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation, baking_queue)
 
     def bake_controls(self, translate = True, rotate = True, scale = False, simulation = True):
-        super(ReverseFoot, self).bake_controls(translate, rotate, scale, simulation)
+        super().bake_controls(translate, rotate, scale, simulation)
 
 
     @undoable
     def remove(self):
         # grab list before we delete the component
         attachment_joint_list = self.network['attachment'].get_connections()
-        if super(ReverseFoot, self).remove():
+        if super().remove():
             self.fix_attachments(attachment_joint_list)
         return True
 
@@ -114,7 +114,7 @@ class ReverseFoot(Rig_Component):
         pm.autoKeyframe(state=False)
 
         do_zero_character = False if baking_queue else True
-        super(ReverseFoot, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
+        super().rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         character_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.CharacterSettings)
 
@@ -387,4 +387,4 @@ class ReverseFoot(Rig_Component):
         return method_dict
 
     def create_menu(self, parent_menu, control):
-        super(ReverseFoot, self).create_menu(parent_menu, control)
+        super().create_menu(parent_menu, control)

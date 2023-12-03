@@ -113,10 +113,10 @@ class FBXStaticMesh(FBXPreset):
     Preset FBX settings for StaticMesh objects
     '''
     def __init__(self):
-        super(FBXStaticMesh, self).__init__()
+        super().__init__()
 
     def load(self):
-        super(FBXStaticMesh, self).load()
+        super().load()
 
         self.set_animation(False)
         self.set_deformation(False)
@@ -127,10 +127,10 @@ class FBXAnimation(FBXPreset):
     Preset FBX settings for Animated objects
     '''
     def __init__(self):
-        super(FBXAnimation, self).__init__()
+        super().__init__()
 
     def load(self):
-        super(FBXAnimation, self).load()
+        super().load()
 
         self.set_animation(True)
         self.set_deformation(True)

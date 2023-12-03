@@ -29,7 +29,7 @@ class InvalidPyMelError(Exception):
     """Exception to call to inform user that non-integers were found in the bake range"""
     def __init__(self):
         message = "An Invalid Pymel object was selected.  Scene Manager will not update until only valid objects are selected."
-        super(InvalidPyMelError, self).__init__(message)
+        super().__init__(message)
 
 class SceneManager(object, metaclass=Singleton):
     '''

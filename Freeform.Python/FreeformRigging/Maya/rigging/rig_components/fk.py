@@ -52,12 +52,12 @@ class FK(Rig_Component):
 
 
     def __init__(self, *args, **kwargs):
-        super(FK, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.prefix = 'fk'
 
 
     def bake_controls(self, translate = True, rotate = True, scale = True):
-        super(FK, self).bake_controls(translate, rotate, scale)
+        super().bake_controls(translate, rotate, scale)
 
 
     @undoable
@@ -68,7 +68,7 @@ class FK(Rig_Component):
         pm.autoKeyframe(state=False)
 
         do_zero_character = False if baking_queue else True
-        super(FK, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
+        super().rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         control_chain = self.rig_setup(side, region, reverse, control_holder_list)
         for i, child_control in enumerate(control_chain[:-1]):
@@ -225,7 +225,7 @@ class FK(Rig_Component):
         logging_method, args, kwargs = v1_core.v1_logging.logging_wrapper(self.switch_to_ik, "Context Menu (FK)", None, None)
         pm.menuItem(label="Switch To IK", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs))
         pm.menuItem(divider=True, parent=parent_menu)
-        super(FK, self).create_menu(parent_menu, control)
+        super().create_menu(parent_menu, control)
 
 
 class Point_FK(FK):
@@ -260,18 +260,18 @@ class Point_FK(FK):
 
 
     def bake_controls(self, translate = False, rotate = True, scale = False, simulation = False):
-        super(Point_FK, self).bake_controls(translate, rotate, scale)
+        super().bake_controls(translate, rotate, scale)
 
     def queue_bake_controls(self, post_process_kwargs, translate = False, rotate = True, scale = False, simulation = False, baking_queue = maya_utils.baking.Global_Bake_Queue()):
-        super(Point_FK, self).queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation, baking_queue)
+        super().queue_bake_controls(post_process_kwargs, translate, rotate, scale, simulation, baking_queue)
 
     def bake_joints(self, translate = False, rotate = True, scale = False, simulation = False, baking_queue = maya_utils.baking.Global_Bake_Queue()):
-        super(Point_FK, self).bake_joints(translate, rotate, scale, simulation, baking_queue)
+        super().bake_joints(translate, rotate, scale, simulation, baking_queue)
 
     @undoable
     def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = None, additive = False, reverse = False, **kwargs):
         if self.verify_component(skeleton_dict, side, region):
-            return super(Point_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
+            return super().rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
         else:
             v1_shared.usertools.message_dialogue.open_dialogue("Can't Apply Point FK to more than 1 joint", title="Can't Build Point FK")
             return False
@@ -326,7 +326,7 @@ class Point_FK(FK):
         re-parent the component group to a joint on the skeleton of the character
         '''
         if new_parent != self.default_space:
-            super(Point_FK, self).re_parent(new_parent, preserve_animation, bake_constraint_list)
+            super().re_parent(new_parent, preserve_animation, bake_constraint_list)
         else:
             component_group = self.network['component'].group
             group_constraint = get_first_or_default(component_group.listConnections(type='constraint'))
@@ -426,7 +426,7 @@ class Aim_FK(FK):
         Returns:
             dictionary. json dictionary for all Rig Component information
         '''
-        class_info_dict = super(Aim_FK, self).create_json_dictionary()
+        class_info_dict = super().create_json_dictionary()
         control_list = self.network['controls'].get_connections()
         locator = None
         end_control = None
@@ -447,7 +447,7 @@ class Eye_FK(FK):
     '''
 
     def __init__(self):
-        super(FK, self).__init__()
+        super().__init__()
         self.prefix = 'eye_fk'
 
     def switch_to_ik(self):
@@ -455,13 +455,13 @@ class Eye_FK(FK):
 
     def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = None, additive = False, reverse = False, **kwargs):
         if self.valid_check(skeleton_dict, side, region):
-            return super(Eye_FK, self).rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
+            return super().rig(skeleton_dict, side, region, world_space, control_holder_list, baking_queue, additive, reverse, **kwargs)
         else:
             v1_shared.usertools.message_dialogue.open_dialogue("Can't Apply Eye FK", title="Can't Build Eye FK")
             return False
 
     def rig_setup(self, side, region, reverse, control_holder_list):
-        control_chain = super(Eye_FK, self).rig_setup(side, region, reverse, control_holder_list)
+        control_chain = super().rig_setup(side, region, reverse, control_holder_list)
 
         lookat_loc = pm.joint(name="{0}_{1}_{2}_aim".format(self.prefix, region, side))
 
@@ -480,7 +480,7 @@ class Eye_FK(FK):
 
 
     def attach_to_skeleton(self, target_skeleton_dict):
-        constraint_list = super(Eye_FK, self).attach_to_skeleton(target_skeleton_dict)
+        constraint_list = super().attach_to_skeleton(target_skeleton_dict)
         constraint_list.append( self.attach_aim_target() )
 
         return constraint_list
@@ -530,4 +530,4 @@ class Eye_FK(FK):
         pm.menuItem(label="Switch To IK", parent=parent_menu, command=lambda _: logging_method(*args, **kwargs))
         pm.menuItem(label="Switch To Aim", parent=parent_menu, command=lambda _: self.switch_to_aim())
         pm.menuItem(divider=True, parent=parent_menu)
-        super(FK, self).create_menu(parent_menu, control)
+        super().create_menu(parent_menu, control)

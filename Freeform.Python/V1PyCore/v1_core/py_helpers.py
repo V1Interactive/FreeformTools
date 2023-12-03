@@ -40,7 +40,7 @@ class Singleton(type):
     _instances = {}
     def __call__(self, *args, **kwargs):
         if self.__name__ not in self._instances:
-            self._instances[self.__name__] = super(Singleton, self).__call__(*args, **kwargs)
+            self._instances[self.__name__] = super().__call__(*args, **kwargs)
         return self._instances[self.__name__]
 
 class UI_Singleton(Singleton):
@@ -48,7 +48,7 @@ class UI_Singleton(Singleton):
     Base for a Singleton with added support for handling a C# UI
     '''
     def __call__(self, *args, **kwargs):
-        return_value = super(UI_Singleton, self).__call__(*args, **kwargs)
+        return_value = super().__call__(*args, **kwargs)
         return_value.show(return_value._show)
         return return_value
 

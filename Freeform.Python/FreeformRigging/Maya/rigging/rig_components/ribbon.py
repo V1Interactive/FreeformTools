@@ -47,12 +47,12 @@ class Ribbon(Rig_Component):
 
 
     def __init__(self, *args, **kwargs):
-        super(Ribbon, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.prefix = 'ribbon'
         self.up_axis = [0,1,0]
 
     def bake_joints(self, translate = True, rotate = True, scale = True, simulation = True, baking_queue = None):
-        super(Ribbon, self).bake_joints(translate, rotate, scale, simulation, baking_queue)
+        super().bake_joints(translate, rotate, scale, simulation, baking_queue)
 
     @undoable
     def rig(self, skeleton_dict, side, region, world_space = False, control_holder_list = None, baking_queue = False, additive = False, reverse = False, **kwargs):
@@ -62,7 +62,7 @@ class Ribbon(Rig_Component):
         pm.autoKeyframe(state=False)
 
         do_zero_character = False if baking_queue else True
-        super(Ribbon, self).rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
+        super().rig(skeleton_dict, side, region, world_space, do_zero_character, **kwargs)
 
         if kwargs.get("up_axis"):
             self.up_axis =kwargs.get("up_axis")
@@ -237,7 +237,7 @@ class Ribbon(Rig_Component):
         Args:
             network_node (PyNode): The Maya scene rig component network node for the Rig Component
         '''
-        super(Ribbon, self).initialize_from_network_node(network_node)
+        super().initialize_from_network_node(network_node)
         if self.network['component'].get('up_axis'):
             vector = self.network['component'].get('up_axis')
             self.up_axis = [vector.x, vector.y, vector.z]
@@ -250,7 +250,7 @@ class Ribbon(Rig_Component):
         Returns:
             dictionary. json dictionary for all Rig Component information
         '''
-        class_info_dict = super(Ribbon, self).create_json_dictionary()
+        class_info_dict = super().create_json_dictionary()
         class_info_dict["up_axis"] = self.up_axis
         return class_info_dict
 

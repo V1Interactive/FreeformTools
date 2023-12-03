@@ -340,7 +340,7 @@ class BakeSettings(SettingsCategory):
         BakeSettings.property_list.append(SettingsProperty("smart_bake", False))
         BakeSettings.property_list.append(SettingsProperty("bake_new_layer", False))
 
-        super(BakeSettings, self).__init__(settings_data)
+        super().__init__(settings_data)
 
     def force_bake_key_range(self):
         user_settings = [self.current_frame, self.time_range, self.frame_range, self.key_range]
@@ -366,7 +366,7 @@ class ExporterSettings(SettingsCategory):
         ExporterSettings.property_list.append(SettingsProperty("asset_sort", "Index"))
         ExporterSettings.property_list.append(SettingsProperty("definition_sort", "Index"))
 
-        super(ExporterSettings, self).__init__(settings_data)
+        super().__init__(settings_data)
 
 class CharacterSettings(SettingsCategory):
     '''
@@ -386,8 +386,9 @@ class CharacterSettings(SettingsCategory):
         CharacterSettings.property_list.append(SettingsProperty("force_remove", False))
         CharacterSettings.property_list.append(SettingsProperty("remove_existing", True))
         CharacterSettings.property_list.append(SettingsProperty("world_orient_ik", True))
+        CharacterSettings.property_list.append(SettingsProperty("run_import_properties", False))
 
-        super(CharacterSettings, self).__init__(settings_data)
+        super().__init__(settings_data)
 
 class OptimizationSettings(SettingsCategory):
     '''
@@ -399,7 +400,7 @@ class OptimizationSettings(SettingsCategory):
         OptimizationSettings.property_list = []
         OptimizationSettings.property_list.append(SettingsProperty("ui_manual_update", False))
 
-        super(OptimizationSettings, self).__init__(settings_data)
+        super().__init__(settings_data)
 
 class OverdriverSettings(SettingsCategory):
     '''
@@ -411,7 +412,7 @@ class OverdriverSettings(SettingsCategory):
         OverdriverSettings.property_list = []
         OverdriverSettings.property_list.append(SettingsProperty("bake_overdriver", True))
 
-        super(OverdriverSettings, self).__init__(settings_data)
+        super().__init__(settings_data)
 
 
 

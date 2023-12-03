@@ -1839,7 +1839,7 @@ class HelixRigger:
             character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
             binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
 
-            rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list)
+            rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list, event_args.onlySelected)
 
             if event_args.preset in ["ZERO_ORIENT", "ZERO_ORIENT_ALL"]:
                 joint_list = character_network.get_downstream(JointsCore).get_connections()
@@ -1865,7 +1865,7 @@ class HelixRigger:
             character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
             binding_list = rigging.settings_binding.Binding_Sets[self.vm.SelectedPreset.upper()].value
 
-            rigging.file_ops.load_settings_from_json(character_network.group, c_v1_menu_item.Data, binding_list)
+            rigging.file_ops.load_settings_from_json(character_network.group, c_v1_menu_item.Data, binding_list, True, self.vm.OnlySelected)
 
             self.vm.ActiveCharacter.OutOfDate = self.check_settings(character_network, self.vm.ActiveCharacter)
             self.update_active_character_regions()
