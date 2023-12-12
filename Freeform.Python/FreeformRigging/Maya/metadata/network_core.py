@@ -500,7 +500,7 @@ class ImportedCore(DependentNode):
     dependent_node = Core
 
     def __init__(self, parent = None, node_name = 'imported_core', node = None, namespace = ""):
-        super().__init__(parent, node_name, node, namespace, import_path = ("", 'string'))
+        super().__init__(parent, node_name, node, namespace, import_path = ("", 'string'), checksum = ("", 'string'))
 
 class CharacterCore(DependentNode):
     '''

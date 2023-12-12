@@ -82,14 +82,28 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 </Style>
                             </MenuItem.ItemContainerStyle>
                         </MenuItem>
-                        <MenuItem Header="Load Section">
+                        <MenuItem Header="Sections">
                             <CheckBox Content="Only Selected"
                                       IsChecked="{Binding Data.OnlySelected, Source={StaticResource dataContextProxy}}"/>
+
                             <ComboBox VerticalAlignment="Bottom" 
                                       Height="20"
                                       ItemsSource="{Binding Data.SettingsPresetList, Source={StaticResource dataContextProxy}}" 
                                       SelectedIndex="0" 
                                       SelectedValue="{Binding Data.SelectedPreset, Source={StaticResource dataContextProxy}, Mode=TwoWay}"/>
+
+                            <StackPanel Orientation="Horizontal" 
+                                        Grid.Row="0"
+                                        Grid.Column="2">
+                                <TextBox Text="{Binding Data.TypeOverride, Source={StaticResource dataContextProxy}, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="60"
+                                         Margin="0,2"/>
+                                <TextBlock Text="SubType ~Save~" Width="100" Margin="4,2"/>
+                            </StackPanel>
+
+                            <CheckBox Content="Disable Skins ~Load~"
+                                      IsChecked="{Binding Data.DisableSkins, Source={StaticResource dataContextProxy}}"/>
+
                         </MenuItem>
 
                         <MenuItem Header="Save _Settings..." 

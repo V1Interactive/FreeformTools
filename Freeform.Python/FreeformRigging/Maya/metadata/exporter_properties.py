@@ -268,7 +268,7 @@ class StaticAsset(ExportAssetProperty):
         freeform_utils.fbx_presets.FBXStaticMesh().load()
         pm.select(export_geo, replace=True)
 
-        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True)
 
         if c_asset.ZeroExport:
             for asset, value_list in reset_dict.items():
@@ -342,7 +342,7 @@ class CharacterAsset(ExportAssetProperty):
         export_geo = self.get_connections(node_type='transform')
         export_geo = [x for x in export_geo if x.getShape()]
         export_skeleton_root = self.get_first_connection(node_type='joint')
-        export_skeleton = [export_skeleton_root] + pm.listRelatives(export_skeleton_root, ad=True, type='joint')
+        export_skeleton = rigging.skeleton.get_hierarchy(export_skeleton_root, type='joint')
 
         # remove non-export joints
         for export_joint in export_skeleton:
@@ -364,7 +364,7 @@ class CharacterAsset(ExportAssetProperty):
 
         freeform_utils.fbx_presets.FBXAnimation().load()
         pm.select(export_geo + export_skeleton, replace=True)
-        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True, s = True)
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = True)
 
         pm.autoKeyframe(state=autokey_state)
 
@@ -522,7 +522,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
         '''
         Duplicate the skeleton to create an export skeleton and bind it to the animated skeleton
         '''
-        joint_list = [skele_root] + pm.listRelatives(skele_root, ad=True, type='joint')
+        joint_list = rigging.skeleton.get_hierarchy(skele_root, type='joint')
         asset_namespace = skele_root.namespace()
 
         export_skele = pm.duplicate(joint_list, ic=True)
@@ -619,7 +619,7 @@ class CharacterAnimationAsset(ExportAssetProperty):
 
         freeform_utils.fbx_presets.FBXAnimation().load()
         pm.select(export_root, replace=True)
-        maya_utils.scene_utils.export_selected_safe(export_path, checkout = check_perforce, s = True)
+        maya_utils.scene_utils.export_selected_safe(export_path, checkout = check_perforce)
 
 
 

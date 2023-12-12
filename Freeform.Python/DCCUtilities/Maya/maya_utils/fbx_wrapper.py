@@ -68,6 +68,7 @@ def _FBXCmd(_CMD, *args, **kwargs):
     kwargs_string = kwargs_string.replace('True', 'true').replace('False', 'false')
     
     command = _CMD + " " + kwargs_string + " " + arg_string + ";"
+    print(command)
     return maya.mel.eval(command)
 
 

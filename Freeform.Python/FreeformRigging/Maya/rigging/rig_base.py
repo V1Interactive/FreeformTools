@@ -444,7 +444,7 @@ class Component_Base(object, metaclass=Component_Meta):
 
         transform_list = [x for x in control_holder_list if type(x) == pm.nt.Transform]
         pm.select(transform_list)
-        maya_utils.scene_utils.export_selected_safe(control_shape_path, checkout = True, s = True)
+        maya_utils.scene_utils.export_selected_safe(control_shape_path, checkout = True)
         pm.delete(transform_list)  
 
     @staticmethod

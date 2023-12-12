@@ -22,6 +22,8 @@ import maya.OpenMaya
 
 import os
 import sys
+import hashlib
+from pathlib import Path
 
 import v1_core
 import v1_shared
@@ -62,7 +64,7 @@ def set_current_frame():
     # Weird issue, turning off cycle check here prevents warnings of a meaningless cycle
     cycle_check = pm.cycleCheck(q=True, e=True)
     pm.cycleCheck(e=False)
-    
+    pm.currentTime(pm.currentTime())
     pm.cycleCheck(e=cycle_check)
 
 
@@ -380,8 +382,10 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_sce
     if import_return and tag_imported:
         from metadata.network_core import ImportedCore
         imported_core = Network_Registry().get(ImportedCore)()
+        checksum = hashlib.md5(open(file_path, 'rb').read()).hexdigest()
         relative_path = v1_shared.file_path_utils.full_path_to_relative(file_path)
         imported_core.set('import_path', relative_path)
+        imported_core.set('checksum', checksum)
         imported_core.connect_nodes(import_return)
         import_return.append(imported_core.node)
 
@@ -393,6 +397,118 @@ def export_selected_safe(file_path, **kwargs):
         pm.exportSelected(file_path, force = True)
     elif extension.lower() == '.fbx':
         fbx_file_path = file_path.replace("\\", "\\\\")
+        kwargs['s'] = True # Export Selected
         fbx_wrapper.FBXExport(f = fbx_file_path, **kwargs)
 
     v1_core.v1_logging.get_logger().info("export_selected_safe - {0}".format(file_path))
+    
+def export_safe(obj_list, file_path, **kwargs):
+    previous_selection = pm.ls(sl=True)
+
+    pm.select(obj_list, replace=True)
+    export_selected_safe(file_path, **kwargs)
+
+    pm.select(previous_selection, r=True)
+
+def re_export_from_selection():
+    '''
+    Re-export all objects from a previous import
+    '''
+    import freeform_utils
+    from metadata.network_core import ImportedCore
+    
+    imported_network = meta_network_utils.get_first_network_entry(pm.ls(sl=True)[0], ImportedCore)
+    if imported_network:
+        relative_path = imported_network.get('import_path')
+        export_path = v1_shared.file_path_utils.relative_path_to_content(relative_path)
+        obj_list = imported_network.get_connections()
+    
+        freeform_utils.fbx_presets.FBXCharacter().load()
+        export_safe(obj_list, export_path)
+        
+        checksum = hashlib.md5(open(export_path, 'rb').read()).hexdigest()
+        imported_network.set('checksum', checksum)
+        
+def export_partial_mesh(mesh_transform):
+    '''
+    Exports a partial mesh from the property editor's first selected PartialModelProperty
+    
+    Args:
+        mesh_transfrom(PyNode): Transform of the object to export from
+    '''
+    import freeform_utils
+    import metadata
+    import rigging
+    import scene_tools
+    import maya_utils
+    
+    from metadata.meta_properties import PartialModelProperty
+    from metadata.network_core import ImportedCore, CharacterCore
+    from rigging.settings_binding import Binding_Sets
+    
+    get_method_string = "property_editor_get_selected"
+    return_dict = scene_tools.scene_manager.SceneManager().run_by_string(get_method_string)
+    if not return_dict[get_method_string]:
+        return None        
+
+    selected_partial_network = return_dict[get_method_string][0]
+    
+    dupe_mesh, skeleton_list = rigging.skeleton.duplicate_for_combine(mesh_transform)
+    skeleton_root = rigging.skeleton.get_root_joint(skeleton_list)
+    character_skeleton = rigging.skeleton.get_hierarchy(skeleton_root)
+    try:
+        vtx_group_list = []
+        partial_newtork_list = metadata.meta_property_utils.get_property_list(dupe_mesh, PartialModelProperty)
+        for partial_network in [x for x in partial_newtork_list if x != selected_partial_network]:
+            vertex_group = eval(partial_network.get('vertex_indicies'))
+            vtx_group_list.append(dupe_mesh.vtx[vertex_group[0][0]:vertex_group[0][1]])
+
+        dupe_mesh_face_list = pm.polyListComponentConversion( vtx_group_list, tf=True )
+        pm.delete(dupe_mesh_face_list)
+    
+        pm.select(dupe_mesh, replace=True)
+        pm.bakePartialHistory(prePostDeformers=True)
+    
+        imported_network = meta_network_utils.get_first_network_entry(selected_partial_network.node, ImportedCore)
+        relative_path = imported_network.get('import_path')
+        export_path = v1_shared.file_path_utils.relative_path_to_content(relative_path)
+        dupe_mesh.rename(Path(export_path).stem)
+        
+        character_network = metadata.meta_network_utils.get_first_network_entry(skeleton_root, CharacterCore)
+        # If it's a character make sure we're resetting to model bind pose before export
+        if character_network:
+            constraint_weight_dict = rigging.skeleton.detach_skeleton(skeleton_root)
+            bind_settings_path = rigging.file_ops.get_first_settings_file(Path(export_path).parent, 'bind', None, True)
+            binding_list = Binding_Sets.TRANSFORMS.value
+            rigging.file_ops.load_settings_from_json(character_network.group, bind_settings_path, binding_list,
+                                                     load_joint_list = character_skeleton, update_settings_path = False)
+            rigging.skeleton.zero_skeleton_joints(character_skeleton)
+        
+        dupe_parent = dupe_mesh.getParent()
+        skeleton_parent = skeleton_root.getParent()
+        
+        dupe_mesh.setParent(None)
+        skeleton_root.setParent(None)
+        
+        export_list = [dupe_mesh] + character_skeleton
+        freeform_utils.fbx_presets.FBXCharacter().load()
+        export_safe(export_list, export_path)
+        
+        checksum = hashlib.md5(open(export_path, 'rb').read()).hexdigest()
+        imported_network.set('checksum', checksum)
+    except Exception as e:
+        exception_info = sys.exc_info()
+        v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
+    finally:
+        if character_network:
+            settings_path = rigging.file_ops.get_first_settings_file_from_character(character_network)
+            binding_list = Binding_Sets.TRANSFORMS.value
+            rigging.file_ops.load_settings_from_json(character_network.group, settings_path, binding_list, 
+                                                     load_joint_list = character_skeleton, update_settings_path = False)
+            rigging.skeleton.reattach_skeleton(constraint_weight_dict)        
+
+        dupe_mesh.setParent(dupe_parent)
+        skeleton_root.setParent(skeleton_parent)
+        pm.delete(dupe_mesh)
+        
+        maya_utils.scene_utils.set_current_frame()

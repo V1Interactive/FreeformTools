@@ -192,11 +192,12 @@ If not, see <https://www.gnu.org/licenses/>.-->
 
         <Grid Margin="4" Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="80"/>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="1.5*"/>
+                <ColumnDefinition Width="90"/>
             </Grid.ColumnDefinitions>
             
             <TextBlock Text="Property Type: " 
@@ -222,6 +223,13 @@ If not, see <https://www.gnu.org/licenses/>.-->
                      MinWidth="100"
                      Margin="2" 
                      Grid.Column="3"/>
+            <Button Content="Run Property" 
+                    Command="{Binding RunPropertyCommand}" 
+                    HorizontalAlignment="Left" 
+                    VerticalAlignment="Center" 
+                    Width="80" 
+                    Margin="4,0" 
+                    Grid.Column="5"/>
         </Grid>
 
         <Grid Margin="4" Grid.Row="1">

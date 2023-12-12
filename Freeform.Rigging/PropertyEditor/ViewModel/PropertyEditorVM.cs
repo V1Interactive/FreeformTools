@@ -33,9 +33,12 @@ namespace Freeform.Rigging.PropertyEditor
   {
     public event EventHandler SelectPropetyHandler;
     public event EventHandler DeletePropertyHandler;
+    public event EventHandler RunPropertyHandler;
 
     public RelayCommand SelectPropertyCommand { get; set; }
     public RelayCommand DeletePropertyCommand { get; set; }
+    public RelayCommand RunPropertyCommand { get; set; }
+
 
 
     public ObservableCollection<string> PropertyTypeList
@@ -172,6 +175,7 @@ namespace Freeform.Rigging.PropertyEditor
 
       SelectPropertyCommand = new RelayCommand(SelectPropertyCall);
       DeletePropertyCommand = new RelayCommand(DeletePropertyCall);
+      RunPropertyCommand = new RelayCommand(RunPropertyCall);
 
       MetaPropertyList = new ObservableCollection<MetaProperty>();
       MetaPropertyListViewSource = new CollectionViewSource
@@ -285,6 +289,15 @@ namespace Freeform.Rigging.PropertyEditor
       SelectedMetaProperty = null;
       SelectedMetaPropertyList.Clear();
       RaisePropertyChanged("SelectedMetaPropertyList");
+    }
+
+    public void RunPropertyCall(object sender)
+    {
+        MetaPropertyEventArgs eventArgs = new MetaPropertyEventArgs()
+        {
+            MetaPropertyList = SelectedMetaPropertyList
+        };
+        RunPropertyHandler?.Invoke(this, eventArgs);
     }
 
     public class MetaPropertyEventArgs : EventArgs

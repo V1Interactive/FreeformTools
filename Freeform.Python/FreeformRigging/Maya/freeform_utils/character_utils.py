@@ -79,7 +79,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     v1_core.v1_logging.get_logger().info("Characterizing {0} From - {1}".format(name, jnt.name()))
 
     skeleton_root = rigging.skeleton.get_root_joint(jnt)
-    replaced_joint_list = rigging.skeleton.replace_transforms_with_joints([skeleton_root] + pm.listRelatives(skeleton_root, ad=True, type='transform'))
+    replaced_joint_list = rigging.skeleton.replace_transforms_with_joints(rigging.skeleton.get_hierarchy(skeleton_root, type='transform'))
 
     # Ideally we'd check if skeleton_root was deleted by replace_transforms_with_joints(), but pm.objExists returns True
     # while simultaneously throwing a warning that the skeleton_root does not exist if it was deleted above.
@@ -150,7 +150,7 @@ def characterize_with_zeroing(jnt = None):
 
     root_joint = rigging.skeleton.get_root_joint(jnt) if jnt else pm.ls(pm.ls(assemblies=True), type='joint')[0]
 
-    joint_list = [root_joint] + root_joint.listRelatives(ad=True)    
+    joint_list = rigging.skeleton.get_hierarchy(root_joint)   
     first_frame = maya_utils.anim_attr_utils.find_first_keyframe(joint_list)
     last_frame = maya_utils.anim_attr_utils.find_last_keyframe(joint_list)
     pm.currentTime(first_frame)
@@ -323,7 +323,8 @@ def update_rig_file():
         # connected to the character network
         new_root = updated_character_network.get_downstream(JointsCore).root
         jnt_layer_list = new_root.drawOverride.listConnections()
-        character_obj_list = [updated_character_network.group] + updated_character_network.group.listRelatives(ad=True)
+        
+        character_obj_list = rigging.skeleton.get_hierarchy(updated_character_network.group)
 
         mesh_list = [x for x in character_obj_list if not isinstance(x, pm.nt.Joint) and isinstance(x, pm.nt.Transform)]
         mesh_layer_list = []

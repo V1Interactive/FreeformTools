@@ -355,6 +355,20 @@ namespace Freeform.Rigging
             }
         }
 
+        bool _disableSkins;
+        public bool DisableSkins
+        {
+            get { return _disableSkins; }
+            set
+            {
+                if (_disableSkins != value)
+                {
+                    _disableSkins = value;
+                    RaisePropertyChanged("DisableSkins");
+                }
+            }
+        }
+
         bool _removeExisting;
         public bool RemoveExisting
         {
@@ -590,7 +604,7 @@ namespace Freeform.Rigging
             }
         }
 
-    string _quickSelectText;
+        string _quickSelectText;
         public string QuickSelectText
         {
             get { return _quickSelectText; }
@@ -628,6 +642,17 @@ namespace Freeform.Rigging
                     ActiveCharacter.RegionSearchFilter = value;
                 }
                 RaisePropertyChanged("FilterRegionText");
+            }
+        }
+
+        string _typeOverride;
+        public string TypeOverride
+        {
+            get { return _typeOverride; }
+            set
+            {
+                _typeOverride = value;
+                RaisePropertyChanged("TypeOverride");
             }
         }
 
@@ -863,6 +888,9 @@ namespace Freeform.Rigging
             IsWorldSpace = false;
             RootEntry = "Pick Root";
             EndEntry = "Pick End";
+            TypeOverride = "";
+            OnlySelected = false;
+            DisableSkins = false;
 
             RigCategoryList = new ObservableCollection<RigBarCategory>();
             SelectButtonList = new ObservableCollection<SelectBarButton>();
@@ -1442,7 +1470,8 @@ namespace Freeform.Rigging
             {
                 character = (Character)sender,
                 preset = SelectedPreset.ToUpper(),
-                onlySelected = OnlySelected
+                onlySelected = OnlySelected,
+                disableSkins = DisableSkins
             };
             LoadSettingsHandler?.Invoke(this, eventArgs);
         }
@@ -1453,7 +1482,10 @@ namespace Freeform.Rigging
             {
                 character = (Character)sender,
                 preset = SelectedPreset.ToUpper(),
-                incrementVersion = IncrementVersion
+                typeOverride = TypeOverride,
+                incrementVersion = IncrementVersion,
+                onlySelected = OnlySelected,
+                disableSkins = DisableSkins
             };
             SaveSettingsHandler?.Invoke(this, eventArgs);
         }
@@ -1557,8 +1589,10 @@ namespace Freeform.Rigging
         {
             public Character character = null;
             public string preset = "";
+            public string typeOverride = "";
             public bool incrementVersion = false;
             public bool onlySelected = false;
+            public bool disableSkins = false;
         }
 
         public class BakeRangeEventArgs : EventArgs
