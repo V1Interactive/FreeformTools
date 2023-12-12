@@ -26,6 +26,7 @@ import time
 
 import rigging
 import v1_core
+
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 
 from maya_utils.decorators import undoable
@@ -193,7 +194,15 @@ class PartialModelProperty(ModelProperty):
         from metadata.network_core import ImportedCore
         imported_network = meta_network_utils.get_first_network_entry(self.node, ImportedCore)
         return imported_network.get('import_path')
-
+    
+    @property
+    def checksum(self):
+        '''
+        Path that the geometry was imported from
+        '''
+        from metadata.network_core import ImportedCore
+        imported_network = meta_network_utils.get_first_network_entry(self.node, ImportedCore)
+        return imported_network.get('checksum')
 
     def __init__(self, node_name = 'partial_model_property', node = None, namespace = "", **kwargs):
         super().__init__(node_name, node, namespace, vertex_indicies = ("", 'string'), **kwargs)
@@ -207,6 +216,17 @@ class PartialModelProperty(ModelProperty):
         pm.select(self.node, replace=True)
         for vtx_group in vertex_group_list:
             pm.select(self.mesh.vtx[vtx_group[0]:vtx_group[1]], add=True)
+            
+    def act(self):
+        import maya_utils
+        current_selection = pm.ls(selection=True)
+        autokey_state = pm.autoKeyframe(q=True, state=True)
+        pm.autoKeyframe(state=False)
+
+        maya_utils.scene_utils.export_partial_mesh(self.mesh)
+        
+        pm.autoKeyframe(state=autokey_state)
+        pm.select(current_selection, replace=True)
 
     def do_delete(self):
         '''

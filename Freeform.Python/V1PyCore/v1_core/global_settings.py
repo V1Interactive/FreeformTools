@@ -367,6 +367,7 @@ class ExporterSettings(SettingsCategory):
         ExporterSettings.property_list.append(SettingsProperty("definition_sort", "Index"))
 
         super().__init__(settings_data)
+        
 
 class CharacterSettings(SettingsCategory):
     '''
@@ -389,6 +390,7 @@ class CharacterSettings(SettingsCategory):
         CharacterSettings.property_list.append(SettingsProperty("run_import_properties", False))
 
         super().__init__(settings_data)
+        
 
 class OptimizationSettings(SettingsCategory):
     '''
@@ -401,6 +403,7 @@ class OptimizationSettings(SettingsCategory):
         OptimizationSettings.property_list.append(SettingsProperty("ui_manual_update", False))
 
         super().__init__(settings_data)
+        
 
 class OverdriverSettings(SettingsCategory):
     '''
@@ -413,8 +416,7 @@ class OverdriverSettings(SettingsCategory):
         OverdriverSettings.property_list.append(SettingsProperty("bake_overdriver", True))
 
         super().__init__(settings_data)
-
-
+        
 
 class ConfigManager(object):
     '''

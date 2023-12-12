@@ -88,7 +88,7 @@ class ContentBrowser(object):
             check_perforce = config_manager.get("Perforce").get("Enabled")
 
             freeform_utils.fbx_presets.FBXAnimation().load()
-            maya_utils.scene_utils.export_selected_safe(event_args.FilePath, checkout = check_perforce, s = True)
+            maya_utils.scene_utils.export_selected_safe(event_args.FilePath, checkout = check_perforce)
 
 
     @csharp_error_catcher
@@ -113,13 +113,11 @@ class ContentBrowser(object):
             if (get_active_character in method_name):
                 character_network = return_value
 
-        # If Rigger UI is open use the selected character and find the skeleton and current combined base mesh
+        # If Rigger UI is open we use the selected character and find the skeleton and current combined base mesh
         skeleton_list = None
         base_mesh = None
         mesh_group = None
-        settings_path = None
         if character_network is not None:
-            settings_path = rigging.file_ops.get_first_settings_file_from_character(character_network)
             joints_network = character_network.get_downstream(JointsCore)
             if joints_network:
                 skeleton_list = joints_network.get_connections()
@@ -138,10 +136,10 @@ class ContentBrowser(object):
         # Use user selection if skeleton_list isn't found yet
         joint_list = pm.ls(sl=True, type='joint')
         if skeleton_list is None and joint_list:
-            root_joint = rigging.skeleton.get_root_joint(skeleton_list[0])
-            joint_list = root_joint.listRelatives(ad=True, type='joint')
+            root_joint = rigging.skeleton.get_root_joint(joint_list[0])
+            skeleton_list = [root_joint] + root_joint.listRelatives(ad=True, type='joint')
 
-        combine_mesh = rigging.skeleton.import_and_combine(path_list, skeleton_list, base_mesh, mesh_group, (character_network, settings_path))
+        combine_mesh = rigging.skeleton.import_and_combine_call(path_list, skeleton_list, base_mesh, mesh_group, character_network)
 
 
     @csharp_error_catcher

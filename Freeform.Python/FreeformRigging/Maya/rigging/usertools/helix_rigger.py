@@ -17,6 +17,7 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+from re import I
 import pymel.core as pm
 
 import imp
@@ -1838,8 +1839,10 @@ class HelixRigger:
         if pm.objExists(event_args.character.NodeName):
             character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(event_args.character.NodeName))
             binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
-
-            rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list, event_args.onlySelected)
+            
+            load_joint_list = pm.ls(sl=True) if event_args.onlySelected else None
+            rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list, load_joint_list, 
+                                                                 disable_skins = event_args.disableSkin)
 
             if event_args.preset in ["ZERO_ORIENT", "ZERO_ORIENT_ALL"]:
                 joint_list = character_network.get_downstream(JointsCore).get_connections()
@@ -1865,7 +1868,9 @@ class HelixRigger:
             character_network = metadata.meta_network_utils.create_from_node(pm.PyNode(self.vm.ActiveCharacter.NodeName))
             binding_list = rigging.settings_binding.Binding_Sets[self.vm.SelectedPreset.upper()].value
 
-            rigging.file_ops.load_settings_from_json(character_network.group, c_v1_menu_item.Data, binding_list, True, self.vm.OnlySelected)
+            load_joint_list = pm.ls(sl=True) if self.vm.OnlySelected else None
+            rigging.file_ops.load_settings_from_json(character_network.group, c_v1_menu_item.Data, binding_list, True, 
+                                                     load_joint_list, disable_skins = self.vm.DisableSkins)
 
             self.vm.ActiveCharacter.OutOfDate = self.check_settings(character_network, self.vm.ActiveCharacter)
             self.update_active_character_regions()
@@ -1887,8 +1892,11 @@ class HelixRigger:
             joint_list   = character_network.get_downstream(JointsCore).get_connections()
             first_joint  = get_first_or_default(joint_list)
             binding_list = rigging.settings_binding.Binding_Sets[event_args.preset].value
+            save_joint_list = pm.ls(sl=True) if event_args.onlySelected else None
+            subtype = "rig" if not event_args.typeOverride else event_args.typeOverride
 
-            rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, "rig", character_network.get("varient"), event_args.incrementVersion)
+            rigging.file_ops.save_settings_to_json_with_dialog(first_joint, binding_list, False, subtype, character_network.get("varient"), 
+                                                               event_args.incrementVersion, save_joint_list)
         else:
             print("Found nothing to save settings from")
 

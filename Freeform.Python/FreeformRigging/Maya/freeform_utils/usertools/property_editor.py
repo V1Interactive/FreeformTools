@@ -51,8 +51,10 @@ class PropertyEditor(object):
         self.vm.CloseWindowEventHandler += self.close
         self.vm.DeletePropertyHandler += self.delete_property
         self.vm.SelectPropetyHandler += self.select_property
+        self.vm.RunPropertyHandler += self.run_propety
 
         scene_tools.scene_manager.SceneManager().selection_changed_list.append(self.update_from_selection)
+        scene_tools.scene_manager.SceneManager().method_list.append(self.property_editor_get_selected)
 
         self.update_from_selection(pm.ls(sl=True))
         
@@ -76,8 +78,19 @@ class PropertyEditor(object):
         self.vm.CloseWindowEventHandler -= self.close
         self.vm.DeletePropertyHandler -= self.delete_property
         self.vm.SelectPropetyHandler -= self.select_property
+        self.vm.RunPropertyHandler -= self.run_propety
+        
 
         scene_tools.scene_manager.SceneManager().selection_changed_list.remove(self.update_from_selection)
+
+    def property_editor_get_selected(self):
+        network_list = []
+        
+        for c_meta_property in self.vm.SelectedMetaPropertyList:
+            meta_network = metadata.meta_network_utils.create_from_node(pm.PyNode(c_meta_property.NodePath))
+            network_list.append(meta_network)
+
+        return network_list
 
     @undoable
     def update_from_selection(self, selection_list):
@@ -128,10 +141,12 @@ class PropertyEditor(object):
         '''
         Deletes the property passed in through event_args
         '''
+        selection_list = pm.ls(sl=True)
         for c_meta_property in event_args.MetaPropertyList:
             property_node = pm.PyNode(c_meta_property.NodePath)
             property_network = metadata.meta_network_utils.create_from_node(property_node)
             property_network.do_delete()
+        pm.select(selection_list, replace=True)
 
     @csharp_error_catcher
     def select_property(self, vm, event_args):
@@ -142,3 +157,21 @@ class PropertyEditor(object):
             property_node = pm.PyNode(c_meta_property.NodePath)
             property_network = metadata.meta_network_utils.create_from_node(property_node)
             property_network.select()
+            
+    @csharp_error_catcher
+    def run_propety(self, vm, event_args):
+        '''
+        Rub the act method on the property passed in through event_args
+        '''
+        selection_list = pm.ls(sl=True)
+        autokey_state = pm.autoKeyframe(q=True, state=True)
+        pm.autoKeyframe(state=False)        
+
+        for c_meta_property in event_args.MetaPropertyList:
+            property_node = pm.PyNode(c_meta_property.NodePath)
+            property_network = metadata.meta_network_utils.create_from_node(property_node)
+            property_network.act()
+            
+        pm.autoKeyframe(state=autokey_state)
+        pm.select(selection_list, replace=True)
+            

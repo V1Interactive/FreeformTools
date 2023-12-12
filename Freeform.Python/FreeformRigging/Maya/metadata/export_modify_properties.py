@@ -476,7 +476,7 @@ class ZeroAnimCurvesProperty(ExporterProperty):
         export_root = get_first_or_default(export_asset_list)
 
         scene_times = maya_utils.scene_utils.get_scene_times()
-        export_skeleton_list = [export_root] + export_root.listRelatives(ad=True)
+        export_skeleton_list = rigging.skeleton.get_hierarchy(export_root)
         maya_utils.keyframe_utils.move_keyframes(export_skeleton_list, -scene_times[0])
 
         zero_scene_times = tuple([x-scene_times[0] for x in scene_times])
@@ -576,7 +576,7 @@ class ZeroMocapProperty(ExporterProperty):
         pm.delete(offset_loc)
 
         scene_times = maya_utils.scene_utils.get_scene_times()
-        export_skeleton_list = [export_root] + export_root.listRelatives(ad=True)
+        export_skeleton_list = rigging.skeleton.get_hierarchy(export_root)
         maya_utils.keyframe_utils.move_keyframes(export_skeleton_list, -scene_times[0])
 
         zero_scene_times = tuple([x-scene_times[0] for x in scene_times])
