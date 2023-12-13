@@ -24,7 +24,7 @@ import v1_shared
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
 
-from metadata.network_registry import Property_Registry
+from metadata.network_registry import Property_Registry, Network_Registry
 from metadata import meta_network_utils
 
 
@@ -188,9 +188,15 @@ def add_property_by_name(pynode, module_type_name):
     module_name = get_first_or_default(module_type_name)
     type_name = get_index_or_default(module_type_name, 1)
     node_type = Property_Registry().get(type_name)
+    network_check = True
+    
+    if not node_type:
+        node_type = Network_Registry().get(type_name)
+    else:
+        network_check = node_type.multi_allowed or not get_properties_dict(pynode).get(node_type)
+        
     property_obj = None
-
-    if node_type.multi_allowed or not get_properties_dict(pynode).get(node_type):
+    if network_check:
         py_namespace = pynode.namespace()
         property_obj = node_type(namespace = py_namespace)
         property_obj.connect_node(pynode)
@@ -204,7 +210,7 @@ def load_properties_from_obj(obj):
     property_dict = {}
     attr_dict = {}
     for attr in [x for x in obj.listAttr(ud=True) if 'x_x' in x.attrName()]:
-        guid_key, attr_name = attr.attrName().split('x_x')
+        guid_key, attr_name = attr.attrName().split('x_x', 1)
         attr_dict.setdefault(guid_key, {})
         attr_dict[guid_key][attr_name] = attr.get()
         attr.delete()
