@@ -131,7 +131,12 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
             guid_name = ''.join([i for i in guid_name if not i.isdigit()])
             add_name = "{0}x_x{1}".format(guid_name, attr_name)
             if not obj.hasAttr(add_name):
-                obj.addAttr(add_name, type=type(value))
+                value_type = type(value)
+                # When saved and re-loaded single / reads in as the special character identifier
+                # so we need to save / as // on the attribute.
+                if value_type == str:
+                    value = value.replace(os.sep, "{0}{0}".format(os.sep))
+                self.node.addAttr(add_name, type=value_type)
                 obj.setAttr(add_name, value)
 
 
