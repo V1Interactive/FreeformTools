@@ -328,7 +328,8 @@ def clean_reference_cameras():
         except:
             continue
 
-def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_scene_time = True, **kwargs):
+def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_scene_time = True, 
+                     load_properties = False, **kwargs):
     '''
     Import FBX files or Maya files safely, and with the ability to return import nodes.
     
@@ -340,6 +341,10 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_sce
 
     Args:
         file_path (string): Full path to the file to import
+        fbx_mode (string): Import mode for the FBX (exmerge|add|merge)
+        tag_imported (boolean): Whether or not imported objects should be tagged with where they were imported from
+        keep_scene_time (boolean): Whether or not to keep scene time range or accept imported file
+        load_properties (boolean): Whether or not to load properties that were stored on fbx objects as attributes
         **kwargs (kwargs): keyword args to pass along to pm.importFile
     '''
     scene_time_tuple = get_scene_times()
@@ -371,6 +376,7 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_sce
             set_scene_times(scene_time_tuple)
             pm.currentTime(current_time)
 
+    # Gather new scene objects from import if import method didn't
     if not import_return and kwargs['returnNewNodes'] == True:
         post_import_list = pm.ls(assemblies = True)
         import_parent_list = [x for x in post_import_list if x not in pre_import_list]
@@ -378,6 +384,16 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_sce
         import_return = import_parent_list
         for import_parent in import_parent_list:
             import_return = import_return + import_parent.listRelatives(ad=True)
+
+    if load_properties:
+        import metadata
+        for transform_obj in pm.ls(import_return, type='transform'):
+            property_dict = metadata.meta_property_utils.load_properties_from_obj(transform_obj)
+            for property_type, property_network_list in property_dict.items():
+                for property_network in property_network_list:
+                    if property_type.auto_run:
+                        property_network.act()
+                    metadata.meta_property_utils.load_properties_from_obj(property_network.node)
 
     if import_return and tag_imported:
         from metadata.network_core import ImportedCore

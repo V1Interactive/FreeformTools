@@ -387,7 +387,6 @@ class CharacterSettings(SettingsCategory):
         CharacterSettings.property_list.append(SettingsProperty("force_remove", False))
         CharacterSettings.property_list.append(SettingsProperty("remove_existing", True))
         CharacterSettings.property_list.append(SettingsProperty("world_orient_ik", True))
-        CharacterSettings.property_list.append(SettingsProperty("run_import_properties", False))
 
         super().__init__(settings_data)
         
