@@ -128,7 +128,7 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
             guid_name = self.data.get('guid').replace('-', '_')
             guid_name = ''.join([i for i in guid_name if not i.isdigit()])
             add_name = "{0}x_x{1}".format(guid_name, attr_name)
-            if not obj.hasAttr(attr_name):
+            if not obj.hasAttr(add_name):
                 obj.addAttr(add_name, type=type(value))
                 obj.setAttr(add_name, value)
 
@@ -178,6 +178,7 @@ class PartialModelProperty(ModelProperty):
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
     '''
     _do_register = True
+    multi_allowed = True
 
     @property
     def mesh(self):
@@ -227,6 +228,24 @@ class PartialModelProperty(ModelProperty):
         
         pm.autoKeyframe(state=autokey_state)
         pm.select(current_selection, replace=True)
+        
+    def bake_to_connected(self):
+        '''
+        Bake the property into attributes on the object it's connected to
+        '''
+        from metadata.network_core import ImportedCore
+        imported_network = meta_network_utils.get_first_network_entry(self.node, ImportedCore)
+        if imported_network:
+            for attr_name, value in imported_network.data.items():
+                guid_name = imported_network.data.get('guid').replace('-', '_')
+                guid_name = ''.join([i for i in guid_name if not i.isdigit()])
+                add_name = "{0}x_x{1}".format(guid_name, attr_name)
+                if not self.node.hasAttr(add_name):
+                    self.node.addAttr(add_name, type=type(value))
+                    self.node.setAttr(add_name, value)
+
+        super().bake_to_connected()
+        imported_network.delete()
 
     def do_delete(self):
         '''
