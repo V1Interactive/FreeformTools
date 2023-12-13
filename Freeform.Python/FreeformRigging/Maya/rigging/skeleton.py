@@ -1417,7 +1417,8 @@ def reattach_skeleton(constraint_weight_dict):
             weight_attr.set(value)
             
 
-def import_and_combine_call(path_list, skeleton_list, base_mesh = None, mesh_group = None, character_network = None):
+def import_and_combine_call(path_list, skeleton_list, base_mesh = None, mesh_group = None, load_properties = False, 
+                            character_network = None):
     '''
     Handle external call to import_and_combine with additional checks
 
@@ -1442,10 +1443,10 @@ def import_and_combine_call(path_list, skeleton_list, base_mesh = None, mesh_gro
             joints_network = character_network.get_downstream(JointsCore)
             skeleton_list = joints_network.get_connections()
 
-    import_and_combine(path_list, skeleton_list, base_mesh, mesh_group)
+    import_and_combine(path_list, skeleton_list, base_mesh, mesh_group, load_properties)
     pm.select(selection_list, replace=True)
 
-def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_group = None):
+def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_group = None, load_properties = False):
     '''
     Import a list of files and combine all meshes from each file into a single skinned mesh
     on a single skeleton.
@@ -1471,7 +1472,8 @@ def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_g
         bind_settings_list.append(file_ops.get_first_settings_file(dir_path, 'bind', None, True))
         offset_settings_list.append(file_ops.get_first_settings_file(dir_path, 'offset', None, True))
         
-        import_objects = maya_utils.scene_utils.import_file_safe(path, fbx_mode="add", tag_imported=True, returnNewNodes=True)
+        import_objects = maya_utils.scene_utils.import_file_safe(path, fbx_mode="add", tag_imported=True, 
+                                                                 load_properties=load_properties, returnNewNodes=True)
         import_dict[path] = import_objects
         
     bind_settings_list = [x for x in list(set(bind_settings_list)) if x != None]
@@ -1522,17 +1524,11 @@ def import_and_combine(path_list, skeleton_list = None, base_mesh = None, mesh_g
         imported_mesh_list = [x.getParent() for x in imported_mesh_list]
         imported_mesh_list = list(set(imported_mesh_list))
         delete_mesh_list.extend(imported_mesh_list)
+        
         for imported_mesh in imported_mesh_list:
             mesh_skin_cluster = skin_weights.find_skin_cluster(imported_mesh)
             if (mesh_skin_cluster is not None):
                 dupe_mesh, skeleton_list = duplicate_for_combine(imported_mesh, skeleton_list)
-
-                if character_settings.run_import_properties:
-                    property_dict = metadata.meta_property_utils.load_properties_from_obj(dupe_mesh)
-                    edit_uv_property = get_first_or_default(property_dict.get(Property_Registry().get(EditUVProperty.__name__)))
-                    if edit_uv_property:
-                        edit_uv_property.act()
-
                 pm.select(dupe_mesh, replace=True)
                 pm.bakePartialHistory(prePostDeformers=True)
                 dupe_combine_list.append(dupe_mesh)

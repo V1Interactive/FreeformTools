@@ -65,9 +65,11 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
     Attributes:
         node (PyNode): The scene network node that represents the property
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+        auto_run (boolean): Whether or not act() method will be called automatically when it's loaded on import
     '''
     _do_register = False
     multi_allowed = False
+    auto_run = False
     priority = 0
 
     @staticmethod
@@ -241,7 +243,10 @@ class PartialModelProperty(ModelProperty):
                 guid_name = ''.join([i for i in guid_name if not i.isdigit()])
                 add_name = "{0}x_x{1}".format(guid_name, attr_name)
                 if not self.node.hasAttr(add_name):
-                    self.node.addAttr(add_name, type=type(value))
+                    value_type = type(value)
+                    if value_type == str:
+                        value = value.replace(os.sep, "{0}{0}".format(os.sep))
+                    self.node.addAttr(add_name, type=value_type)
                     self.node.setAttr(add_name, value)
 
         super().bake_to_connected()
@@ -319,6 +324,7 @@ class EditUVProperty(ModelProperty):
         multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
     '''
     _do_register = True
+    auto_run = True
 
     def __init__(self, node_name = 'edit_uv_property', node = None, namespace = "", **kwargs):
         super().__init__(node_name, node, namespace, pivotU = (0, 'float'), pivotV = (0, 'float'), 

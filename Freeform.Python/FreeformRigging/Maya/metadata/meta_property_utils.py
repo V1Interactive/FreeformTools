@@ -226,3 +226,11 @@ def load_properties_from_obj(obj):
                 property_obj.set(prop_name, prop_value)
 
     return property_dict
+
+def bake_properties_to_obj(obj):
+    '''
+    Bakes all properties into the object as user attributes
+    '''
+    for property_network in get_all_properties(obj):
+        property_network.bake_to_connected()
+    

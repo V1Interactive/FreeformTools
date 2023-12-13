@@ -1168,9 +1168,14 @@ namespace Freeform.Rigging.ContentBrowser
 
         public void ImportCombineCall(object sender)
         {
+            string argMessage = sender as string;
+            bool combine = argMessage.Contains("Combine");
+            bool load = argMessage.Contains("Load");
             ImportCombineEventArgs eventArgs = new ImportCombineEventArgs
             {
-                FilePathList = SelectedFileList
+                FilePathList = SelectedFileList,
+                Combine = combine,
+                Load = load
             };
             ImportCombineHandler?.Invoke(this, eventArgs);
         }
@@ -1203,6 +1208,8 @@ namespace Freeform.Rigging.ContentBrowser
         public class ImportCombineEventArgs : EventArgs
         {
           public List<UserFile> FilePathList = new List<UserFile>();
+          public bool Load = false;
+          public bool Combine = false;
         }
   }
 }

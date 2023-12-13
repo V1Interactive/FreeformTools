@@ -28,7 +28,7 @@ class ContentBrowser(object):
         if "maya" in self.process.ToString():
             self.launch_program = "Maya"
             self.vm.OpenFileHandler += self.launch_in_maya
-            self.vm.ImportCombineHandler += self.import_and_combine
+            self.vm.ImportCombineHandler += self.import_call
             self.vm.ImportRetargetHandler += self.import_and_retarget
             self.vm.ExportSelectedHandler += self.export_selected
         if "3dsmax" in self.process.ToString():
@@ -89,6 +89,16 @@ class ContentBrowser(object):
             freeform_utils.fbx_presets.FBXAnimation().load()
             maya_utils.scene_utils.export_selected_safe(event_args.FilePath, checkout = check_perforce)
 
+    @csharp_error_catcher
+    def import_call(self, vm, event_args):
+        import maya_utils
+        if event_args.Combine:
+            self.import_and_combine(vm, event_args)
+        else:
+            path_list = [x.ItemPath for x in event_args.FilePathList]
+            for file_path in path_list:
+                maya_utils.scene_utils.import_file_safe(file_path, fbx_mode="add", tag_imported=True, 
+                                                        load_properties=event_args.Load, returnNewNodes=True)
 
     @csharp_error_catcher
     def import_and_combine(self, vm, event_args):
@@ -137,8 +147,8 @@ class ContentBrowser(object):
         if skeleton_list is None and joint_list:
             root_joint = rigging.skeleton.get_root_joint(joint_list[0])
             skeleton_list = [root_joint] + root_joint.listRelatives(ad=True, type='joint')
-
-        combine_mesh = rigging.skeleton.import_and_combine_call(path_list, skeleton_list, base_mesh, mesh_group, character_network)
+        
+        combine_mesh = rigging.skeleton.import_and_combine_call(path_list, skeleton_list, base_mesh, mesh_group, event_args.Load, character_network)
 
 
     @csharp_error_catcher
