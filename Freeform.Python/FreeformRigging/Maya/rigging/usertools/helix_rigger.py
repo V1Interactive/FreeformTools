@@ -1842,7 +1842,7 @@ class HelixRigger:
             
             load_joint_list = pm.ls(sl=True) if event_args.onlySelected else None
             rigging.file_ops.load_settings_from_json_with_dialog(character_network.group, binding_list, load_joint_list, 
-                                                                 disable_skins = event_args.disableSkin)
+                                                                 disable_skins = event_args.disableSkins)
 
             if event_args.preset in ["ZERO_ORIENT", "ZERO_ORIENT_ALL"]:
                 joint_list = character_network.get_downstream(JointsCore).get_connections()

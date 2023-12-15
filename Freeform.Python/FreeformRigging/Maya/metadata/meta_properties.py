@@ -136,7 +136,7 @@ class PropertyNode(MetaNode, metaclass=Property_Meta):
                 # so we need to save / as // on the attribute.
                 if value_type == str:
                     value = value.replace(os.sep, "{0}{0}".format(os.sep))
-                self.node.addAttr(add_name, type=value_type)
+                obj.addAttr(add_name, type=value_type)
                 obj.setAttr(add_name, value)
 
 
@@ -347,6 +347,8 @@ class EditUVProperty(ModelProperty):
 
         for obj in self.get_connections():
             pm.polyEditUV(obj.faces, pu=self.get('pivotU'), pv=self.get('pivotV'), su=self.get('scaleU'), sv=self.get('scaleV'))
+            
+            pm.select(obj, replace=True)
 
     def set_lower_half(self):
         self.set('pivotU', 0.5)
