@@ -396,6 +396,7 @@ def import_file_safe(file_path, fbx_mode = "add", tag_imported = False, keep_sce
                     metadata.meta_property_utils.load_properties_from_obj(property_network.node)
 
     if import_return and tag_imported:
+        import_return = [x for x in import_return if pm.objExists(x)]
         from metadata.network_core import ImportedCore
         imported_core = Network_Registry().get(ImportedCore)()
         checksum = hashlib.md5(open(file_path, 'rb').read()).hexdigest()

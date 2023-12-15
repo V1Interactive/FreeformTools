@@ -22,7 +22,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="batches\automate_uv_tags.py" />
+    <Compile Include="batches\automate_face_joints.py" />
+    <Compile Include="batches\batch_template.py" />
     <Compile Include="batches\animation_export.py" />
+    <Compile Include="batches\multi_batch.py" />
     <Compile Include="batches\animation_multi_export.py" />
     <Compile Include="batches\check_file_p4_status.py">
       <SubType>Code</SubType>

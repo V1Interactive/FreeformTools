@@ -420,8 +420,8 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
             character_network.set('version', version)
             settings_file_path = v1_shared.file_path_utils.full_path_to_relative(file_path)
             character_network.set('settings_file_path', settings_file_path)
-
-        joints_network = character_network.get_downstream(JointsCore)
+            
+        joints_network = character_network.get_downstream(JointsCore) if character_network else None
         target_namespace = character_grp.namespace()      
 
         if binding_list != Binding_Sets.PROPERTIES.value:
@@ -475,7 +475,8 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
             for binding in Binding_Sets.PROPERTIES.value:
                 binding.load_data(character_data, character_network.node)
             
-        skeleton.remove_invalid_rig_markup(joints_network.get_first_connection())
+        if joints_network:
+            skeleton.remove_invalid_rig_markup(joints_network.get_first_connection())
     except Exception as e:
         exception_info = sys.exc_info()
         v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
