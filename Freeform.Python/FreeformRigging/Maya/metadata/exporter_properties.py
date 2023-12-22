@@ -20,6 +20,8 @@ If not, see <https://www.gnu.org/licenses/>.
 import os
 import sys
 import time
+import hashlib
+from pathlib import Path
 
 import pymel.core as pm
 
@@ -28,16 +30,17 @@ import freeform_utils
 import maya_utils
 
 import v1_core
+import v1_shared
 
-from metadata.meta_properties import PropertyNode, ExportStageEnum, ExportProperty
+from metadata.meta_properties import PropertyNode, ExportStageEnum, ExportProperty, PartialModelProperty
 from metadata.joint_properties import RemoveAnimationProperty
-from metadata.network_core import DependentNode, Core
+from metadata.network_core import DependentNode, Core, ImportedCore, CharacterCore
 from metadata import meta_network_utils
 from metadata import meta_property_utils
+from rigging.settings_binding import Binding_Sets
 
 from v1_shared.shared_utils import get_first_or_default, get_index_or_default, get_last_or_default
 from v1_shared.decorators import csharp_error_catcher
-
 
 
 class ExportCore(DependentNode):
@@ -367,6 +370,116 @@ class CharacterAsset(ExportAssetProperty):
         maya_utils.scene_utils.export_selected_safe(export_path, checkout = True)
 
         pm.autoKeyframe(state=autokey_state)
+
+
+class PartialCharacterAsset(ExportAssetProperty):
+    '''
+    Export property for part of a combined Character asset.  Handles all export setup and stores export names and paths.
+    Create a new property if a network node is not provided, otherwise instantiate off of the given scene network node
+
+    Args:
+        node_name (str): Name of the network node
+        node (PyNode): PyNode to initialize the property from
+        kwargs (kwargs): keyword arguements of attributes to add to the network node
+
+    Attributes:
+        node (PyNode): The scene network node that represents the property
+        multi_allowed (boolean): Whether or not you can apply this property multiple times to one object
+
+    Node Attributes:
+        guid (string): GUID for this export asset
+        asset_name (string): Name of the export asset
+        asset_type (string): Name for the type of asset
+        export_path (string): Path that this asset will export to
+        zero_export (boolean): Whether or not to zero out the asset
+        use_export_path (boolean): Whether or not to use the export_path or to use default behavior
+    '''
+    _do_register = True
+    asset_type = "PartialCharacter"
+
+
+    def __init__(self, node_name = 'partial_character_asset', node = None, namespace = "", **kwargs):
+        super().__init__(node_name, node, namespace, **kwargs)
+        if not node:
+            self.set('asset_type', PartialCharacterAsset.asset_type)
+
+    def export(self, c_asset, event_args):
+        '''
+        export(self, c_asset, event_args)
+        Export a Character asset, ensuring scene and fbx settings are set correctly for the asset
+
+        Args:
+            c_asset (ExportAsset): ExportAsset calling the export
+            event_args (ExportDefinitionEventArgs): EventArgs storing the definition we are exporting
+        '''
+
+        autokey_state = pm.autoKeyframe(q=True, state=True)
+        pm.autoKeyframe(state=False)
+
+        partial_node = self.get_first_connection(node_type='network')
+        connected_partial_network = meta_network_utils.create_from_node(partial_node)
+        export_transform = connected_partial_network.get_first_connection(node_type='transform')
+    
+        dupe_mesh, skeleton_list = rigging.skeleton.duplicate_for_combine(export_transform)
+        skeleton_root = rigging.skeleton.get_root_joint(skeleton_list)
+        character_skeleton = rigging.skeleton.get_hierarchy(skeleton_root)
+        try:
+            vtx_group_list = []
+            partial_newtork_list = meta_property_utils.get_property_list(dupe_mesh, PartialModelProperty)
+            for partial_network in [x for x in partial_newtork_list if x != connected_partial_network]:
+                vertex_group = eval(partial_network.get('vertex_indicies'))
+                vtx_group_list.append(dupe_mesh.vtx[vertex_group[0][0]:vertex_group[0][1]])
+
+            dupe_mesh_face_list = pm.polyListComponentConversion( vtx_group_list, tf=True )
+            pm.delete(dupe_mesh_face_list)
+    
+            pm.select(dupe_mesh, replace=True)
+            pm.bakePartialHistory(prePostDeformers=True)
+    
+            imported_network = meta_network_utils.get_first_network_entry(connected_partial_network.node, ImportedCore)
+            relative_path = imported_network.get('import_path')
+            export_path = v1_shared.file_path_utils.relative_path_to_content(relative_path)
+            dupe_mesh.rename(Path(export_path).stem)
+        
+            character_network = meta_network_utils.get_first_network_entry(skeleton_root, CharacterCore)
+            # If it's a character make sure we're resetting to model bind pose before export
+            if character_network:
+                constraint_weight_dict = rigging.skeleton.detach_skeleton(skeleton_root)
+                bind_settings_path = rigging.file_ops.get_first_settings_file(Path(export_path).parent, 'bind', None, True)
+                binding_list = Binding_Sets.TRANSFORMS.value
+                rigging.file_ops.load_settings_from_json(character_network.group, bind_settings_path, binding_list,
+                                                         load_joint_list = character_skeleton, update_settings_path = False)
+                rigging.skeleton.zero_skeleton_joints(character_skeleton)
+        
+            dupe_parent = dupe_mesh.getParent()
+            skeleton_parent = skeleton_root.getParent()
+        
+            dupe_mesh.setParent(None)
+            skeleton_root.setParent(None)
+        
+            export_list = [dupe_mesh] + character_skeleton
+            freeform_utils.fbx_presets.FBXCharacter().load()
+            maya_utils.scene_utils.export_safe(export_list, export_path)
+        
+            checksum = hashlib.md5(open(export_path, 'rb').read()).hexdigest()
+            imported_network.set('checksum', checksum)
+        except Exception as e:
+            exception_info = sys.exc_info()
+            v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
+        finally:
+            if character_network:
+                settings_path = rigging.file_ops.get_first_settings_file_from_character(character_network)
+                binding_list = Binding_Sets.TRANSFORMS.value
+                rigging.file_ops.load_settings_from_json(character_network.group, settings_path, binding_list, 
+                                                         load_joint_list = character_skeleton, update_settings_path = False)
+                rigging.skeleton.reattach_skeleton(constraint_weight_dict)        
+
+            dupe_mesh.setParent(dupe_parent)
+            skeleton_root.setParent(skeleton_parent)
+            pm.delete(dupe_mesh)
+        
+            maya_utils.scene_utils.set_current_frame()
+            pm.autoKeyframe(state=autokey_state)
 
 
 class CharacterAnimationAsset(ExportAssetProperty):

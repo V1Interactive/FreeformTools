@@ -234,6 +234,8 @@ def setup_exporter():
     '''
     from metadata.network_core import CharacterCore, JointsCore
     from metadata.exporter_properties import ExportDefinition, CharacterAnimationAsset
+    from metadata.meta_properties import PartialModelProperty
+
     character_core_type = Network_Registry().get(CharacterCore)
     joints_core_type = Network_Registry().get(JointsCore)
     export_definition_type = Network_Registry().get(ExportDefinition)
@@ -257,9 +259,33 @@ def setup_exporter():
     
         export_property.connect_node(root_joint)
         export_definition.connect_node(export_property.node)
+        
+    partial_model_list = meta_network_utils.get_all_network_nodes(PartialModelProperty)
+    for partial_model_node in partial_model_list:
+        setup_partial_model_export(partial_model_node)
 
     pm.select(None)
     
+def setup_partial_model_export(partial_model_node):
+    import metadata
+    
+    partial_model_property = metadata.meta_network_utils.create_from_node(partial_model_node)
+    partial_asset_network = metadata.meta_network_utils.get_first_network_entry(partial_model_property.node, metadata.exporter_properties.PartialCharacterAsset)
+    if partial_asset_network == None:
+        partial_asset_network = metadata.exporter_properties.PartialCharacterAsset()
+        partial_asset_network.connect_node(partial_model_property.node)
+
+        export_path = Path(partial_model_property.import_path)
+        partial_asset_network.set('asset_name', str(export_path.stem))
+        partial_asset_network.set('export_path', str(export_path.parent))
+
+    definition_network = metadata.meta_network_utils.get_first_network_entry(partial_asset_network.node, metadata.exporter_properties.ExportDefinition)
+    if definition_network == None:
+        definition_network = metadata.exporter_properties.ExportDefinition()
+        definition_network.connect_node(partial_asset_network.node)
+        definition_network.set('definition_name', str(export_path.stem))
+        
+    return partial_asset_network
 
 def fix_full_paths():
     '''
@@ -448,84 +474,21 @@ def re_export_from_selection():
         
 def export_partial_mesh(mesh_transform):
     '''
-    Exports a partial mesh from the property editor's first selected PartialModelProperty
+    Creates Exporter connections and exports a partial mesh from the property editor's first selected PartialModelProperty
     
     Args:
         mesh_transfrom(PyNode): Transform of the object to export from
     '''
-    import freeform_utils
-    import metadata
-    import rigging
-    import scene_tools
-    import maya_utils
     
-    from metadata.meta_properties import PartialModelProperty
-    from metadata.network_core import ImportedCore, CharacterCore
-    from rigging.settings_binding import Binding_Sets
+    import scene_tools
+    from exporter.usertools import helix_exporter
     
     get_method_string = "property_editor_get_selected"
     return_dict = scene_tools.scene_manager.SceneManager().run_by_string(get_method_string)
     if not return_dict[get_method_string]:
         return None        
 
-    selected_partial_network = return_dict[get_method_string][0]
-    
-    dupe_mesh, skeleton_list = rigging.skeleton.duplicate_for_combine(mesh_transform)
-    skeleton_root = rigging.skeleton.get_root_joint(skeleton_list)
-    character_skeleton = rigging.skeleton.get_hierarchy(skeleton_root)
-    try:
-        vtx_group_list = []
-        partial_newtork_list = metadata.meta_property_utils.get_property_list(dupe_mesh, PartialModelProperty)
-        for partial_network in [x for x in partial_newtork_list if x != selected_partial_network]:
-            vertex_group = eval(partial_network.get('vertex_indicies'))
-            vtx_group_list.append(dupe_mesh.vtx[vertex_group[0][0]:vertex_group[0][1]])
+    partial_model_property = return_dict[get_method_string][0]
+    partial_asset_network = setup_partial_model_export(partial_model_property)
 
-        dupe_mesh_face_list = pm.polyListComponentConversion( vtx_group_list, tf=True )
-        pm.delete(dupe_mesh_face_list)
-    
-        pm.select(dupe_mesh, replace=True)
-        pm.bakePartialHistory(prePostDeformers=True)
-    
-        imported_network = meta_network_utils.get_first_network_entry(selected_partial_network.node, ImportedCore)
-        relative_path = imported_network.get('import_path')
-        export_path = v1_shared.file_path_utils.relative_path_to_content(relative_path)
-        dupe_mesh.rename(Path(export_path).stem)
-        
-        character_network = metadata.meta_network_utils.get_first_network_entry(skeleton_root, CharacterCore)
-        # If it's a character make sure we're resetting to model bind pose before export
-        if character_network:
-            constraint_weight_dict = rigging.skeleton.detach_skeleton(skeleton_root)
-            bind_settings_path = rigging.file_ops.get_first_settings_file(Path(export_path).parent, 'bind', None, True)
-            binding_list = Binding_Sets.TRANSFORMS.value
-            rigging.file_ops.load_settings_from_json(character_network.group, bind_settings_path, binding_list,
-                                                     load_joint_list = character_skeleton, update_settings_path = False)
-            rigging.skeleton.zero_skeleton_joints(character_skeleton)
-        
-        dupe_parent = dupe_mesh.getParent()
-        skeleton_parent = skeleton_root.getParent()
-        
-        dupe_mesh.setParent(None)
-        skeleton_root.setParent(None)
-        
-        export_list = [dupe_mesh] + character_skeleton
-        freeform_utils.fbx_presets.FBXCharacter().load()
-        export_safe(export_list, export_path)
-        
-        checksum = hashlib.md5(open(export_path, 'rb').read()).hexdigest()
-        imported_network.set('checksum', checksum)
-    except Exception as e:
-        exception_info = sys.exc_info()
-        v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
-    finally:
-        if character_network:
-            settings_path = rigging.file_ops.get_first_settings_file_from_character(character_network)
-            binding_list = Binding_Sets.TRANSFORMS.value
-            rigging.file_ops.load_settings_from_json(character_network.group, settings_path, binding_list, 
-                                                     load_joint_list = character_skeleton, update_settings_path = False)
-            rigging.skeleton.reattach_skeleton(constraint_weight_dict)        
-
-        dupe_mesh.setParent(dupe_parent)
-        skeleton_root.setParent(skeleton_parent)
-        pm.delete(dupe_mesh)
-        
-        maya_utils.scene_utils.set_current_frame()
+    helix_exporter.HelixExporter.export_asset(partial_asset_network.node)

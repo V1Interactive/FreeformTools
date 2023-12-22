@@ -41,10 +41,21 @@ class ExporterProperty(PropertyNode):
     
     '''
     export_stage = ExportStageEnum.Pre.value
+    ui_name = "~Export Property~"
 
     @classmethod
     def create_c_property(self, property_network, *args, **kwargs):
         return None
+    
+    @staticmethod
+    def get_inherited_classes():
+        '''
+        Get all classes that inherit off of this class
+
+        Returns:
+            (list<type>). List of all class types that inherit this class
+        '''
+        return ExporterProperty.__subclasses__()
 
     def __init__(self, node_name = 'property_node_temp', node = None, namespace = "", **kwargs):
         super().__init__(node_name, node, namespace, **kwargs)
@@ -70,6 +81,7 @@ class AnimCurveProperties(ExporterProperty):
     '''
     _do_register = True
     export_stage = ExportStageEnum.Pre.value
+    ui_name = "Root Motion Curve"
 
     @classmethod
     def create_c_property(self, property_network, *args, **kwargs):
@@ -202,6 +214,7 @@ class RotationCurveProperties(ExporterProperty):
     '''
     _do_register = True
     export_stage = ExportStageEnum.During.value
+    ui_name = "Animation Curve"
 
     @classmethod
     def create_c_property(cls, property_network, *args, **kwargs):
@@ -299,6 +312,7 @@ class RemoveRootAnimationProperty(ExporterProperty):
     '''
     _do_register = True
     export_stage = ExportStageEnum.During.value
+    ui_name = "Remove Root Animation"
 
     @classmethod
     def create_c_property(cls, property_network, *args, **kwargs):
@@ -346,6 +360,7 @@ class ZeroCharacterProperty(ExporterProperty):
     '''
     _do_register = True
     export_stage = ExportStageEnum.During.value
+    ui_name = "Zero Translate"
 
     @classmethod
     def create_c_property(self, property_network, *args, **kwargs):
@@ -393,6 +408,7 @@ class ZeroCharacterRotateProperty(ExporterProperty):
     _do_register = True
     export_stage = ExportStageEnum.During.value
     priority = -1
+    ui_name = "Zero Rotate"
 
     @classmethod
     def create_c_property(self, property_network, *args, **kwargs):
@@ -451,6 +467,7 @@ class ZeroAnimCurvesProperty(ExporterProperty):
     _do_register = True
     export_stage = ExportStageEnum.During.value
     priority = -1
+    ui_name = "Zero Root Rotation"
 
     @classmethod
     def create_c_property(self, property_network, *args, **kwargs):
@@ -501,6 +518,7 @@ class ZeroMocapProperty(ExporterProperty):
     _do_register = True
     export_stage = ExportStageEnum.During.value
     priority = -1
+    ui_name = "Mocap Zero Skeleton"
 
     @classmethod
     def create_c_property(self, property_network, *args, **kwargs):
