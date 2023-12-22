@@ -805,6 +805,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
+                                    <Grid.Resources>
+                                        <v1:BindingProxy x:Key="definitionContextProxy" Data="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"/>
+                                    </Grid.Resources>
                                     <Grid.Style>
                                         <MultiBinding Converter="{StaticResource StyleConverter}">
                                             <MultiBinding.Bindings>
@@ -841,26 +844,22 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                             <MenuItem Header="Export" 
                                                         Command="{Binding Data.ExportDefinitionCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
-                                            <MenuItem Header="Add Anim Attributes" 
-                                                        Command="{Binding Data.AnimationCurveCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Translate All" 
-                                                        Command="{Binding Data.ZeroCharacterCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Rotate All"
-                                                        Command="{Binding Data.ZeroCharacterRotateCommand, Source={StaticResource dataContextProxy}}"
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Remove All Root Animation" 
-                                                        Command="{Binding Data.RemoveRootAnimationCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Mocap" 
-                                                        Command="{Binding Data.ZeroMocapCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
+                                            
+                                            <MenuItem Header="Add Export Property..."
+                                                      ItemsSource="{Binding Data.ExportPropertyList, Source={StaticResource dataContextProxy}}">
+                                                <MenuItem.ItemContainerStyle>
+                                                    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource V1MenuItem}">
+                                                        <Setter Property="MenuItem.Header"
+                                                                Value="{Binding DisplayName}"/>
+                                                        <Setter Property="MenuItem.Command"
+                                                                Value="{Binding PropertyCommand}"/>
+                                                        <Setter Property="MenuItem.CommandParameter"
+                                                                Value="{Binding Path=Data, Source={StaticResource definitionContextProxy}}"/>
+                                                        <Setter Property="MenuItem.Visibility"
+                                                                Value="{Binding MaxDisabled, Converter={StaticResource BoolToVis}}"/>
+                                                    </Style>
+                                                </MenuItem.ItemContainerStyle>
+                                            </MenuItem>
                                         </ContextMenu>
                                     </Grid.ContextMenu>
 
@@ -967,6 +966,9 @@ If not, see <https://www.gnu.org/licenses/>.-->
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
+                                    <Grid.Resources>
+                                        <v1:BindingProxy x:Key="assetContextProxy" Data="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"/>
+                                    </Grid.Resources>
                                     <Grid.Style>
                                         <MultiBinding Converter="{StaticResource StyleConverter}">
                                             <MultiBinding.Bindings>
@@ -1002,34 +1004,22 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                             <MenuItem Header="Export" 
                                                         Command="{Binding Data.ExportAssetCommand, Source={StaticResource dataContextProxy}}" 
                                                         CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
-                                            <MenuItem Header="Swap Geo" 
-                                                        Command="{Binding Data.SwapAssetCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxEnabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Translate Character" 
-                                                        Command="{Binding Data.ZeroCharacterCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Rotate Character"
-                                                      Command="{Binding Data.ZeroCharacterRotateCommand, Source={StaticResource dataContextProxy}}"
-                                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"
-                                                      Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Remove Root Animation" 
-                                                        Command="{Binding Data.RemoveRootAnimationCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Add Rotation Curve" 
-                                                        Command="{Binding Data.RotationCurveCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Animation Curves" 
-                                                        Command="{Binding Data.ZeroAnimCurvesCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
-                                            <MenuItem Header="Zero Mocap" 
-                                                        Command="{Binding Data.ZeroMocapCommand, Source={StaticResource dataContextProxy}}" 
-                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
-                                                        Visibility="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}, Converter={StaticResource BoolToVis}}"/>
+                                            
+                                            <MenuItem Header="Add Export Property..."
+                                                      ItemsSource="{Binding Data.ExportPropertyList, Source={StaticResource dataContextProxy}}">
+                                                <MenuItem.ItemContainerStyle>
+                                                    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource V1MenuItem}">
+                                                        <Setter Property="MenuItem.Header"
+                                                                Value="{Binding DisplayName}"/>
+                                                        <Setter Property="MenuItem.Command"
+                                                                Value="{Binding PropertyCommand}"/>
+                                                        <Setter Property="MenuItem.CommandParameter"
+                                                                Value="{Binding Path=Data, Source={StaticResource assetContextProxy}}"/>
+                                                        <Setter Property="MenuItem.Visibility"
+                                                                Value="{Binding MaxDisabled, Converter={StaticResource BoolToVis}}"/>
+                                                    </Style>
+                                                </MenuItem.ItemContainerStyle>
+                                            </MenuItem>
                                         </ContextMenu>
                                     </Grid.ContextMenu>
 

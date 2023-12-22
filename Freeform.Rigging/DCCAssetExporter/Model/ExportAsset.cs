@@ -33,7 +33,6 @@ namespace Freeform.Rigging.DCCAssetExporter
     {
         public event EventHandler ExportEventHandler;
         public event EventHandler ToggleAssetExportHandler;
-        public event EventHandler SwapGeometryHandler;
 
 
         public RelayCommand SetExportPathCommand { get; set; }
@@ -235,11 +234,6 @@ namespace Freeform.Rigging.DCCAssetExporter
             FileType = "";
 
             SetExportPathCommand = new RelayCommand(SetExportPathCall);
-        }
-
-        public void SwapGeometry()
-        {
-            SwapGeometryHandler?.Invoke(this, null);
         }
 
         public void Export(ExportDefinition definition)

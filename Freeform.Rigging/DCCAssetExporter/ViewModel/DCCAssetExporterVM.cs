@@ -48,13 +48,6 @@ namespace Freeform.Rigging.DCCAssetExporter
         public event EventHandler DefinitionSelectedHandler;
         public event EventHandler AssetSelectedHandler;
         public event EventHandler CreateNewDefinitionHandler;
-        public event EventHandler AnimationCurveHandler;
-        public event EventHandler RemoveRootAnimationHandler;
-        public event EventHandler ZeroCharacterHandler;
-        public event EventHandler ZeroCharacterRotateHandler;
-        public event EventHandler RotationCurveHandler;
-        public event EventHandler ZeroMocapHandler;
-        public event EventHandler ZeroAnimCurvesHandler;
         public event EventHandler CreateNewAssetHandler;
         public event EventHandler RemoveDefinitionHandler;
         public event EventHandler RemovePropertyHandler;
@@ -70,21 +63,12 @@ namespace Freeform.Rigging.DCCAssetExporter
         public RelayCommand AutoSetupCommand { get; set; }
         public RelayCommand ExportCommand { get; set; }
         public RelayCommand CreateNewDefinitionCommand { get; set; }
-        public RelayCommand AnimationCurveCommand { get; set; }
-        public RelayCommand RemoveRootAnimationCommand { get; set; }
-        public RelayCommand ZeroCharacterCommand { get; set; }
-        public RelayCommand ZeroCharacterRotateCommand { get; set; }
-        public RelayCommand RotationCurveCommand { get; set; }
-        public RelayCommand ZeroMocapCommand { get; set; }
-        public RelayCommand ZeroAnimCurvesCommand { get; set; }
         public RelayCommand RemovePropertyCommand { get; set; }
         public RelayCommand CreateNewAssetCommand { get; set; }
         public RelayCommand RemoveDefinitionCommand { get; set; }
         public RelayCommand ExportDefinitionCommand { get; set; }
         public RelayCommand RemoveAssetCommand { get; set; }
         public RelayCommand ExportAssetCommand { get; set; }
-        public RelayCommand SwapAssetCommand { get; set; }
-
         public RelayCommand MoveGroupCommand { get; set; }
         public RelayCommand MoveAssetCommand { get; set; }
         public RelayCommand SetDefinitionSortOrderCommand { get; set; }
@@ -290,25 +274,39 @@ namespace Freeform.Rigging.DCCAssetExporter
             }
         }
 
+        ObservableCollection<ExportPropertyVM> _exportPropertyList;
+        public ObservableCollection<ExportPropertyVM> ExportPropertyList
+        {
+            get { return _exportPropertyList; }
+            set
+            {
+                if (_exportPropertyList != value)
+                {
+                    _exportPropertyList = value;
+                    RaisePropertyChanged("ExportPropertyList");
+                }
+            }
+        }
+
+        public ExportPropertyVM AddExportProperty(string name, string ui_name, string parentProcessName)
+        {
+            ExportPropertyVM newPropertyVM = new ExportPropertyVM(name, ui_name, parentProcessName);
+            ExportPropertyList.Add(newPropertyVM);
+
+            return newPropertyVM;
+        }
+
         public DCCAssetExporterVM()
         {
             AutoSetupCommand = new RelayCommand(AutoSetupCall);
             ExportCommand = new RelayCommand(ExportCall);
             CreateNewDefinitionCommand = new RelayCommand(CreateNewDefinitionCall);
-            AnimationCurveCommand = new RelayCommand(AnimationCurveCall);
-            RemoveRootAnimationCommand = new RelayCommand(RemoveRootAnimationCall);
-            ZeroCharacterCommand = new RelayCommand(ZeroCharacterCall);
-            ZeroCharacterRotateCommand = new RelayCommand(ZeroCharacterRotateCall);
-            RotationCurveCommand = new RelayCommand(RotationCurveCall);
-            ZeroMocapCommand = new RelayCommand(ZeroMocapCall);
-            ZeroAnimCurvesCommand = new RelayCommand(ZeroAnimCurvesCall);
             RemovePropertyCommand = new RelayCommand(RemoveExportPropertyCall);
             CreateNewAssetCommand = new RelayCommand(CreateNewAssetCall);
             RemoveDefinitionCommand = new RelayCommand(RemoveDefinitionCall);
             ExportDefinitionCommand = new RelayCommand(ExportDefinitionCall);
             RemoveAssetCommand = new RelayCommand(RemoveAssetCall);
             ExportAssetCommand = new RelayCommand(ExportAssetCall);
-            SwapAssetCommand = new RelayCommand(SwapAssetCall);
 
             MoveGroupCommand = new RelayCommand(MoveGroupCall);
             MoveAssetCommand = new RelayCommand(MoveAssetCall);
@@ -339,6 +337,8 @@ namespace Freeform.Rigging.DCCAssetExporter
             SelectedAssetType = AssetTypeList.FirstOrDefault();
 
             ExportLayerList = new ObservableCollection<ExportLayer>();
+
+            ExportPropertyList = new ObservableCollection<ExportPropertyVM>();
 
             WindowWidth = 740;
             SelectSceneObjects = true;
@@ -466,63 +466,6 @@ namespace Freeform.Rigging.DCCAssetExporter
             ExportWrapperEndHandler?.Invoke(this, null);
         }
 
-        public void AnimationCurveCall(object sender)
-        {
-            var definition = sender as ExportDefinition;
-            CreateProperty(definition, AnimationCurveHandler);
-        }
-
-        public void RemoveRootAnimationCall(object sender)
-        {
-            var exportObject = sender as ExportObject;
-            CreateProperty(exportObject, RemoveRootAnimationHandler);
-        }
-
-        public void ZeroCharacterCall(object sender)
-        {
-            var asset = sender as ExportObject;
-            CreateProperty(asset, ZeroCharacterHandler);
-        }
-
-        public void ZeroCharacterRotateCall(object sender)
-        {
-            var asset = sender as ExportObject;
-            CreateProperty(asset, ZeroCharacterRotateHandler);
-        }
-
-        public void RotationCurveCall(object sender)
-        {
-            var asset = sender as ExportAsset;
-            CreateProperty(asset, RotationCurveHandler);
-        }
-
-        public void ZeroMocapCall(object sender)
-        {
-            var asset = sender as ExportAsset;
-            CreateProperty(asset, ZeroMocapHandler);
-        }
-
-        public void ZeroAnimCurvesCall(object sender)
-        {
-            var asset = sender as ExportAsset;
-            CreateProperty(asset, ZeroAnimCurvesHandler);
-        }
-
-        public void CreateProperty(ExportObject exportObject, EventHandler handler)
-        {
-            ExportPropertyEventArgs eventArgs = new ExportPropertyEventArgs()
-            {
-                NodeName = exportObject.NodeName
-            };
-
-            handler?.Invoke(this, eventArgs);
-
-            if (eventArgs.Object != null)
-            {
-                exportObject.AddExportProperty(eventArgs.Object);
-            }
-        }
-
         public void RemoveExportPropertyCall(object sender)
         {
             var property = sender as ExportProperty;
@@ -547,11 +490,6 @@ namespace Freeform.Rigging.DCCAssetExporter
             ExportWrapperStartHandler?.Invoke(this, null);
             SelectedAsset.Export(SelectedDefinition);
             ExportWrapperEndHandler?.Invoke(this, null);
-        }
-
-        public void SwapAssetCall(object sender)
-        {
-            SelectedAsset.SwapGeometry();
         }
 
         public void MoveGroupCall(object sender)

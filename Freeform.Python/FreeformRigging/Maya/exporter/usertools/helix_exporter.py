@@ -17,6 +17,7 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+from calendar import c
 import System
 import Freeform.Rigging.DCCAssetExporter as DCCAssetExporter
 import System.Diagnostics
@@ -34,6 +35,7 @@ import scene_tools
 from metadata.exporter_properties import ExportDefinition, CharacterAnimationAsset, ExportAssetProperty
 from metadata.export_modify_properties import ExporterProperty, ZeroCharacterProperty, ZeroCharacterRotateProperty, ZeroAnimCurvesProperty
 from metadata.export_modify_properties import RemoveRootAnimationProperty, AnimCurveProperties, RotationCurveProperties, ZeroMocapProperty
+from metadata.network_registry import Network_Registry, Property_Registry
 
 import v1_core
 
@@ -112,6 +114,41 @@ class HelixExporter(object):
             for asset_node in definition_node.message.listConnections(type='network'):
                 new_asset = HelixExporter.create_asset(asset_node)
                 new_asset.Export(new_definition)
+
+        HelixExporter.print_export_finished()
+        
+    @staticmethod
+    def export_asset(asset_node):
+        '''
+        Run export on the given asset
+        '''
+        HelixExporter.print_export_started()
+        
+        asset_network = metadata.meta_network_utils.create_from_node(asset_node)
+        definition_network = metadata.meta_network_utils.get_first_network_entry(asset_node, ExportDefinition)
+        
+        c_definition = HelixExporter.create_definition(definition_network.node,
+                                                        attribute_changed = metadata.meta_property_utils.attribute_changed, 
+                                                        get_scene_name = maya_utils.scene_utils.get_scene_name_csharp)
+        c_asset = HelixExporter.create_asset(asset_node)
+        c_asset.Export(c_definition)
+
+        HelixExporter.print_export_finished()
+        
+    @staticmethod
+    def export_definition(definition_node):
+        '''
+        Run export on the given asset
+        '''
+        HelixExporter.print_export_started()
+        
+        c_definition = HelixExporter.create_definition(definition_node,
+                                                        attribute_changed = metadata.meta_property_utils.attribute_changed, 
+                                                        get_scene_name = maya_utils.scene_utils.get_scene_name_csharp)
+
+        for asset_node in definition_node.message.listConnections(type='network'):
+            new_asset = HelixExporter.create_asset(asset_node)
+            new_asset.Export(c_definition)
 
         HelixExporter.print_export_finished()
 
@@ -202,13 +239,6 @@ class HelixExporter(object):
         self.vm.AutoSetupHandler += self.auto_setup
         self.vm.UpdateHandler += self.update_from_scene
         self.vm.DefinitionSelectedHandler += self.definition_selected
-        self.vm.AnimationCurveHandler += self.new_animation_curve
-        self.vm.RemoveRootAnimationHandler += self.new_remove_root_animation
-        self.vm.ZeroCharacterHandler += self.new_zero_character
-        self.vm.ZeroCharacterRotateHandler += self.new_zero_character_rotate
-        self.vm.RotationCurveHandler += self.new_rotation_curve
-        self.vm.ZeroMocapHandler += self.new_zero_mocap
-        self.vm.ZeroAnimCurvesHandler += self.new_zero_animation_curves
         self.vm.RemovePropertyHandler += self.remove_property
         self.vm.AssetSelectedHandler += self.asset_selected
         self.vm.CreateNewDefinitionHandler += self.create_new_export_definition
@@ -223,6 +253,10 @@ class HelixExporter(object):
         self.export_property_type_list = []
         self.export_property_type_list.extend(ExportAssetProperty.get_inherited_classes())
         self.export_property_type_list.extend(CharacterAnimationAsset.get_inherited_classes())
+        
+        for exporter_property in ExporterProperty.get_inherited_classes():
+            c_property_vm = self.vm.AddExportProperty(exporter_property.__name__, exporter_property.ui_name, self.vm.ParentProcessName)
+            c_property_vm.PropertyHandler += self.new_export_property
 
         for export_type in self.export_property_type_list:
             self.vm.AssetTypeList.Add(export_type.asset_type)
@@ -235,7 +269,7 @@ class HelixExporter(object):
         exporter_category = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.ExporterSettings)
         self.vm.SetDefinitionSortOrderCall(exporter_category.definition_sort)
         self.vm.SetAssetSortOrderCall(exporter_category.asset_sort)
-
+        
     def show(self):
         '''
         Show the UI
@@ -256,12 +290,6 @@ class HelixExporter(object):
         self.vm.AutoSetupHandler -= self.auto_setup
         self.vm.UpdateHandler -= self.update_from_scene
         self.vm.DefinitionSelectedHandler -= self.definition_selected
-        self.vm.AnimationCurveHandler -= self.new_animation_curve
-        self.vm.RemoveRootAnimationHandler -= self.new_remove_root_animation
-        self.vm.ZeroCharacterHandler -= self.new_zero_character
-        self.vm.RotationCurveHandler -= self.new_rotation_curve
-        self.vm.ZeroMocapHandler -= self.new_zero_mocap
-        self.vm.ZeroAnimCurvesHandler -= self.new_zero_animation_curves
         self.vm.RemovePropertyHandler -= self.remove_property
         self.vm.AssetSelectedHandler -= self.asset_selected
         self.vm.CreateNewDefinitionHandler -= self.create_new_export_definition
@@ -514,107 +542,9 @@ class HelixExporter(object):
             node = pm.PyNode(event_args.Object.NodeName)
             node.message.disconnect()
             pm.delete(node)
-
+            
     @csharp_error_catcher
-    def new_animation_curve(self, vm, event_args):
-        '''
-        new_animation_curve(self, vm, event_args)
-        Event method that handles creating a new AnimCurveProperties and connecting it to the given ExportDefinition
-
-        Args:
-            vm (DCCExporterVM): The C# DCCExporterVM calling the event
-            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
-        '''
-        anim_curve_network = AnimCurveProperties()
-        anim_curve_network.refresh_names()
-        curve_node = anim_curve_network.node
-        
-        definition_node = pm.PyNode(event_args.NodeName)
-        anim_curve_network.connect_node(definition_node)
-
-        c_anim_curves = AnimCurveProperties.create_c_property(anim_curve_network, 
-                                                              attribute_changed = metadata.meta_property_utils.attribute_changed, 
-                                                              set_frame = self.set_frame, 
-                                                              get_frame = self.get_frame)
-        event_args.Object = c_anim_curves
-
-    @csharp_error_catcher
-    def new_rotation_curve(self, vm, event_args):
-        '''
-        new_rotation_curve(self, vm, event_args)
-        Event method that handles creating a new AnimCurveProperties and connecting it to the given ExportDefinition
-
-        Args:
-            vm (DCCExporterVM): The C# DCCExporterVM calling the event
-            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
-        '''
-        rotate_curve_network = RotationCurveProperties()
-
-        asset_node = pm.PyNode(event_args.NodeName)
-        rotate_curve_network.connect_node(asset_node)
-
-        c_rotation_curve = RotationCurveProperties.create_c_property(rotate_curve_network, 
-                                                                     attribute_changed=metadata.meta_property_utils.attribute_changed)
-        event_args.Object = c_rotation_curve
-
-    @csharp_error_catcher
-    def new_zero_mocap(self, vm, event_args):
-        '''
-        new_zero_mocap(self, vm, event_args)
-        Event method that handles creating a new ZeroMocapProperty and connecting it to the given ExportAsset
-
-        Args:
-            vm (DCCExporterVM): The C# DCCExporterVM calling the event
-            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportAsset's PyNode
-        '''
-        zero_mocap_network = ZeroMocapProperty()
-        
-        asset_node = pm.PyNode(event_args.NodeName)
-        zero_mocap_network.connect_node(asset_node)
-
-        c_zero_mocap = ZeroMocapProperty.create_c_property(zero_mocap_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
-        event_args.Object = c_zero_mocap
-
-
-    @csharp_error_catcher
-    def new_zero_animation_curves(self, vm, event_args):
-        '''
-        new_zero_animation_curves(self, vm, event_args)
-        Event method that handles creating a new ZeroAnimCurvesProperty and connecting it to the given ExportAsset
-
-        Args:
-            vm (DCCExporterVM): The C# DCCExporterVM calling the event
-            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportAsset's PyNode
-        '''
-        zero_anim_network = ZeroAnimCurvesProperty()
-        
-        asset_node = pm.PyNode(event_args.NodeName)
-        zero_anim_network.connect_node(asset_node)
-
-        c_remove_root = ZeroAnimCurvesProperty.create_c_property(zero_anim_network, attribute_changed=metadata.meta_property_utils.attribute_changed)
-        event_args.Object = c_remove_root
-        
-
-    @csharp_error_catcher
-    def new_remove_root_animation(self, vm, event_args):
-        '''
-        new_remove_root_animation(self, vm, event_args)
-        Event method that handles creating a new RemoveRootAnimationProperty and connecting it to the given ExportDefinition
-
-        Args:
-            vm (DCCExporterVM): The C# DCCExporterVM calling the event
-            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
-        '''
-        remove_root_anim_network = RemoveRootAnimationProperty()
-        
-        definition_node = pm.PyNode(event_args.NodeName)
-        remove_root_anim_network.connect_node(definition_node)
-
-        c_remove_root = RemoveRootAnimationProperty.create_c_property(remove_root_anim_network)
-        event_args.Object = c_remove_root
-
-    @csharp_error_catcher
-    def new_zero_character(self, vm, event_args):
+    def new_export_property(self, vm, event_args):
         '''
         new_zero_character(self, vm, event_args)
         Event method that handles creating a new ZeroCharacterProperty and connecting it to the given AssetDefinition
@@ -623,31 +553,19 @@ class HelixExporter(object):
             vm (DCCExporterVM): The C# DCCExporterVM calling the event
             event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
         '''
-        zero_character_network = ZeroCharacterProperty()
+        
+        
+        property_type = Property_Registry().get(event_args.ExportPropertyName)
+        property_network = property_type()
         
         asset_node = pm.PyNode(event_args.NodeName)
-        zero_character_network.connect_node(asset_node)
+        property_network.connect_node(asset_node)
 
-        c_zero_character = ZeroCharacterProperty.create_c_property(zero_character_network)
-        event_args.Object = c_zero_character
-
-    @csharp_error_catcher
-    def new_zero_character_rotate(self, vm, event_args):
-        '''
-        new_zero_character_rotate(self, vm, event_args)
-        Event method that handles creating a new ZeroCharacterRotateProperty and connecting it to the given AssetDefinition
-
-        Args:
-            vm (DCCExporterVM): The C# DCCExporterVM calling the event
-            event_args (DefinitionEventArgs): EventArgs that give the name of the ExportDefinition's PyNode
-        '''
-        zero_character_network = ZeroCharacterRotateProperty()
-        
-        asset_node = pm.PyNode(event_args.NodeName)
-        zero_character_network.connect_node(asset_node)
-
-        c_zero_character = ZeroCharacterRotateProperty.create_c_property(zero_character_network)
-        event_args.Object = c_zero_character
+        c_property = property_type.create_c_property(property_network, 
+                                                     attribute_changed = metadata.meta_property_utils.attribute_changed, 
+                                                     set_frame = self.set_frame, 
+                                                     get_frame = self.get_frame)
+        event_args.Object = c_property
 
     @csharp_error_catcher
     def remove_property(self, vm, event_args):
