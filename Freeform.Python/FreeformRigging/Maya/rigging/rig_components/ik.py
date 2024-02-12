@@ -48,7 +48,7 @@ class IK(Rig_Component):
     _inherittype = "component"
     _spacetype = "inherit"
     _hasattachment = None
-    _icon = "../../Resources/ik_icon.ico"
+    _icon = "../../Resources/circle-open.png"
 
     def __init__(self):
         super().__init__()

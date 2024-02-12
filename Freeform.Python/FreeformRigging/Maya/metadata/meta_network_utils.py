@@ -45,11 +45,36 @@ def get_network_core():
     core_type = Network_Registry().get(Core)
     core_module, core_name = v1_shared.shared_utils.get_class_info( str(core_type) )
 
-    core_node = [x for x in pm.ls(type='network') if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == core_name]
-    if not core_node:
-        return core_type().node
+    core_node_list = [x for x in pm.ls(type='network') if v1_shared.shared_utils.get_class_info( x.meta_type.get() )[-1] == core_name]
+    core_node = None
+    if not core_node_list:
+        core_node = core_type().node
     else:
-        return get_first_or_default(core_node)
+        core_node = get_first_or_default(core_node_list)
+        
+    if len(core_node_list) > 1:
+        for extra_core in core_node_list[1:]:
+            remap_metadata_output(extra_core, core_node)
+            pm.delete(core_node)
+        
+    return core_node
+    
+
+def remap_metadata_output(source_obj, destination_obj):
+    '''
+    Reconnect all metadata output connections from one object to another
+    
+    Args:
+        source_obj (PyNode): Object to remove connections from
+        destination_obj (PyNode): Object to add connections to
+    '''
+    source_network = create_from_node(source_obj)
+    destination_network = create_from_node(destination_obj)
+    
+    connected_node_list = source_network.get_connections()
+    
+    source_network.disconnect_nodes(connected_node_list)
+    destination_network.connect_nodes(connected_node_list)
 
 
 def get_node_type(pynode):

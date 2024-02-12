@@ -287,79 +287,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\adjust.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\animUnlocked.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\bake_remove_rig.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\fk_icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\fk_icon_od.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\fk_ik_switch.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\ik_icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\ik_icon_od.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\locked.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\not_visible.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\overdriver.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\overdriver_rotate.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\overdriver_singlespace.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\overdriver_translate.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\overdriver_ws.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\pin_rig.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\pv_icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\pv_icon_od.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\remove.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\remove_overdriver.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\rig_mirror.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\rig_switcher.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\space_switcher.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\unlocked.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\unpin_rig.ico" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\V1ToolsIcon.ico" />
@@ -371,25 +299,7 @@
     <Resource Include="Resources\V1ToolsIconSmallRed.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\visible.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\world_space.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\world_space_od.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\zero_rig.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="V1ToolsIconSmall.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\export_anim_curve.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\export_remove_root_anim.ico" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\p4_unlocked.ico" />
@@ -416,27 +326,10 @@
     <Resource Include="Resources\p4_unknown.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\t_fk.png" />
-    <Resource Include="Resources\t_ik.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\control_lock_toggle.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\remove_revert.png" />
     <Resource Include="Resources\trashcan.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\characterize.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\overdriver_aim.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\save_control_shapes.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\pendulum.png" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\visible_ribbon.png" />
@@ -453,16 +346,64 @@
     <Resource Include="Resources\partial_bake.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\aim_constraint.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\particle_constraint.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Resources\center_of_mass.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\merge_down.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\center-of-mass.png" />
+    <Resource Include="Resources\visibility-off.png" />
+    <Resource Include="Resources\visibility-on.png" />
+    <Resource Include="Resources\zero.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\aim-constraint.png" />
+    <Resource Include="Resources\aim-driver.png" />
+    <Resource Include="Resources\bake.png" />
+    <Resource Include="Resources\bake_and_remove.png" />
+    <Resource Include="Resources\build-pickwalk.png" />
+    <Resource Include="Resources\circle-open-purple.png" />
+    <Resource Include="Resources\circle-open.png" />
+    <Resource Include="Resources\circle-purple.png" />
+    <Resource Include="Resources\circle.png" />
+    <Resource Include="Resources\fk-ik.png" />
+    <Resource Include="Resources\lock-toggle.png" />
+    <Resource Include="Resources\lock.png" />
+    <Resource Include="Resources\mirror.png" />
+    <Resource Include="Resources\multi-driver.png" />
+    <Resource Include="Resources\one-driver.png" />
+    <Resource Include="Resources\particle-constraint.png" />
+    <Resource Include="Resources\pendulum-driver.png" />
+    <Resource Include="Resources\pin.png" />
+    <Resource Include="Resources\position-driver.png" />
+    <Resource Include="Resources\re-parent.png" />
+    <Resource Include="Resources\rectangle-purple.png" />
+    <Resource Include="Resources\rectangle.png" />
+    <Resource Include="Resources\remove-overdriver.png" />
+    <Resource Include="Resources\remove.png" />
+    <Resource Include="Resources\revert.png" />
+    <Resource Include="Resources\rotation-driver.png" />
+    <Resource Include="Resources\save-controls.png" />
+    <Resource Include="Resources\switcher.png" />
+    <Resource Include="Resources\temporary-fk.png" />
+    <Resource Include="Resources\temporary-ik.png" />
+    <Resource Include="Resources\timer.png" />
+    <Resource Include="Resources\un-pin.png" />
+    <Resource Include="Resources\unlock.png" />
+    <Resource Include="Resources\world-driver.png" />
+    <Resource Include="Resources\world-purple.png" />
+    <Resource Include="Resources\world.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-anim-curve.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-remove-root.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-zero-rotate.png" />
+    <Resource Include="Resources\export-zero-translate.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-zero-animation.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets" Condition="Exists('..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets')" />

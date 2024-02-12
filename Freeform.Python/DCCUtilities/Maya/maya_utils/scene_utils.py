@@ -489,6 +489,6 @@ def export_partial_mesh(mesh_transform):
         return None        
 
     partial_model_property = return_dict[get_method_string][0]
-    partial_asset_network = setup_partial_model_export(partial_model_property)
+    partial_asset_network = setup_partial_model_export(partial_model_property.node)
 
     helix_exporter.HelixExporter.export_asset(partial_asset_network.node)

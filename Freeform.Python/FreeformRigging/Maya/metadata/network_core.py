@@ -227,6 +227,13 @@ class MetaNode(object, metaclass=Network_Meta):
             else:
                 connect_attribute >> connect_attr
 
+    def disconnect_nodes(self, node_list):
+        '''
+        Disconnect all given nodes to this network node
+        '''
+        for node in node_list:
+            self.disconnect_node(node)
+
     def disconnect_node(self, node):
         '''
         Disconnect a single node from this network node

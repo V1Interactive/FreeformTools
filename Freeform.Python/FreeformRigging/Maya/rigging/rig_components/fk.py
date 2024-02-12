@@ -521,7 +521,7 @@ class Eye_FK(FK):
 
     def get_rigger_methods(self):
         method_dict = {}
-        method_dict[self.switch_to_aim] = {"Name" : "(Eye_FK)Switch To Aim", "ImagePath" : "../../Resources/overdriver_aim.png", "Tooltip" : "Switch the Eye rotate control to the Aim target"}
+        method_dict[self.switch_to_aim] = {"Name" : "(Eye_FK)Switch To Aim", "ImagePath" : "../../Resources/aim-driver.png", "Tooltip" : "Switch the Eye rotate control to the Aim target"}
 
         return method_dict
 

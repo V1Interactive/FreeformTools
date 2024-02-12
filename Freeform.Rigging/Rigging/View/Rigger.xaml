@@ -394,7 +394,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 Margin="6,5,2,5"
                                 Tag="menu_bar__quick_search"
                                 Grid.Column="0">
-                            <Image Source="pack://application:,,,/HelixResources;component/Resources/add_rig.ico"/>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/plus-orange-dark.png"/>
                             <Button.ToolTip>
                                 <TextBlock Style="{StaticResource HighlightTextBlock}" Text="Add Quick Selection Set"/>
                             </Button.ToolTip>
@@ -1203,13 +1203,13 @@ If not, see <https://www.gnu.org/licenses/>.-->
                                 Visibility="{Binding UiManualUpdate, Converter={StaticResource booleanToVisibilityConverter}}"
                                 Width="20"
                                 Grid.Row="0">
-                            <Image Source="pack://application:,,,/HelixResources;component/Resources/add_rig.ico" Margin="3"/>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/plus-orange-dark.png" Margin="3"/>
                         </Button>
                         <Button Command="{Binding UnloadCharacterCommand}" 
                                 Visibility="{Binding UiManualUpdate, Converter={StaticResource booleanToVisibilityConverter}}"
                                 Width="20"
                                 Grid.Row="1">
-                            <Image Source="pack://application:,,,/HelixResources;component/Resources/minus.png" Margin="3"/>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/minus-orange-dark.png" Margin="3"/>
                         </Button>
                     </Grid>
 
@@ -1219,7 +1219,7 @@ If not, see <https://www.gnu.org/licenses/>.-->
                             Margin="5,4" 
                             Tag="character_view__character_picker"
                             Grid.Column="2">
-                        <Image Source="pack://application:,,,/HelixResources;component/Resources/add_rig.ico" Margin="8"/>
+                        <Image Source="pack://application:,,,/HelixResources;component/Resources/plus-orange-dark.png" Margin="8"/>
                     </Button>
 
                 </Grid>

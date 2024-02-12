@@ -477,9 +477,9 @@ namespace Freeform.Rigging
 
                     if (value)
                     {
-                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "../../Resources/bake_remove_rig.ico";
-                        GetRigButtonFromCategory(GetRigCategoryList("Miscellaneous"), "Re-Parent Component").StatusImagePath = "../../Resources/bake_remove_rig.ico";
-                        GetRigButtonFromCategory(GetRigCategoryList("Space Switching"), "Dynamics - AIM").StatusImagePath = "../../Resources/bake_remove_rig.ico";
+                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "../../Resources/bake.png";
+                        GetRigButtonFromCategory(GetRigCategoryList("Miscellaneous"), "Re-Parent Component").StatusImagePath = "../../Resources/bake.png";
+                        GetRigButtonFromCategory(GetRigCategoryList("Space Switching"), "Dynamics - AIM").StatusImagePath = "../../Resources/bake.png";
                     }
                     else if (!RevertAnimation)
                     {
@@ -517,7 +517,7 @@ namespace Freeform.Rigging
 
                     if (value)
                     {
-                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "../../Resources/remove_revert.png";
+                        GetRigButtonFromCategory(GetRigCategoryList("Bake/Remove Components"), "Remove Component").StatusImagePath = "../../Resources/revert.png";
                     }
                     else if (!BakeComponent)
                     {
@@ -543,7 +543,7 @@ namespace Freeform.Rigging
                     if (value)
                         GetRigCategoryList("Bake/Remove Components").RigButtonList.First().ImagePath = "../../Resources/trashcan.png";
                     else
-                        GetRigCategoryList("Bake/Remove Components").RigButtonList.First().ImagePath = "../../Resources/remove.ico";
+                        GetRigCategoryList("Bake/Remove Components").RigButtonList.First().ImagePath = "../../Resources/remove.png";
                 }
             }
         }
