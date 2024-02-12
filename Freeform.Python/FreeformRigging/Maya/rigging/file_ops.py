@@ -471,9 +471,13 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
                     Properties_Binding().load_data(data, load_property_jnt) 
 
         character_data = load_settings_data.get('character')
-        if character_data and load_joint_list == None:
+        if character_data and load_joint_list == None and joints_network:
             for binding in Binding_Sets.PROPERTIES.value:
+                constraint_weight_dict = skeleton.detach_skeleton(joints_network.get_first_connection())
+                skeleton.zero_skeleton_joints(joints_network.get_connections())
                 binding.load_data(character_data, character_network.node)
+                skeleton.reattach_skeleton(constraint_weight_dict)
+                maya_utils.scene_utils.set_current_frame()
             
         if joints_network:
             skeleton.remove_invalid_rig_markup(joints_network.get_first_connection())
