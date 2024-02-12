@@ -132,7 +132,7 @@ class Component_Base(object, metaclass=Component_Meta):
         network (dictionary): Dictionary of all network objects made for this rig component
     '''
     _do_register = False
-    _icon = "../../Resources/fk_icon.ico"
+    _icon = "../../Resources/rectangle.png"
     _save_channel_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz']
 
     @property

@@ -109,9 +109,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\add_rig.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\adjust.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -244,7 +241,9 @@
     <Resource Include="Resources\chain_link.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\minus.png" />
+    <Resource Include="Resources\minus-orange-dark.png" />
+    <Resource Include="Resources\plus-orange-dark.png" />
+    <Resource Include="Resources\plus-orange.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

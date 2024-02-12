@@ -139,7 +139,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public RemoveRootAnimProperty(string guid, string nodeName) : base(guid, nodeName)
         {
             _propertyType = "Remove Root Animation";
-            Icon = "../../Resources/export_remove_root_anim.ico";
+            Icon = "../../Resources/export-remove-root.png";
         }
     }
 
@@ -149,7 +149,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public ZeroCharacterProperty(string guid, string nodeName) : base(guid, nodeName)
         {
             _propertyType = "Zero Translate";
-            Icon = "../../Resources/zero_rig.ico";
+            Icon = "../../Resources/export-zero-translate.png";
         }
     }
 
@@ -158,7 +158,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public ZeroCharacterRotateProperty(string guid, string nodeName) : base(guid, nodeName)
         {
             _propertyType = "Zero Rotate";
-            Icon = "../../Resources/zero_rig.ico";
+            Icon = "../../Resources/export-zero-rotate.png";
         }
     }
 
@@ -167,7 +167,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public ZeroAnimCurvesProperty(string guid, string nodeName) : base(guid, nodeName)
         {
             _propertyType = "Zero Animation Curves";
-            Icon = "../../Resources/zero_rig.ico";
+            Icon = "../../Resources/export-zero-animation.png";
         }
     }
 
@@ -222,7 +222,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public ZeroMocapProperty(string guid, string nodeName, float rotateValue, int alignKeyframe) : base(guid, nodeName)
         {
             _propertyType = "Zero Mocap";
-            Icon = "../../Resources/zero_rig.ico";
+            Icon = "../../Resources/zero.png";
             RotateValue = rotateValue;
             AlignKeyframe = alignKeyframe;
         }
@@ -415,7 +415,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         {
             // This will need to be different per ExportProperty type
             _propertyType = "Animation Curves";
-            Icon = "../../Resources/export_anim_curve.ico";
+            Icon = "../../Resources/export-anim-curve.png";
 
             ControlName = controlName;
             TargetName = targetName;
@@ -641,7 +641,7 @@ namespace Freeform.Rigging.DCCAssetExporter
         public RotationExporterProperty(string guid, string nodeName, string attributeName, string targetName, string axis, float rotateValue) : base(guid, nodeName)
         {
             _propertyType = "Rotation Curve";
-            Icon = "pack://application:,,,/HelixResources;component/Resources/refresh.ico";
+            Icon = "../../Resources/export-anim-curve.png";
 
             AttributeName = attributeName;
             TargetName = targetName;

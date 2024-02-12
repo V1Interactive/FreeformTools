@@ -89,7 +89,7 @@ class Dynamic_Driver(Overdriver):
 
 
 class Aim(Dynamic_Driver):
-    _icon = "../../Resources/overdriver_aim.png"
+    _icon = "../../Resources/aim-driver.png"
 
     def __init__(self, translate = False, rotate = True):
         super().__init__(translate, rotate)
@@ -138,7 +138,7 @@ class Aim(Dynamic_Driver):
 
 class Pendulum(Aim):
     _requires_space = False
-    _icon = "../../Resources/pendulum.png"
+    _icon = "../../Resources/pendulum-driver.png"
 
     def __init__(self, translate=False, rotate=True):
         super().__init__(translate=translate, rotate=rotate)

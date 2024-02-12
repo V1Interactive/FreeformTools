@@ -257,111 +257,111 @@ class HelixRigger:
         Creates all UI side bar buttons
         '''
         remove_category = self.create_category("Bake/Remove Components")
-        remove_category.ImagePath = "../../Resources/bake_remove_rig.ico"
+        remove_category.ImagePath = "../../Resources/bake.png"
         remove_category.Tooltip = "Tools to bake and remove Components from Characters"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.remove_component_call
         new_button.Name = "Remove Component"
-        new_button.ImagePath = "../../Resources/remove.ico"
+        new_button.ImagePath = "../../Resources/remove.png"
         new_button.Tooltip = "Remove rig component on selected controls based on user remove settings"
         remove_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.revert_remove_component
         new_button.Name = "Remove and Revert Component"
-        new_button.ImagePath = "../../Resources/remove.ico"
-        new_button.StatusImagePath = "../../Resources/remove_revert.png" 
+        new_button.ImagePath = "../../Resources/remove.png"
+        new_button.StatusImagePath = "../../Resources/revert.png" 
         new_button.Tooltip = "Remove rig component on selected controls and revert joint animation"
         remove_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.bake_and_remove_component
         new_button.Name = "Bake and Remove Component"
-        new_button.ImagePath = "../../Resources/remove.ico"
-        new_button.StatusImagePath = "../../Resources/bake_remove_rig.ico" 
+        new_button.ImagePath = "../../Resources/remove.png"
+        new_button.StatusImagePath = "../../Resources/bake.png" 
         new_button.Tooltip = "Remove rig component on selected controls and bake animation to joints"
         remove_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.bake_component
         new_button.Name = "Partial Bake - Frame Range"
-        new_button.ImagePath = "../../Resources/bake_remove_rig.ico"
+        new_button.ImagePath = "../../Resources/bake.png"
         new_button.Tooltip = "Bake rig component controls over a frame range, preserving outside animation"
         remove_category.AddButton(new_button)
 
         method_category = self.create_category("Component Methods")
-        method_category.ImagePath = "../../Resources/fk_icon.ico"
+        method_category.ImagePath = "../../Resources/rectangle.png"
         method_category.Tooltip = "Tools specific to the first selected rig Component"
 
         toggle_category = self.create_category("Component Toggles")
-        toggle_category.ImagePath = "../../Resources/visible.ico"
+        toggle_category.ImagePath = "../../Resources/visibility-on.png"
         toggle_category.Tooltip = "Toggle tools for selected Components or scene controls"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.toggle_vis_button
         new_button.Name = "Toggle Visibility"
-        new_button.ImagePath = "../../Resources/visible.ico"
+        new_button.ImagePath = "../../Resources/visibility-on.png"
         new_button.Tooltip = "Toggle visibility on selected controls"
         toggle_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.toggle_proximity_vis
         new_button.Name = "Toggle Proximity Visibility"
-        new_button.ImagePath = "../../Resources/not_visible.ico"
+        new_button.ImagePath = "../../Resources/visibility-off.png"
         new_button.Tooltip = "Toggle proximity visibility on selected controllers"
         toggle_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.zero_component
         new_button.Name = "Zero Component"
-        new_button.ImagePath = "../../Resources/zero_rig.ico"
+        new_button.ImagePath = "../../Resources/zero.png"
         new_button.Tooltip = "Zero out selected controls"
         toggle_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.pin_children
         new_button.Name = "Pin Rig Control"
-        new_button.ImagePath = "../../Resources/pin_rig.ico"
+        new_button.ImagePath = "../../Resources/pin.png"
         new_button.Tooltip = "Create a root space Overdriver on all children of the selected control"
         toggle_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.unpin_children
         new_button.Name = "Un-Pin Rig Control"
-        new_button.ImagePath = "../../Resources/unpin_rig.ico"
+        new_button.ImagePath = "../../Resources/un-pin.png"
         new_button.Tooltip = "Remove all Overdrivers on children of the selected control"
         toggle_category.AddButton(new_button)
 
         space_category = self.create_category("Space Switching")
-        space_category.ImagePath = "../../Resources/overdriver.ico"
+        space_category.ImagePath = "../../Resources/multi-driver.png"
         space_category.Tooltip = "Tools for applying and removing Overdrivers"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_world_space
         new_button.Name = "Overdrive - World"
-        new_button.ImagePath = "../../Resources/overdriver_ws.ico"
+        new_button.ImagePath = "../../Resources/world-driver.png"
         new_button.Tooltip = "Root space Overdriver on all selected controls"
         space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_single_space
         new_button.Name = "Overdrive - One Driver"
-        new_button.ImagePath = "../../Resources/overdriver_singlespace.ico"
+        new_button.ImagePath = "../../Resources/one-driver.png"
         new_button.Tooltip = "Multiple Overdriver, first selected is the overdriver space"
         space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_space
         new_button.Name = "Overdrive - One Target"
-        new_button.ImagePath = "../../Resources/overdriver.ico"
+        new_button.ImagePath = "../../Resources/multi-driver.png"
         new_button.Tooltip = "Apply an Overdriver to the last selected control, in the space of all other selected objects"
         new_button.Data = "Overdriver"
         space_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_space
-        new_button.ImagePath = "../../Resources/overdriver_translate.ico"
+        new_button.ImagePath = "../../Resources/position-driver.png"
         new_button.Name = "Overdrive - Translate"
         new_button.Tooltip = "Apply an Overdriver to the Translate of the last selected control, in the space of all other selected objects"
         new_button.Data = "Position_Overdriver"
@@ -370,7 +370,7 @@ class HelixRigger:
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_space
         new_button.Name = "Overdrive - Rotate"
-        new_button.ImagePath = "../../Resources/overdriver_rotate.ico"
+        new_button.ImagePath = "../../Resources/rotation-driver.png"
         new_button.Tooltip = "Apply an Overdriver to the Rotation of the last selected control, in the space of all other selected objects"
         new_button.Data = "Rotation_Overdriver"
         space_category.AddButton(new_button)
@@ -378,7 +378,7 @@ class HelixRigger:
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_space
         new_button.Name = "Dynamics - AIM"
-        new_button.ImagePath = "../../Resources/overdriver_aim.png"
+        new_button.ImagePath = "../../Resources/aim-driver.png"
         new_button.Tooltip = "Apply an Dynamic AIM Overdriver between a control and a scene object"
         new_button.Data = "Aim"
         space_category.AddButton(new_button)
@@ -386,114 +386,114 @@ class HelixRigger:
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.switch_space
         new_button.Name = "Dynamics - Pendulum"
-        new_button.ImagePath = "../../Resources/pendulum.png"
+        new_button.ImagePath = "../../Resources/pendulum-driver.png"
         new_button.Tooltip = "Apply an Dynamic Pendulum Overdriver to a control"
         new_button.Data = "Pendulum"
         space_category.AddButton(new_button)
 
         dynamic_category = self.create_category("Dynamics")
-        dynamic_category.ImagePath = "../../Resources/pendulum.png"
+        dynamic_category.ImagePath = "../../Resources/pendulum-driver.png"
         dynamic_category.Tooltip = "Tools for applying dynamic control of scene objects"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.open_aim_constraint_ui
         new_button.Name = "Aim Constraint"
-        new_button.ImagePath = "../../Resources/aim_constraint.png"
-        new_button.StatusImagePath = "../../Resources/pendulum.png"
+        new_button.ImagePath = "../../Resources/aim-constraint.png"
         new_button.Tooltip = "Open the UI to build an Aim Constraint on the selected object"
         dynamic_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.open_particle_constraint_ui
         new_button.Name = "Particle Constraint"
-        new_button.ImagePath = "../../Resources/particle_constraint.png"
-        new_button.StatusImagePath = "../../Resources/pendulum.png"
+        new_button.ImagePath = "../../Resources/particle-constraint.png"
         new_button.Tooltip = "Open the UI to build an Particle Constraint on the selected object to apply overlapping motion"
         dynamic_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.create_center_of_mass
         new_button.Name = "Center Of Mass"
-        new_button.ImagePath = "../../Resources/center_of_mass.png"
+        new_button.ImagePath = "../../Resources/center-of-mass.png"
         new_button.Tooltip = "Creates an object tracking the center of mass of the character based on Region markup data"
         dynamic_category.AddButton(new_button)
 
         component_category = self.create_category("Component Switching")
-        component_category.ImagePath = "../../Resources/space_switcher.ico"
+        component_category.ImagePath = "../../Resources/switcher.ico"
         component_category.Tooltip = "Tools for switching Components or Overdrivers to new Components or spaces"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.ik_fk_switch
         new_button.Name = "FK-IK Switch"
-        new_button.ImagePath = "../../Resources/fk_ik_switch.ico"
+        new_button.ImagePath = "../../Resources/fk-ik.png"
         new_button.Tooltip = "Toggle the component between IK and FK rigging"
         component_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.open_switcher
         new_button.Name = "Switcher"
-        new_button.ImagePath = "../../Resources/rig_switcher.ico"
+        new_button.ImagePath = "../../Resources/switcher.png"
         new_button.Tooltip = "Open Switcher UI for the first selected scene object"
         component_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.open_rig_mirror
         new_button.Name = "Rig Mirror"
-        new_button.ImagePath = "../../Resources/rig_mirror.ico"
+        new_button.ImagePath = "../../Resources/mirror.png"
         new_button.Tooltip = "Open Rig Mirror UI"
         component_category.AddButton(new_button)
 
         lock_category = self.create_category("Selection Locks")
-        lock_category.ImagePath = "../../Resources/locked.ico"
+        lock_category.ImagePath = "../../Resources/lock.png"
         lock_category.Tooltip = "Toggle UI Selection Lock on controls and Components"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.set_all_unlocked
         new_button.Name = "Unlock All"
-        new_button.ImagePath = "../../Resources/unlocked.ico"
+        new_button.ImagePath = "../../Resources/unlock.png"
         new_button.Tooltip = "Set All Selected Components to Unlocked"
         lock_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.set_all_locked
         new_button.Name = "Lock All"
-        new_button.ImagePath = "../../Resources/locked.ico"
+        new_button.ImagePath = "../../Resources/lock.png"
         new_button.Tooltip = "Set All Selected Components to Locked"
         lock_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.toggle_locked_selected
         new_button.Name = "Toggle Lock Selected Controls"
-        new_button.ImagePath = "../../Resources/control_lock_toggle.ico"
+        new_button.ImagePath = "../../Resources/lock-toggle.png"
         new_button.Tooltip = "Toggle Lock for all selected control objects"
         lock_category.AddButton(new_button)
 
         temporary_category = self.create_category("Temporary Rigging")
-        temporary_category.ImagePath = "../../Resources/t_fk.png"
+        temporary_category.ImagePath = "../../Resources/temporary-fk.png"
         temporary_category.Tooltip = "Apply temporary rigging without defining regions"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.temporary_fk
         new_button.Name = "Temporary FK"
-        new_button.ImagePath = "../../Resources/t_fk.png"
+        new_button.ImagePath = "../../Resources/temporary-fk.png"
+        new_button.StatusImagePath = "../../Resources/timer.png"
         new_button.Tooltip = "Build a Temporary FK from selection, between the first and last selected joints"
         temporary_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.temporary_ik
         new_button.Name = "Temporary IK"
-        new_button.ImagePath = "../../Resources/t_ik.png"
+        new_button.ImagePath = "../../Resources/temporary-ik.png"
+        new_button.StatusImagePath = "../../Resources/timer.png"
         new_button.Tooltip = "Build a Temporary IK from selection, between the first and last selected joints"
         temporary_category.AddButton(new_button)
 
         misc_category = self.create_category("Miscellaneous")
-        misc_category.ImagePath = "../../Resources/adjust.ico"
+        misc_category.ImagePath = "../../Resources/build-pickwalk.png"
         misc_category.Tooltip = "Miscellaneous tools to assist in rigging setup"
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.build_pickwalking
         new_button.Name = "Build Pickwalking"
-        new_button.ImagePath = "../../Resources/adjust.ico"
+        new_button.ImagePath = "../../Resources/build-pickwalk.png"
         new_button.Tooltip = "Build Pickwalking hierarchy on rig"
         misc_category.AddButton(new_button)
 
@@ -507,28 +507,28 @@ class HelixRigger:
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.re_parent_component
         new_button.Name = "Re-Parent Component"
-        new_button.ImagePath = "pack://application:,,,/HelixResources;component/Resources/transfer.ico"
+        new_button.ImagePath = "../../Resources/re-parent.png"
         new_button.Tooltip = "Re-parents the selected components to last item in your selection"
         misc_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.mirror_control_shapes
         new_button.Name = "Mirror Control Shapes"
-        new_button.ImagePath = "../../Resources/rig_mirror.ico"
+        new_button.ImagePath = "../../Resources/mirror.png"
         new_button.Tooltip = "Mirror control shapes between left and right sides"
         misc_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.apply_control_shapes
         new_button.Name = "Apply Shape to Controls"
-        new_button.ImagePath = "../../Resources/rig_switcher.ico"
+        new_button.ImagePath = "../../Resources/switcher.png"
         new_button.Tooltip = "Apply the shape of a selected object to rig control objects"
         misc_category.AddButton(new_button)
 
         new_button = Freeform.Rigging.RigBarButton()
         new_button.CommandHandler += self.save_control_shapes
         new_button.Name = "Save Control Shapes"
-        new_button.ImagePath = "../../Resources/save_control_shapes.png"
+        new_button.ImagePath = "../../Resources/save-controls.png"
         new_button.Tooltip = "Saves control shapes to character's Control_Shapes.fbx file"
         misc_category.AddButton(new_button)
 
@@ -1359,11 +1359,11 @@ class HelixRigger:
         '''
         control_type = control_property_network.get('control_type')
         if 'ik' in control_type:
-            c_button.ImagePath = "../../Resources/ik_icon.ico"
+            c_button.ImagePath = "../../Resources/circle-open.png"
         elif control_type == 'pv':
-            c_button.ImagePath = "../../Resources/pv_icon.ico"
+            c_button.ImagePath = "../../Resources/circle.png"
         else:
-            c_button.ImagePath = "../../Resources/fk_icon.ico"
+            c_button.ImagePath = "../../Resources/rectangle.png"
             if index != None:
                 c_button.Index = index
 
@@ -1381,7 +1381,7 @@ class HelixRigger:
             overdriver_network = overdriven_control_network.get_upstream(AddonCore)
             overdriver_control_network = overdriver_network.get_downstream(AddonControls)
             control = overdriver_control_network.get_first_connection()
-            c_button.ImagePath = c_button.ImagePath.replace('.ico', '_od.ico')
+            c_button.ImagePath = c_button.ImagePath.replace('.png', '-purple.png')
 
         c_button.Data = control.name()
         c_button.Tooltip = "Select - {0}".format(control.name())
