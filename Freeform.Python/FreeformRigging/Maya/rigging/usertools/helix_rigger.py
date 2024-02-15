@@ -3033,21 +3033,19 @@ class HelixRigger:
         prop_node = pm.PyNode(c_prop.NodeName)
         prop_network = metadata.meta_network_utils.create_from_node(prop_node)
         attach_joint = prop_network.get_first_connection()
-
-        file_path = prop_file.FilePath.replace('\\', '\\\\') 
-        current_obj_list = pm.ls(assemblies = True)
-        maya_utils.fbx_wrapper.FBXImport(f = file_path)
-        new_obj_list = [x for x in pm.ls(assemblies = True) if x not in current_obj_list]
         
-        prop_network.connect_nodes(new_obj_list)
+        imported_node_list = maya_utils.scene_utils.import_file_safe(prop_file.FilePath, fbx_mode="add", tag_imported=True, returnNewNodes=True)
+        prop_network.connect_nodes(imported_node_list)
 
         namespace_name = "{0}prop_{1}_{2}".format(attach_joint.namespace(), attach_joint.stripNamespace(), prop_file.FileName)
         pm.namespace(add = namespace_name)
-        for obj in new_obj_list:
+        for obj in imported_node_list:
             obj.rename("{0}:{1}".format(namespace_name, obj.name()))
 
-        joint_list = pm.ls(new_obj_list, type='joint') if pm.ls(new_obj_list, type='joint') else [x for x in new_obj_list if x.getShape() and isinstance(x.getShape(), pm.nt.Locator)]
-        transform_list = [x for x in pm.ls(assemblies = True) if x.getShape() and isinstance(x.getShape(), pm.nt.Mesh)]
+        transform_list = pm.ls(imported_node_list, type='transform')
+        locator_list = [x for x in transform_list if x.getShape() and isinstance(x.getShape(), pm.nt.Locator)]
+        joint_list = pm.ls(imported_node_list, type='joint') if pm.ls(imported_node_list, type='joint') else locator_list
+        transform_list = [x for x in transform_list if x.getShape() and isinstance(x.getShape(), pm.nt.Mesh)]
         if joint_list:
             root_joint = rigging.skeleton.get_root_joint(get_first_or_default(joint_list))
             pm.parentConstraint(attach_joint, root_joint, mo=False)
@@ -3057,7 +3055,7 @@ class HelixRigger:
                 constraint = pm.parentConstraint(attach_joint, obj, mo=False)
                 constraint.target[0].targetOffsetRotate.set(obj_rotate)
 
-        pm.select(new_obj_list, replace=True)
+        pm.select(imported_node_list, replace=True)
         prop_group = pm.group(name = "{0}:prop_group".format(namespace_name))
         prop_network.connect_node(prop_group)
         pm.select(None)
@@ -3148,4 +3146,5 @@ class HelixRigger:
         self.remove_attachment(c_prop, None)
         self.remove_prop(event_args.Prop)
 
+        # Events fire add attachment on assignment
         event_args.Prop.AttachedProp = attached_prop
