@@ -40,7 +40,7 @@ namespace Freeform.Core.ConfigSettings
     public class ConfigManager
     {
         readonly string ConfigPath = Path.Combine(Environment.GetEnvironmentVariable("V1TOOLSROOT"), "tools_config.json");
-        readonly string UserSettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "V1", "user_settings.json");
+        readonly string UserSettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "FreeformTools", "user_settings.json");
 
         readonly ConfigSettings InitSettings;
         public readonly ConfigSettings UserSettings;
