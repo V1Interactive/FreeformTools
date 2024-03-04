@@ -21,6 +21,7 @@ import pymel.core as pm
 import maya.mel as mel
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+from pathlib import Path
 import os
 import time
 
@@ -462,7 +463,10 @@ class HIKProperty(CommonProperty):
         hik_node = self.get_hik_node()
 
         mel.eval('hikSetCurrentCharacter("{0}");'.format(hik_node.name()))
+        mel.eval('hikSetCurrentSourceFromCharacter("{0}");'.format(hik_node.name()))
         mel.eval('refreshAllCharacterLists();')
+        mel.eval("HIKCharacterControlsTool;")
+        mel.eval('hikUpdateDefinitionUI;')
 
         mel.eval('hikDeleteDefinition();')
 
@@ -471,6 +475,7 @@ class HIKProperty(CommonProperty):
 
     def on_add(self, obj, **kwargs):
         hik_character = kwargs.get('hik_character')
+        settings_file_path = kwargs.get('settings_file_path')
 
         if hik_character:
             self.connect_node(hik_character)
@@ -482,9 +487,18 @@ class HIKProperty(CommonProperty):
             character_joint_list = joint_core_network.get_connections()
             first_joint = get_first_or_default(character_joint_list)
             skeleton_dict = rigging.skeleton.get_skeleton_dict(first_joint)
+            
+            hik_map = None
+            if settings_file_path:
+                windows_path = Path(settings_file_path)
+                config_list = [x for x in windows_path.parent.rglob("*_config.json")]
+                config_file_path = get_first_or_default(config_list)
+                if config_file_path and os.path.exists(config_file_path):
+                    config_dict = v1_core.json_utils.read_json(config_file_path)
+                    hik_map = config_dict[v1_core.global_settings.ConfigKey.RIGGING.value]["HIKDefinition"]
 
             hik_name = '{0}_HIK'.format(character_name)
-            rigging.skeleton.create_hik_definition(hik_name, skeleton_dict)
+            rigging.skeleton.create_hik_definition(hik_name, skeleton_dict, hik_map)
             self.connect_node(pm.PyNode(hik_name))
 
         ignore_list = ['message', 'caching', 'frozen', 'isHistoricallyInteresting', 'nodeState', 'binMembership', 'OutputPropertySetState']
