@@ -324,14 +324,14 @@ class Properties_Binding(Binding):
                     data[self.category][str(prop)]['type'] = get_index_or_default(prop_type_data, 1)
                     data[self.category][str(prop)]['data'] = prop.data
 
-    def load_data(self, data, obj, *args):
+    def load_data(self, data, obj, **kwargs):
         '''
         Load Property MetaNode data from json
 
         Args:
             data (dictionary): json file dictionary to load from
             obj (PyNode): Maya scene object to load attributes onto
-            args (args): Optional args
+            kwargs (dictionary): Optional key word args
         '''
         data_dict = data.get(self.category)
         data_dict = data_dict if data_dict else {}
@@ -369,7 +369,7 @@ class Properties_Binding(Binding):
             if property_class == ExportProperty and property_class in current_properties.keys():
                 get_first_or_default(current_properties[property_class]).data = data
             else:
-                new_property = metadata.meta_property_utils.add_property(obj, property_class)
+                new_property = metadata.meta_property_utils.add_property(obj, property_class, onaddkwargs=kwargs)
                 new_property.data = data
 
 

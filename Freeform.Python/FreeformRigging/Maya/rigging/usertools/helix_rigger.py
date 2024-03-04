@@ -1634,7 +1634,8 @@ class HelixRigger:
 
         if hik_char:
             v1_shared.usertools.message_dialogue.open_dialogue("The skeleton is already part of an HIK Characterization.\nAdding Character to Rig", "HIK Already Setup")
-            hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty, hik_character=hik_char)
+            addkwargs = {'hik_character': hik_char}
+            hik_property = metadata.meta_property_utils.add_property(character_node, HIKProperty, onaddkwargs=addkwargs)
         else:
             autokey_state = pm.autoKeyframe(q=True, state=True)
             pm.autoKeyframe(state=False)

@@ -157,7 +157,7 @@ def get_property_list(pynode, property_type):
 
     return properties
 
-def add_property(pynode, property_type, **kwargs):
+def add_property(pynode, property_type, onaddkwargs={}, **kwargs):
     '''
     Adds a property to a maya scene object from a property type
 
@@ -173,7 +173,7 @@ def add_property(pynode, property_type, **kwargs):
         py_namespace = pynode.namespace()
         property = valid_type(namespace = py_namespace, **kwargs)
         property.connect_node(pynode)
-        property.on_add(pynode, **kwargs)
+        property.on_add(pynode, **onaddkwargs)
         return property
     return None
 
