@@ -993,6 +993,7 @@ class HelixRigger:
             character_network = metadata.meta_network_utils.create_from_node(character_node)
         return character_network
 
+
     def get_c_character(self, character_network):
         '''
         Finds and returns the C# Character object from a maya CharacterCore network
