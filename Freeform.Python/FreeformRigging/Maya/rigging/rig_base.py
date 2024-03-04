@@ -466,12 +466,14 @@ class Component_Base(object, metaclass=Component_Meta):
         for obj in obj_list + network_list:
             if not pm.ls(obj, readOnly=True):
                 obj_namespace = obj.namespace()
-                new_name = obj.name().replace(obj_namespace, new_namespace) if obj_namespace else new_namespace + obj.name()
+                old_name = obj.name().split('|')[-1]
+                new_name = old_name.replace(obj_namespace, new_namespace) if obj_namespace else new_namespace + old_name
                 obj.rename(new_name)
                 property_dict = metadata.meta_property_utils.get_properties_dict(obj)
                 for property_list in property_dict.values():
                     for property in property_list:
-                        new_prop_name = property.node.name().replace(obj_namespace, new_namespace) if obj_namespace else new_namespace + property.node.name()
+                        old_prop_name = property.node.name().split('|')[-1]
+                        new_prop_name = old_prop_name.replace(obj_namespace, new_namespace) if obj_namespace else new_namespace + old_prop_name
                         property.node.rename(new_prop_name)
 
         return old_namespace

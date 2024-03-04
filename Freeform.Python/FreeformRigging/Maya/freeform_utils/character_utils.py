@@ -75,6 +75,12 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
             name = pm.promptDialog(query=True, text=True)
         else:
             return None
+        
+    # Validate unique name
+    existing_character_list = metadata.meta_network_utils.get_all_network_nodes(metadata.network_core.CharacterCore)
+    existing_name_list = [x.character_name.get() for x in existing_character_list if name in x.character_name.get()]
+    if existing_name_list:
+        name = "{0}_{1}".format(name, len(existing_name_list))
 
     v1_core.v1_logging.get_logger().info("Characterizing {0} From - {1}".format(name, jnt.name()))
 
@@ -85,7 +91,7 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     # while simultaneously throwing a warning that the skeleton_root does not exist if it was deleted above.
     skeleton_root = rigging.skeleton.get_root_joint(replaced_joint_list[0])
 
-    character_namespace = skeleton_root.namespace()
+    character_namespace = skeleton_root.namespace() if skeleton_root.namespace() else name+":"
     root_parent = skeleton_root.getParent()
 
     character_network = CharacterCore(node_name = name, namespace = character_namespace)
@@ -121,6 +127,9 @@ def characterize_skeleton(jnt, name = None, update_ui = True, freeze_skeleton = 
     mesh_group.setParent(character_network.group)
     meshes_core = MeshesCore(parent = character_network.node, namespace = character_namespace, meshes_group = mesh_group)
     pm.select(None)
+    
+    # Set initial namespace after groups are parented
+    rigging.rig_base.Component_Base.update_character_namespace(character_network.node, character_namespace)
 
     auto_freeze_skeleton = config_manager.get(v1_core.global_settings.ConfigKey.RIGGING.value).get("AutoFreezeSkeleton")
     if auto_freeze_skeleton and freeze_skeleton:
