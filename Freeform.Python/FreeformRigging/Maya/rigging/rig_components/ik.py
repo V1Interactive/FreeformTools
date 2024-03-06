@@ -112,7 +112,7 @@ class IK(Rig_Component):
         skeleton_chain = skeleton.get_joint_chain(skel_root, skel_end)
         if len(rigging_chain) > 2:
             pv_position = skeleton.calculate_pole_vector_position(rigging_chain, pm.currentTime())
-            pm.select(None) # select None to make sure joint doesn't parent to anything
+            pm.select(None) # select None to make sure new joint doesn't parent to anything
             pv_control = pm.joint(name = "{0}control_{1}_{2}_ik_pv".format(self.namespace, side, region), position=pv_position)
             pv_control.setParent(world_group)
             pm.poleVectorConstraint(pv_control, ik_handle)
@@ -200,6 +200,9 @@ class IK(Rig_Component):
 
         if pv_control:
             maya_utils.scene_utils.set_current_frame()
+            pv_position = skeleton.calculate_pole_vector_position(target_chain, pm.currentTime())
+            pm.xform(pv_control, ws=True, translation=pv_position)
+
             settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
             frame_range = maya_utils.baking.get_bake_time_range(target_chain, settings)
 
