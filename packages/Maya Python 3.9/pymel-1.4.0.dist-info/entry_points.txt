@@ -1,0 +1,3 @@
+[console_scripts]
+ipymel=pymel.tools.ipymel:main
+
