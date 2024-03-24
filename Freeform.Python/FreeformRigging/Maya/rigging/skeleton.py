@@ -238,7 +238,7 @@ def build_regions_from_settings_dict(template_settings_file, orig_skeleton_dict,
                 if pm.objExists(namespace+jnt_name):
                     markup_jnt = pm.PyNode(namespace+jnt_name)
                     new_rig_markup = metadata.joint_properties.RigMarkupProperty()
-                    new_rig_markup.data = {'side':side, 'region':region, 'tag':data_name, 'group':data_dict.get('group')}
+                    new_rig_markup.data = {'side':side, 'region':region, 'tag':data_name, 'group_name':data_dict.get('group_name')}
                     
                     rig_markup_network_list = metadata.meta_property_utils.get_property_list(markup_jnt, RigMarkupProperty)
                     matching_markup = []
@@ -357,14 +357,14 @@ def create_single_joint_skeleton_dict(jnt, temporary = False):
                 rig_prop = metadata.meta_property_utils.add_property(skeleton_joint, RigMarkupProperty)
                 rig_prop.data = {'side':side, 'region':region, 'tag':'root'}
                 if temporary:
-                    rig_prop.set('group', 'Temporary')
+                    rig_prop.set('group_name', 'Temporary')
                     rig_prop.set('temporary', True)
 
             if not markup_property_list or not [x for x in markup_property_list if (x.data['side'] == side and x.data['region'] == region and x.data['tag'] == 'end')]:
                 rig_prop = metadata.meta_property_utils.add_property(skeleton_joint, RigMarkupProperty)
                 rig_prop.data = {'side':side, 'region':region, 'tag':'end'}
                 if temporary:
-                    rig_prop.set('group', 'Temporary')
+                    rig_prop.set('group_name', 'Temporary')
                     rig_prop.set('temporary', True)
 
             skeleton_dict.setdefault(side, {})

@@ -248,7 +248,7 @@ def get_skeleton_dict_from_settings(settings_file_path, side_list = [], region_l
                 skeleton_dict.setdefault(side, {})
                 skeleton_dict[side].setdefault(region, {})
                 skeleton_dict[side][region][tag] = jnt_name
-                skeleton_dict[side][region]['group'] = data.get('group')
+                skeleton_dict[side][region]['group_name'] = data.get('group_name')
 
     return skeleton_dict
 

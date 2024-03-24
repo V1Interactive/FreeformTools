@@ -87,8 +87,13 @@ class RigMarkupProperty(JointProperty):
 
     def __init__(self, node_name = 'rig_markup_property', node = None, namespace = ""):
         super().__init__(node_name, node, namespace, side = ("", 'string'), region = ("", 'string'), 
-                                                tag = ("", 'string'), group = ("", 'string'), temporary = (False, 'bool'), locked_list = ("", 'string'),
+                                                tag = ("", 'string'), group_name = ("", 'string'), temporary = (False, 'bool'), locked_list = ("", 'string'),
                                                 com_weight = (0.0, 'float'), com_region = ("", 'string'), com_object = ("", 'string'))
+        
+        if node:
+            # Old name clashed with .group pointing to a scene node, push it to group_name if it still exists
+            if  hasattr(self.node, 'group'):
+                self.set('group_name', self.get('group'), 'string')
 
     def compare(self, data):
         '''
@@ -102,8 +107,9 @@ class RigMarkupProperty(JointProperty):
         '''
         does_compare = self.data.get('side') == data.get('side') and self.data.get('region') == data.get('region') and self.data.get('tag') == data.get('tag')
         # Little hacky to put this here, but this gaurantees that the group attr gets added when applying a settings file
-        if not hasattr(self.node, 'group'):
-            self.add_attr('group', 'string')
+        if not hasattr(self.node, 'group_name'):
+            self.add_attr('group_name', 'string')
+            
         return does_compare
 
     def on_add(self, obj, **kwargs):

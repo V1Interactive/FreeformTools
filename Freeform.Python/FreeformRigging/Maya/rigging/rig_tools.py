@@ -205,13 +205,13 @@ def temporary_rig(start_jnt, end_jnt, type):
     start_property.set('tag', 'root')
     start_property.set('side', side)
     start_property.set('region', region)
-    start_property.set('group', 'Temporary')
+    start_property.set('group_name', 'Temporary')
     start_property.set('temporary', True)
 
     end_property.set('tag', 'end')
     end_property.set('side', side)
     end_property.set('region', region)
-    end_property.set('group', 'Temporary')
+    end_property.set('group_name', 'Temporary')
     end_property.set('temporary', True)
 
     character_network = metadata.meta_network_utils.get_first_network_entry(start_jnt, CharacterCore)

@@ -2075,7 +2075,7 @@ class Rig_Component(Component_Base):
         component_network.node.region.set(region, type='string')
 
 
-        group_name = rig_markup.node.group.get() if rig_markup.node.hasAttr('group') else ""
+        group_name = rig_markup.node.group_name.get() if rig_markup.node.hasAttr('group_name') else ""
         group_name = group_name if group_name else ""
         component_network.node.group_name.set(group_name)
 
