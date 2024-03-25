@@ -98,7 +98,7 @@ class Ribbon(Rig_Component):
         for control_zero in control_zero_list:
             control_zero.setParent(control_grp)
 
-        pm.parentConstraint( self.character_root, world_goup, mo=True )
+        pm.parentConstraint( self.network['character'].group, world_goup, mo=True )
 
         self.attach_component(True)
         if skeleton.is_animated(skeleton_chain):

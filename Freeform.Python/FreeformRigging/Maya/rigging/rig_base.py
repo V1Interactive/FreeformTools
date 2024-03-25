@@ -1078,6 +1078,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         if weight_string == None:
             weight_string = ""
 
+        # If the object space selected is an Addon, find the rig component underneath it and use the control
         addon_start = time.perf_counter()
         for object_space in object_space_list:
             addon_network = metadata.meta_network_utils.get_first_network_entry(object_space, AddonControls)
