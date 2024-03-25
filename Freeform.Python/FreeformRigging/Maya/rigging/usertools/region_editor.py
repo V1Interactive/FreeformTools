@@ -69,7 +69,7 @@ class RegionEditor(object):
             for region, joint_dict in region_dict.items():
                 markup_properties = metadata.meta_property_utils.get_properties([pm.PyNode(joint_dict['root'].name())], metadata.joint_properties.RigMarkupProperty)
                 markup = get_first_or_default([x for x in markup_properties if x.data['side'] == side and x.data['region'] == region])
-                self.vm.AddRegion(side, region, markup.data.get('group'), joint_dict['root'].name(), joint_dict['end'].name(), markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
+                self.vm.AddRegion(side, region, markup.data.get('group_name'), joint_dict['root'].name(), joint_dict['end'].name(), markup.data.get('com_object'), markup.data.get('com_region'), markup.data.get('com_weight'))
 
         self.vm.CharacterName = self.character_node.name()
 
@@ -282,7 +282,7 @@ class RegionEditor(object):
             tag (str): Whether we're adding a root or end property. Valid strings are 'root' and 'end'
         '''
         rig_prop = metadata.meta_property_utils.add_property(jnt, metadata.joint_properties.RigMarkupProperty)
-        rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group' : group, 'com_region' : com_region, 
+        rig_prop.data = {'side' : side, 'region' : region, 'tag' : tag, 'group_name' : group, 'com_region' : com_region, 
                          'com_object' : com_object, 'com_weight' : com_weight}
 
     def _update_rigging(self, c_region, attr, value):

@@ -1078,6 +1078,7 @@ class Addon_Component(Component_Base, metaclass=Addon_Meta):
         if weight_string == None:
             weight_string = ""
 
+        # If the object space selected is an Addon, find the rig component underneath it and use the control
         addon_start = time.perf_counter()
         for object_space in object_space_list:
             addon_network = metadata.meta_network_utils.get_first_network_entry(object_space, AddonControls)
@@ -2075,7 +2076,7 @@ class Rig_Component(Component_Base):
         component_network.node.region.set(region, type='string')
 
 
-        group_name = rig_markup.node.group.get() if rig_markup.node.hasAttr('group') else ""
+        group_name = rig_markup.node.group_name.get() if rig_markup.node.hasAttr('group_name') else ""
         group_name = group_name if group_name else ""
         component_network.node.group_name.set(group_name)
 

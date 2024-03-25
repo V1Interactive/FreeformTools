@@ -70,7 +70,7 @@ class Channel_Overdriver(Addon_Component):
             if control and target_type:
                 if target_type == 'ctrl':  # rig control object
                     target_data = rig_base.ControlInfo.parse_string(addon_component_dict['target_data'])
-                    target_component = created_rigging[target_data.side][target_data.region]
+                    target_component, did_exist = created_rigging[target_data.side][target_data.region]
                 
                     target_control_list = target_component.get_control_dict()[target_data.control_type]
                     target_ordered_control_list = skeleton.sort_chain_by_hierarchy(target_control_list)
@@ -95,6 +95,12 @@ class Channel_Overdriver(Addon_Component):
     @undoable
 
     def rig(self, component_node, control, object_space, attribute_list, baking_queue = False, **kwargs):
+        '''
+        Args:
+            component_node (PyNode): Maya scene rig component network node for the component to overdrive
+            control (PyNode): The source node that has the attribute we want to put on the control
+            object_space (list<PyNode>): The control to put the attribute on
+        '''
         # Disable queue for this type
         baking_queue = None
 
@@ -106,44 +112,36 @@ class Channel_Overdriver(Addon_Component):
 
         addon_control = self.network['controls'].get_first_connection()
         pm.delete(addon_control.getShape())
+        
+        self.network['controls'].connect_node(object_space)
 
         for attr in attribute_list:
             attr_name = attr.name().replace(attr.namespace(), '').replace(".", "_")
-            addon_control.addAttr(attr_name, at=attr.type(), k=True, h=False, w=True)
+
+            addon_control.addAttr(attr_name, at=attr.type(), k=True, h=False, w=True, proxy=attr)
             addon_control_attr = getattr(addon_control, attr_name)
             
-            object_space.addAttr(attr_name, at=attr.type(), k=True, h=False, w=True)
+            object_space.addAttr(attr_name, at=attr.type(), k=True, h=False, w=True, proxy=attr)
             control_attr = getattr(object_space, attr_name)
 
-            # If there's incoming animation re-connected it to our new attr
-            anim_connection = get_first_or_default(pm.listConnections(attr, s=True, d=False, p=True))
-            if anim_connection:
-                anim_connection >> control_attr
+            # # If there's incoming animation re-connected it to our new attr
+            # anim_connection = get_first_or_default(pm.listConnections(attr, s=True, d=False, p=True))
+            # if anim_connection:
+            #     anim_connection >> control_attr
 
-            control_attr >> addon_control_attr
-            addon_control_attr >> attr
+            # control_attr >> addon_control_attr
+            # addon_control_attr >> attr
 
-            attr.lock()
+            # attr.lock()
 
     @undoable
     def remove(self, do_bake = True):
-        control = self.network['controls'].get_first_connection()
+        control_list = self.network['controls']
 
-        custom_attr_list = [getattr(control, x) for x in pm.listAttr(control, ud=True, k=True)]
-        for attr in custom_attr_list:
-            input_attr = get_first_or_default(pm.listConnections(attr, s=True, d=False, p=True))
-            output_attr = get_first_or_default(pm.listConnections(attr, s=False, d=True, p=True))
-    
-            anim_connection = get_first_or_default(pm.listConnections(input_attr, s=True, d=False, p=True))
-    
-            output_attr.unlock()
-            input_attr // attr
-            attr // output_attr
-            if anim_connection:
-                anim_connection >> output_attr
-                anim_connection // input_attr
-
-            input_attr.delete()
+        for control in control_list:
+            custom_attr_list = [getattr(control, x) for x in pm.listAttr(control, ud=True, k=True)]
+            for attr in custom_attr_list:
+                attr.delete()
 
         self.network['addon'].delete_all()
 
