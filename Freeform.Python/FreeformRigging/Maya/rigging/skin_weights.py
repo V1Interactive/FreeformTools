@@ -85,7 +85,7 @@ def save_skin_weights(character_grp, file_path):
         joint_list = pm.skinCluster(skin_cluster, q=True, inf=True)
         weight_data['joint_lists'][transform.stripNamespace()] = [x.stripNamespace() for x in joint_list]
         
-        for index in xrange(0, transform.vtx.count()):
+        for index in range(0, transform.vtx.count()):
             vertex_index_string = transform.name()+".vtx[{0}]".format(index)
             skin_values = pm.skinPercent(skin_cluster, vertex_index_string, q=True, value=True)
             vert_ws_vector = v1_math.vector.Vector(*pm.xform(vertex_index_string, q=True, ws=True, t=True))
@@ -155,7 +155,7 @@ def apply_voxel_weighting(obj, voxel_data, max_iterations, min_distance):
 
     skin_cluster = find_skin_cluster(obj) if find_skin_cluster(obj) else pm.skinCluster([obj]+joint_list, toSelectedBones=True)
 
-    for index in xrange(0, obj.vtx.count()):
+    for index in range(0, obj.vtx.count()):
         if pm.progressBar(main_progress_bar, query=True, isCancelled=True ) :
             break
         pm.progressBar(main_progress_bar, edit=True, step=1)
@@ -199,11 +199,11 @@ def prune_skin_weights(obj):
 
     main_progress_bar = pm.mel.eval('$tmp = $gMainProgressBar')
     pm.progressBar( main_progress_bar, edit=True, beginProgress=True, isInterruptable=True, status='Pruning Skin Weights...', maxValue=obj.vtx.count() )
-    for index in xrange(0, obj.vtx.count()):
+    for index in range(0, obj.vtx.count()):
         pm.progressBar(main_progress_bar, edit=True, step=1)
         vertex_index_string = obj.name()+".vtx[{0}]".format(index)
         skin_values = pm.skinPercent(skin_cluster, vertex_index_string, q=True, value=True)
-        for i in xrange(0, len(skin_values)):
+        for i in range(0, len(skin_values)):
             if skin_values[i] < 0.0001:
                 pm.skinPercent(skin_cluster, vertex_index_string, normalize=False, transformValue=(joint_list[i], 0))
 

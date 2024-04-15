@@ -67,7 +67,7 @@ class AnimAttributes(object):
                 pm.setCurrentTime(self.end_time)
 
             referencePos = self.target.getTranslation(space='world')
-            for frame in xrange(self.start_time, self.end_time+1):
+            for frame in range(self.start_time, self.end_time+1):
                 pm.setCurrentTime(frame)
                 currPos = self.target.getTranslation(space='world')
 
@@ -114,7 +114,7 @@ class AnimAttributes(object):
         speed = lastPos.distanceTo(currPos) / (1.0 / fps)
         maya_utils.anim_attr_utils.set_attr_key(self.target, 'SpeedCurve', speed)
 
-        for frame in xrange(self.start_time+1, self.end_time+1):
+        for frame in range(self.start_time+1, self.end_time+1):
             pm.setCurrentTime(frame)
             currPos = self.target.getTranslation(space='world')
 
@@ -168,7 +168,7 @@ class AnimAttributes(object):
         pm.currentTime(start_time)
         start_distance = Vector(pm.xform(self.target, t=True, q=True)).length3D()
         start_rotate = Vector(pm.xform(self.target, ro=True, q=True)).length3D()
-        for frame in xrange(start_time, end_time+1):
+        for frame in range(start_time, end_time+1):
             pm.currentTime(frame)
             current_distance = Vector(pm.xform(self.target, t=True, q=True)).length3D()
             current_rotate = Vector(pm.xform(self.target, ro=True, q=True)).length3D()

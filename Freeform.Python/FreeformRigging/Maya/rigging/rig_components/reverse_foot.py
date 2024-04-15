@@ -51,6 +51,7 @@ class ReverseFoot(Rig_Component):
     def __init__(self):
         super().__init__()
         self.prefix = 'reverse'
+        self.suffix = "_rf"
 
 
     def bake_non_attach_joints(self, translate = True, rotate = True, scale = True, baking_queue = maya_utils.baking.Global_Bake_Queue()):
@@ -125,7 +126,7 @@ class ReverseFoot(Rig_Component):
         skeleton_chain = skeleton.sort_chain_by_hierarchy(skeleton_chain)
 
         rigging_chain = self.network['rigging'].get_connections()
-        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
+        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix, self.suffix)
         skeleton.reverse_joint_chain(control_chain)
 
         self.network['controls'].connect_nodes(control_chain)
@@ -347,7 +348,7 @@ class ReverseFoot(Rig_Component):
         del_constraint.append(pm.pointConstraint(toe_ik_pos_loc, ik_control, mo=False))
 
         bake_list = [ordered_controls[-1], ordered_controls[1], ik_control]
-        maya_utils.baking.bake_objects(bake_list, True, True, False, bake_range = fix_range, preserveOutsideKeys = True)
+        maya_utils.baking.bake_objects(bake_list, True, True, False, bake_range = fix_range)
 
         pm.delete(del_constraint + [heel_loc, toe_rot_loc, toe_ik_pos_loc])
 

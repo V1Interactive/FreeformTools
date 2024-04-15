@@ -49,6 +49,7 @@ class Ribbon(Rig_Component):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.prefix = 'ribbon'
+        self.suffix = "_{0}".format(type(self).__name__.lower())
         self.up_axis = [0,1,0]
 
     def bake_joints(self, translate = True, rotate = True, scale = True, simulation = True, baking_queue = None):
@@ -162,7 +163,7 @@ class Ribbon(Rig_Component):
         control_chain = []
         for control_name in name_list:
             pm.select(None)
-            ribbon_control = pm.joint(name="{0}control_ribbon_{1}".format(self.namespace, control_name), radius=2)
+            ribbon_control = pm.joint(name="{0}control_{1}{2}".format(self.namespace, control_name, self.suffix), radius=2)
             control_chain.append(ribbon_control)
 
         self.network['controls'].connect_nodes(control_chain)

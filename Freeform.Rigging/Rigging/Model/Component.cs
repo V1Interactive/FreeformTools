@@ -144,9 +144,9 @@ namespace Freeform.Rigging
                 ToggleVisibilityComponentHandler?.Invoke(this, eventArgs);
 
                 if (_isVisible)
-                    VisibleIcon = "pack://application:,,,/HelixResources;component/Resources/visibility-on.png";
+                    VisibleIcon = "../../Resources/visibility-on.png";
                 else
-                    VisibleIcon = "pack://application:,,,/HelixResources;component/Resources/visibility-off.png";
+                    VisibleIcon = "../../Resources/visibility-off.png";
             }
         }
 

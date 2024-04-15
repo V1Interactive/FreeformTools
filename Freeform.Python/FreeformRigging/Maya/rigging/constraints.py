@@ -185,7 +185,7 @@ def bake_constrained_rig_controls(obj_list):
 
 def bind_chains(control_chain, driven_list, exclude, translate = True, rotate = True, scale = False, additive = False):
     '''
-    Binds two joint chains together using orient, point, and scale constraints
+    Binds two joint chains together using orient, point, and scale constraints and direct connecting all custom attributes.
 
     Args:
         control_chain (list<PyNode>): List of joints that will drive the constraint
@@ -212,3 +212,6 @@ def bind_chains(control_chain, driven_list, exclude, translate = True, rotate = 
                 old_target_list = [x for x in constraint_method(constraint, q=True, tl=True) if x != control_jnt]
                 for target in old_target_list:
                     constraint_method(target, driven_jnt, e=True, w=0)
+        
+        for custom_attr_name in pm.listAttr(control_jnt, ud=True, k=True, l=False, v=True):
+            getattr(control_jnt, custom_attr_name) >> getattr(driven_jnt, custom_attr_name)

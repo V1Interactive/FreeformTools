@@ -407,7 +407,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
     if disable_skins:
         combine_mesh = freeform_utils.character_utils.get_combine_mesh(character_network)
         skin_cluster = skin_weights.find_skin_cluster(combine_mesh)
-        pm.skinCluster(skin_cluster, e=True, moveJointsMode=False)
+        pm.skinCluster(skin_cluster, e=True, moveJointsMode=True)
 
     try:
         load_settings_data = v1_core.json_utils.read_json(file_path)
@@ -486,7 +486,7 @@ def load_settings_from_json(character_grp, file_path, binding_list = Binding_Set
         v1_core.exceptions.except_hook(exception_info[0], exception_info[1], exception_info[2])
     finally:
         if disable_skins:
-            pm.skinCluster(skin_cluster, e=True, moveJointsMode=True)
+            pm.skinCluster(skin_cluster, e=True, moveJointsMode=False)
         pm.autoKeyframe(state=autokey_state)
         v1_shared.usertools.message_dialogue.set_dialogue_display(initial_dialogue_display)
 

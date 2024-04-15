@@ -129,9 +129,9 @@ def get_surrounding_voxels(voxel_list, voxel_vector):
     Returns:
         list<vector>. List of all vector indecies for neighbors
     '''
-    for x in xrange(-1, 2):
-        for y in xrange(-1, 2):
-            for z in xrange(-1, 2):
+    for x in range(-1, 2):
+        for y in range(-1, 2):
+            for z in range(-1, 2):
                 temp = v1_math.vector.Vector(voxel_vector)
                 temp.x = voxel_vector.x + x
                 temp.y = voxel_vector.y + y

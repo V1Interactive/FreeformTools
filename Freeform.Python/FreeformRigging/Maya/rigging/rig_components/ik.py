@@ -53,7 +53,7 @@ class IK(Rig_Component):
     def __init__(self):
         super().__init__()
         self.prefix = 'ik_rig' # Can't be named ik due to node name conflict with UE4 necessary joints ik_foot_l and ik_foot_r
-
+        self.suffix = "_{0}".format(type(self).__name__.lower())
 
 
     def bake_controls(self, translate = True, rotate = True, scale = False, simulation = True):
@@ -90,7 +90,7 @@ class IK(Rig_Component):
         ik_handle.setParent(world_group)
         skeleton.force_set_attr(ik_handle.visibility, False)
 
-        control_chain = skeleton.duplicate_chain([get_first_or_default(rigging_chain)], self.namespace, 'control', self.prefix)
+        control_chain = skeleton.duplicate_chain([get_first_or_default(rigging_chain)], self.namespace, 'control', self.prefix, self.suffix)
         control_root = skeleton.get_chain_root(control_chain)
 
         check_world_orient_ik = kwargs.get('world_orient_ik') if kwargs.get('world_orient_ik') != None else character_category.world_orient_ik
@@ -278,7 +278,7 @@ class IK(Rig_Component):
             ik_control.rotate.set(loc.rotate.get())
         else:
             temp_constraint = pm.parentConstraint(loc, ik_control, mo=False)
-            maya_utils.baking.bake_objects([ik_control], True, True, False, False, None, time_range, preserveOutsideKeys = True)
+            maya_utils.baking.bake_objects([ik_control], True, True, False, False, None, time_range)
             pm.delete(temp_constraint)
 
         pm.delete(loc)
