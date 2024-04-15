@@ -59,7 +59,7 @@ def create_face_morph_rig(root_joint, mesh_list):
         attr_list = []
         start_frame = int(pm.playbackOptions(q=True, ast=True))
         end_frame = int(pm.playbackOptions(q=True, aet=True))
-        for frame in xrange(start_frame, end_frame+10, 10):
+        for frame in range(start_frame, end_frame+10, 10):
             pm.currentTime(frame)
             attr_list = pm.listAttr(root_joint, ud=True, k=True, l=False, v=True)
             for attr in attr_list:

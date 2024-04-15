@@ -17,6 +17,7 @@ along with Freeform Rigging and Animation Tools.
 If not, see <https://www.gnu.org/licenses/>.
 '''
 
+from ast import For
 import pymel.core as pm
 
 import sys
@@ -54,6 +55,7 @@ class FK(Rig_Component):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.prefix = 'fk'
+        self.suffix = "_{0}".format(type(self).__name__.lower())
 
 
     def bake_controls(self, translate = True, rotate = True, scale = True):
@@ -106,7 +108,7 @@ class FK(Rig_Component):
         maya_utils.node_utils.force_align(self.skel_root, control_grp)
 
         rigging_chain = self.network['rigging'].get_connections()
-        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
+        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix, self.suffix)
         control_chain = skeleton.sort_chain_by_hierarchy(control_chain)
 
         if self.reverse:
@@ -150,6 +152,10 @@ class FK(Rig_Component):
                 self.constrain_to_skeleton_mismatch(target_skeleton_dict, rotate_only, maintain_offset, control_chain, target_chain, constraint_list, matching_dict)
             else:
                 self.constrain_to_skeleton_1to1(target_skeleton_dict, rotate_only, maintain_offset, control_chain, target_chain, constraint_list)
+                
+            for target, control in zip(target_chain, control_chain):
+                for custom_attr_name in pm.listAttr(target, ud=True):
+                    getattr(target, custom_attr_name) >> getattr(control, custom_attr_name)
 
             constraint_list.extend(self.attach_component())
 
@@ -171,7 +177,7 @@ class FK(Rig_Component):
         control_jnt_list.reverse()
         skeleton_jnt_list.reverse()
 
-        for frame in xrange(time_range[0], time_range[1]+1):
+        for frame in range(time_range[0], time_range[1]+1):
             pm.currentTime(frame)
             for skeleton_jnt, control_jnt in zip(skeleton_jnt_list, control_jnt_list):
                 # if the control is driven by an overdriver, apply the match to the overdriver control
@@ -368,7 +374,7 @@ class Aim_FK(FK):
         maya_utils.node_utils.force_align(self.skel_root, control_group)
 
         rigging_chain = skeleton.sort_chain_by_hierarchy(self.network['rigging'].get_connections())
-        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix)
+        control_chain = skeleton.duplicate_chain(rigging_chain, self.namespace, 'control', self.prefix, self.suffix)
         control_chain = skeleton.sort_chain_by_hierarchy(control_chain)
         self.network['controls'].connect_nodes(control_chain)
 

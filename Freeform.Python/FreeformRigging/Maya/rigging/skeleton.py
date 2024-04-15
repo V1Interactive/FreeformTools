@@ -590,7 +590,7 @@ def freeze_transform(jnt):
     for child in children:
         child.setParent(jnt)
 
-def duplicate_chain(jnt_chain, namespace, prefix, replace = None):
+def duplicate_chain(jnt_chain, namespace, prefix, replace = None, suffix = ""):
     '''
     Duplicate a joint chain, applying a new namespace, a prefix to the duplicate chain, and optionally replacing
     a string name in the joint with a new string
@@ -609,7 +609,7 @@ def duplicate_chain(jnt_chain, namespace, prefix, replace = None):
     dup_root.setParent(None)
 
     for dup_jnt in dup_chain:
-        new_name = "{0}_{1}".format(prefix, joint_short_name(dup_jnt)) if not replace else joint_short_name(dup_jnt).replace(replace, prefix)
+        new_name = "{0}_{1}{2}".format(prefix, joint_short_name(dup_jnt), suffix) if not replace else "{0}{1}".format(joint_short_name(dup_jnt).replace(replace, prefix), suffix)
         dup_jnt.rename(namespace + new_name)
 
     return dup_chain

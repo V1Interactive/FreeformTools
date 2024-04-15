@@ -77,54 +77,59 @@ If not, see <https://www.gnu.org/licenses/>.-->
             </Button>
         </Grid>
 
-        <Grid Margin="0,0,0,6" IsEnabled="{Binding KeySwitch}" Grid.Row="1">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="60"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="50"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Grid.ToolTip>
-                <TextBlock Text="Will use current time range if not set."/>
-            </Grid.ToolTip>
-            <TextBlock Text="Frame Range:" 
-                       VerticalAlignment="Center" 
-                       Margin="10,2,4,2" 
-                       Grid.Column="0"/>
-            <Button Content="&gt;" 
+            <Grid Margin="0,0,0,6" IsEnabled="{Binding KeySwitch}" Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="60"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.ToolTip>
+                    <TextBlock Text="Will use current time range if not set."/>
+                </Grid.ToolTip>
+                <TextBlock Text="Frame Range:" 
+                    VerticalAlignment="Center" 
+                    Margin="10,2,4,2" 
+                    Grid.Column="0"/>
+                <Button Content="&gt;" 
                     Command="{Binding SetStartFrameCommand}" 
                     Width="16" 
                     Margin="0,2" 
                     Grid.Column="1"/>
-            <TextBox Text="{Binding StartFrame, UpdateSourceTrigger=PropertyChanged}" 
+                <TextBox Text="{Binding StartFrame, UpdateSourceTrigger=PropertyChanged}" 
                      Margin="4,2" 
                      Height="20" 
                      Grid.Column="2"/>
-            <Button Content="&lt;-&gt;" 
+                <Button Content="&lt;-&gt;" 
                     Command="{Binding SetFrameCommand}" 
                     Width="26" 
                     Margin="0,2" 
                     Grid.Column="3"/>
-            <TextBox Text="{Binding EndFrame, UpdateSourceTrigger=PropertyChanged}" 
+                <TextBox Text="{Binding EndFrame, UpdateSourceTrigger=PropertyChanged}" 
                      Margin="4,2" 
                      Height="20" 
                      Grid.Column="4"/>
-            <Button Content="&lt;" 
+                <Button Content="&lt;" 
                     Command="{Binding SetEndFrameCommand}" 
                     Width="16" 
                     Margin="0,2" 
                     Grid.Column="5"/>
-
+            </Grid>
             <CheckBox Content="Key"
-                      VerticalAlignment="Center" 
-                      IsChecked="{Binding KeySwitch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                      Margin="10,0"
-                      Grid.Column="6"/>
+                VerticalAlignment="Center" 
+                IsChecked="{Binding KeySwitch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                Margin="20,0"
+                Grid.Column="1"/>
         </Grid>
+        
 
         <Grid Margin="0,3" Height="24" Grid.Row="2">
             <Grid.ColumnDefinitions>

@@ -325,7 +325,7 @@ def space_switch_bake(obj_list, start_time, end_time, matrix_dict):
         pm.refresh(su=True)
         bake_settings = v1_core.global_settings.GlobalSettings().get_category(v1_core.global_settings.BakeSettings)
 
-        for i, frame in enumerate(xrange(start_time, end_time+1)):
+        for i, frame in enumerate(range(start_time, end_time+1)):
             pm.currentTime(frame)
             for obj in obj_list:
                 if bake_settings.smart_bake:
@@ -436,7 +436,7 @@ def get_bake_values(obj_list, start_time, end_time):
     return_dict = {}
     for obj in obj_list:
         matrix_list = []
-        for frame in xrange(start_time, end_time+1):
+        for frame in range(start_time, end_time+1):
             matrix_list.append( pm.getAttr(obj.worldMatrix, t=frame) )
         return_dict[obj] = matrix_list
         
@@ -506,7 +506,7 @@ def remove_sub_frames(obj_list):
 
         time_range = (int(first_keyframe), int(last_keyframe))
         current_time = pm.currentTime()
-        for frame in xrange(time_range[0], time_range[1]+1):
+        for frame in range(time_range[0], time_range[1]+1):
             pm.currentTime(frame)
             pm.setKeyframe(obj_list)
     except:
