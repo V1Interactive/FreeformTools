@@ -1,0 +1,416 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{EADC8DB3-E23C-41AC-BAE1-725F2C53DCAA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Freeform.Rigging</RootNamespace>
+    <AssemblyName>Freeform.Rigging</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>V1ToolsIconSmall.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\..\bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="p4api.net">
+      <HintPath>..\packages\p4api.net.2021.2.233.6662\lib\net462\p4api.net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.DirectoryServices.AccountManagement" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AimConstraintDialogue\View\AimConstraintDialogue.xaml.cs">
+      <DependentUpon>AimConstraintDialogue.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AimConstraintDialogue\ViewModel\AimConstraintDialogueVM.cs" />
+    <Compile Include="AnimMirror\Model\MirrorPair.cs" />
+    <Compile Include="AnimMirror\ViewModel\AnimMirrorVM.cs" />
+    <Compile Include="AnimMirror\View\AnimMirror.xaml.cs">
+      <DependentUpon>AnimMirror.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ContentBrowser\Model\UserDirectory.cs" />
+    <Compile Include="ContentBrowser\Model\UserFile.cs" />
+    <Compile Include="ContentBrowser\ViewModel\ContentBrowserVM.cs" />
+    <Compile Include="ContentBrowser\View\ContentBrowser.xaml.cs">
+      <DependentUpon>ContentBrowser.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ContentBrowser\View\DragUserControl.xaml.cs">
+      <DependentUpon>DragUserControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ControlColorSet\Model\ColorSet.cs" />
+    <Compile Include="ControlColorSet\Model\ControlColor.cs" />
+    <Compile Include="ControlColorSet\ViewModel\ControlColorSetVM.cs" />
+    <Compile Include="ControlColorSet\View\ControlColorSet.xaml.cs">
+      <DependentUpon>ControlColorSet.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DCCAssetExporter\Model\ExportLayer.cs" />
+    <Compile Include="DCCAssetExporter\Model\ExportPropertyVM.cs" />
+    <Compile Include="FrameRangeDialogue\ViewModel\FrameRangeDialogueVM.cs" />
+    <Compile Include="FrameRangeDialogue\View\FrameRangeDialogue.xaml.cs">
+      <DependentUpon>FrameRangeDialogue.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MessageDialogue\ViewModel\MessageDialogueVM.cs" />
+    <Compile Include="MessageDialogue\View\MessageDialogue.xaml.cs">
+      <DependentUpon>MessageDialogue.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MocapCleanupDialogue\ViewModel\MocapCleanupDialogueVM.cs" />
+    <Compile Include="MocapCleanupDialogue\View\MocapCleanupDialogue.xaml.cs">
+      <DependentUpon>MocapCleanupDialogue.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ParticleConstraintDialogue\ViewModel\ParticleConstraintDialogueVM.cs" />
+    <Compile Include="ParticleConstraintDialogue\View\ParticleConstraintDialogue.xaml.cs">
+      <DependentUpon>ParticleConstraintDialogue.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PropertyEditor\Model\PropertyValue.cs" />
+    <Compile Include="PropertyEditor\ViewModel\PropertyEditorVM.cs" />
+    <Compile Include="PropertyEditor\View\PropertyEditor.xaml.cs">
+      <DependentUpon>PropertyEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PropertyEditor\Model\MetaProperty.cs" />
+    <Compile Include="RegionEditor\Model\Region.cs" />
+    <Compile Include="RegionEditor\ViewModel\RegionEditorVM.cs" />
+    <Compile Include="RegionEditor\View\RegionEditor.xaml.cs">
+      <DependentUpon>RegionEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="RigBuilder\Model\RigItem.cs" />
+    <Compile Include="RigBuilder\Model\TemplateGroup.cs" />
+    <Compile Include="RigBuilder\ViewModel\RigBuilderVM.cs" />
+    <Compile Include="RigBuilder\View\RigBuilder.xaml.cs">
+      <DependentUpon>RigBuilder.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Rigging\HeelFixer\ViewModel\HeelFixerVM.cs" />
+    <Compile Include="Rigging\HeelFixer\View\HeelFixer.xaml.cs">
+      <DependentUpon>HeelFixer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Rigging\Model\Character.cs" />
+    <Compile Include="Rigging\Model\Component.cs" />
+    <Compile Include="Rigging\Model\ComponentGroup.cs" />
+    <Compile Include="Rigging\Model\PropAttachment.cs" />
+    <Compile Include="Rigging\Model\RigBarButton.cs" />
+    <Compile Include="Rigging\Model\RigBarCategory.cs" />
+    <Compile Include="Rigging\Model\SkeletonRegion.cs" />
+    <Compile Include="Rigging\SpaceSwitcher\ViewModel\SpaceSwitcherVM.cs" />
+    <Compile Include="Rigging\SpaceSwitcher\View\SpaceSwitcher.xaml.cs">
+      <DependentUpon>SpaceSwitcher.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Rigging\ViewModel\RiggerVM.cs" />
+    <Compile Include="Rigging\View\Rigger.xaml.cs">
+      <DependentUpon>Rigger.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CharacterPicker\Model\RigFile.cs" />
+    <Compile Include="CharacterPicker\ViewModel\CharacterPickerVM.cs" />
+    <Compile Include="CharacterPicker\View\CharacterPicker.xaml.cs">
+      <DependentUpon>CharacterPicker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DCCAssetExporter\Model\ExportAsset.cs" />
+    <Compile Include="DCCAssetExporter\Model\ExportDefinition.cs" />
+    <Compile Include="DCCAssetExporter\Model\ExportObject.cs" />
+    <Compile Include="DCCAssetExporter\Model\ExportProperty.cs" />
+    <Compile Include="DCCAssetExporter\ViewModel\DCCAssetExporterVM.cs" />
+    <Compile Include="DCCAssetExporter\View\DCCAssetExporter.xaml.cs">
+      <DependentUpon>DCCAssetExporter.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Freeform.Core\Freeform.Core.csproj">
+      <Project>{41cb8432-c878-4a75-8101-5674ec92572c}</Project>
+      <Name>Freeform.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\HelixResources\HelixResources.csproj">
+      <Project>{271a79b9-2ca6-4869-8e52-8ba1dbcebf01}</Project>
+      <Name>HelixResources</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="AimConstraintDialogue\View\AimConstraintDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AnimMirror\View\AnimMirror.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CharacterPicker\View\CharacterPicker.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ContentBrowser\View\ContentBrowser.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ContentBrowser\View\DragUserControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ControlColorSet\View\ControlColorSet.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="DCCAssetExporter\View\DCCAssetExporter.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="FrameRangeDialogue\View\FrameRangeDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MessageDialogue\View\MessageDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MocapCleanupDialogue\View\MocapCleanupDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ParticleConstraintDialogue\View\ParticleConstraintDialogue.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PropertyEditor\View\PropertyEditor.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RegionEditor\View\RegionEditor.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="RigBuilder\View\RigBuilder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Rigging\HeelFixer\View\HeelFixer.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Rigging\SpaceSwitcher\View\SpaceSwitcher.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Rigging\View\Rigger.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\animUnlocked.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\V1ToolsIcon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\V1ToolsIconSmall.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\V1ToolsIconSmallRed.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="V1ToolsIconSmall.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_unlocked.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_add.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_checkedin.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_checkout.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_checkout_other.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_delete.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_locked.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\p4_unknown.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\trashcan.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\characterize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\visible_ribbon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\pick_constraint.png" />
+    <Resource Include="Resources\pick_control.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\fk_switch.png" />
+    <Resource Include="Resources\ik_switch.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\partial_bake.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\merge_down.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\center-of-mass.png" />
+    <Resource Include="Resources\visibility-off.png" />
+    <Resource Include="Resources\visibility-on.png" />
+    <Resource Include="Resources\zero.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\aim-constraint.png" />
+    <Resource Include="Resources\aim-driver.png" />
+    <Resource Include="Resources\bake.png" />
+    <Resource Include="Resources\bake_and_remove.png" />
+    <Resource Include="Resources\build-pickwalk.png" />
+    <Resource Include="Resources\circle-open-purple.png" />
+    <Resource Include="Resources\circle-open.png" />
+    <Resource Include="Resources\circle-purple.png" />
+    <Resource Include="Resources\circle.png" />
+    <Resource Include="Resources\fk-ik.png" />
+    <Resource Include="Resources\lock-toggle.png" />
+    <Resource Include="Resources\lock.png" />
+    <Resource Include="Resources\mirror.png" />
+    <Resource Include="Resources\multi-driver.png" />
+    <Resource Include="Resources\one-driver.png" />
+    <Resource Include="Resources\particle-constraint.png" />
+    <Resource Include="Resources\pendulum-driver.png" />
+    <Resource Include="Resources\pin.png" />
+    <Resource Include="Resources\position-driver.png" />
+    <Resource Include="Resources\re-parent.png" />
+    <Resource Include="Resources\rectangle-purple.png" />
+    <Resource Include="Resources\rectangle.png" />
+    <Resource Include="Resources\remove-overdriver.png" />
+    <Resource Include="Resources\remove.png" />
+    <Resource Include="Resources\revert.png" />
+    <Resource Include="Resources\rotation-driver.png" />
+    <Resource Include="Resources\save-controls.png" />
+    <Resource Include="Resources\switcher.png" />
+    <Resource Include="Resources\temporary-fk.png" />
+    <Resource Include="Resources\temporary-ik.png" />
+    <Resource Include="Resources\timer.png" />
+    <Resource Include="Resources\un-pin.png" />
+    <Resource Include="Resources\unlock.png" />
+    <Resource Include="Resources\world-driver.png" />
+    <Resource Include="Resources\world-purple.png" />
+    <Resource Include="Resources\world.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-anim-curve.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-remove-root.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-zero-rotate.png" />
+    <Resource Include="Resources\export-zero-translate.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\export-zero-animation.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets" Condition="Exists('..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\p4api.net.2021.2.233.6662\build\p4api.net.targets'))" />
+  </Target>
+</Project>

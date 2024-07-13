@@ -1,0 +1,48 @@
+// ===========================================================================
+// Copyright 2017 Autodesk, Inc. All rights reserved.
+//
+// Use of this software is subject to the terms of the Autodesk license
+// agreement provided at the time of installation or download, or which
+// otherwise accompanies this software in either electronic or hard copy form.
+// ===========================================================================
+//
+//
+//  Creation Date:  June 25, 2012
+//
+//  Description:
+//      performFileDropAction, helper function to import dropped files
+//
+
+global proc int
+performFileDropAction (string $theFile)
+{
+	string $fbxMatch = match("\.fbx", $theFile);
+	string $FBXMatch = match("\.FBX", $theFile);
+	string $maMatch = match("\.ma", $theFile);
+	string $mbMatch = match("\.mb", $theFile);
+	
+	$maMatch = match("ma", $maMatch);
+	$mbMatch = match("mb", $mbMatch);
+	
+	if( $fbxMatch == "\.fbx" || $FBXMatch == "\.FBX" )
+	{
+		file -import -namespace (basenameEx($theFile)) $theFile ;
+		return(1);
+	}
+	else if ($maMatch == "ma" || $mbMatch == "mb")
+	{
+		global string $gv_operationMode;
+		string $save_gv_operationMode = $gv_operationMode;
+		$gv_operationMode = "Open";
+		int $result = performFileAction ($theFile, 1, "");
+		$gv_operationMode = $save_gv_operationMode;
+		return ($result);
+	}
+	else
+	{
+		// This is the original line in the file.  To revert, leave this line alone in the method
+		return( performFileImportAction( $theFile ) );
+	}
+	
+	return(0);
+}

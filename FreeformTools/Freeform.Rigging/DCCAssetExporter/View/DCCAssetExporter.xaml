@@ -1,0 +1,1200 @@
+﻿<!--Freeform Rigging and Animation Tools
+Copyright (C) 2020  Micah Zahm
+
+Freeform Rigging and Animation Tools is free software: you can redistribute it 
+and/or modify it under the terms of the GNU General Public License as published 
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Freeform Rigging and Animation Tools is distributed in the hope that it will 
+be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Freeform Rigging and Animation Tools.  
+If not, see <https://www.gnu.org/licenses/>.-->
+
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:System;assembly=mscorlib"
+        xmlns:v1="clr-namespace:HelixResources.Style;assembly=HelixResources" 
+        xmlns:local="clr-namespace:Freeform.Rigging.DCCAssetExporter"
+        x:Class="Freeform.Rigging.DCCAssetExporter.DCCAssetExporter" WindowStartupLocation="Manual"
+        Closing="DCCAssetExporter_Closing"
+        Activated="window_Activated" Deactivated="window_Deactivated" Loaded="window_Activated" Unloaded="window_Deactivated"
+        Title="Asset Exporter" 
+        Height="350" 
+        Width="{Binding WindowWidth, Mode=TwoWay}" 
+        MinWidth="700" 
+        WindowStyle="ToolWindow">
+    <Window.Resources>
+        <ResourceDictionary>
+            <Style x:Key="ButtonRadio" TargetType="{x:Type RadioButton}" BasedOn="{StaticResource {x:Type ToggleButton}}"/>
+            <v1:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <v1:BooleanAndConverter  x:Key="booleanAndConverter"/>
+            <v1:StyleConverter  x:Key="StyleConverter"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/HelixResources;component/Style/V1ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Window.InputBindings>
+        <KeyBinding Key="H" Modifiers="Alt" Command="{Binding HelpCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"/>
+    </Window.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.Resources>
+            <v1:BindingProxy x:Key="dataContextProxy" Data="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
+
+            <ControlTemplate x:Key="assetTemplate">
+                <Grid Style="{StaticResource SubGrid}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="30"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,3,0,0" Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Asset Name:" VerticalAlignment="Center" Margin="10,2,0,2" Grid.Column="0"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedAsset.Name, UpdateSourceTrigger=PropertyChanged}" 
+                                 Margin="2,2" 
+                                 Height="20" 
+                                 Grid.Column="1"/>
+
+                        <TextBlock Text="Type:" VerticalAlignment="Center" Margin="6,2,0,2" Grid.Column="2"/>
+                        <TextBlock Text="{Binding SelectedAsset.Type, UpdateSourceTrigger=PropertyChanged}" 
+                                   VerticalAlignment="Stretch" 
+                                   Margin="2,4,2,0" 
+                                   Height="20" 
+                                   Grid.Column="3"/>
+                    </Grid>
+                    <Grid Margin="0,0,0,3" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.ToolTip>
+                            <TextBlock Text="Will use parent directory if not enabled."/>
+                        </Grid.ToolTip>
+
+                        <TextBlock Text="Export Path:" VerticalAlignment="Center" Margin="10,2,0,2" Grid.Column="0"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedAsset.ExportPath, UpdateSourceTrigger=PropertyChanged}" 
+                                 IsEnabled="{Binding SelectedAsset.UseExportPath, Mode=OneWay}" 
+                                 Margin="4,2" 
+                                 Height="20" 
+                                 Grid.Column="1"/>
+                        <Button Command="{Binding SelectedAsset.SetExportPathCommand}" 
+                                IsEnabled="{Binding SelectedAsset.UseExportPath, Mode=OneWay}" 
+                                Grid.Column="2">
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/file_browser.ico"/>
+                        </Button>
+                        <CheckBox IsChecked="{Binding SelectedAsset.UseExportPath, Mode=TwoWay}" VerticalAlignment="Center" Margin="10,2" Grid.Column="3"/>
+                    </Grid>
+                </Grid>
+            </ControlTemplate>
+
+            <ControlTemplate x:Key="emptyTemplate">
+                <Grid Style="{StaticResource SubGrid}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                </Grid>
+            </ControlTemplate>
+
+            <DataTemplate DataType="{x:Type local:RemoveRootAnimProperty}">
+                <Grid Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+                        <TextBlock Text="Root Animation will be removed" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:ZeroCharacterProperty}">
+                <Grid Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+                        <TextBlock Text="Character Animation will start from Zero world space" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:ZeroCharacterRotateProperty}">
+                <Grid Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+                        <TextBlock Text="Character Animation will start Oriented to world space" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:ZeroAnimCurvesProperty}">
+                <Grid Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+                        <TextBlock Text="Character Animation will start from Frame 0" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+
+            <DataTemplate DataType="{x:Type local:ZeroMocapProperty}">
+                <Grid Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+                        <TextBlock Text="Mocap Root joint will be zero'd to world and oriented to the Rotate value" VerticalAlignment="Center" Margin="10,2" Grid.Column="1"/>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="50"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Align Keyframe:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="0">
+                            <TextBlock.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource HighlightTextBlock}">
+                                        Keyframe that will be aligned to the start frame to straighten motion. <LineBreak/>
+                                        If 0 the end frame of the export will be used.
+                                    </TextBlock>
+                                </ToolTip>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding AlignKeyframe, UpdateSourceTrigger=PropertyChanged}" 
+                                 Margin="4,2" 
+                                 Grid.Column="1"/>
+                        
+                        <TextBlock Text="Offset Rotate Y:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="2">
+                            <TextBlock.ToolTip>
+                                <ToolTip>
+                                    <TextBlock Style="{StaticResource HighlightTextBlock}">
+                                        Additional clockwise rotation to orient the export from the mocap direction.
+                                    </TextBlock>
+                                </ToolTip>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding RotateValue, UpdateSourceTrigger=PropertyChanged}" 
+                                 Margin="4,2" 
+                                 Grid.Column="3"/>
+                    </Grid>
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:AnimCurveExporterProperty}">
+                <Grid Style="{StaticResource SubGrid}" Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2,10,2"/>
+                        </Grid>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                          Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                          CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                          IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- <TextBlock Text="From:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="0"/>                                                   -->
+                        <!-- <TextBox Text="{Binding ControlName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,2,0,2" Grid.Column="1"/> -->
+
+                        <TextBlock Text="To:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="2"/>
+                        <TextBox Text="{Binding TargetName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,2,10,2" Grid.Column="3"/>
+
+                        <Grid Grid.Column="4">
+                            <Button Command="{Binding PickControlCommand}" Margin="5,0,5,5" Width="24">
+                                <Image Source="pack://application:,,,/HelixResources;component/Resources/pick.ico"/>
+                            </Button>
+                        </Grid>
+
+                        <Grid Grid.Column="5">
+                            <Button Command="{Binding RefreshNamesCommand}" Margin="5,0,5,5" Width="24">
+                                <Image Source="pack://application:,,,/HelixResources;component/Resources/refresh.ico"/>
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="90"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <RadioButton Content="Distance Curve" 
+                                     GroupName="{Binding CurveTypeID, Mode=OneWay}" 
+                                     IsChecked="{Binding UseDistanceCurve, Mode=OneWay}" 
+                                     Margin="0,2,0,4" 
+                                     Style="{StaticResource ButtonRadio}" 
+                                     Grid.Column="1"/>
+                        <RadioButton Content="Speed Curve" 
+                                     GroupName="{Binding CurveTypeID, Mode=OneWay}" 
+                                     IsChecked="{Binding UseSpeedCurve, Mode=TwoWay}" 
+                                     Margin="0,2,0,4" 
+                                     Style="{StaticResource ButtonRadio}" 
+                                     Grid.Column="2"/>
+
+                        <RadioButton Content="Start at Zero" 
+                                     GroupName="{Binding FromZeroID, Mode=OneWay}" 
+                                     IsChecked="{Binding FromZero, Mode=TwoWay}" 
+                                     Margin="0,2,0,4" Style="{StaticResource ButtonRadio}" 
+                                     IsEnabled="{Binding UseDistanceCurve}" 
+                                     Grid.Column="4"/>
+                        <RadioButton Content="End at Zero" 
+                                     GroupName="{Binding FromZeroID, Mode=OneWay}" 
+                                     IsChecked="{Binding ToZero, Mode=OneWay}" 
+                                     Style="{StaticResource ButtonRadio}" 
+                                     Margin="0,2,0,4" 
+                                     IsEnabled="{Binding UseDistanceCurve}" 
+                                     Grid.Column="5"/>
+
+                        <TextBlock Text="Frame Range:" VerticalAlignment="Center" Margin="10,2,4,2" Grid.Column="7"/>
+                        <Button Style="{StaticResource ForegroundButton}" 
+                                Content="&gt;" 
+                                Command="{Binding SetStartFrameCommand}" 
+                                IsEnabled="{Binding UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                Width="16" 
+                                Margin="0,2" 
+                                Grid.Column="8"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding StartFrame, UpdateSourceTrigger=PropertyChanged}" 
+                                 IsEnabled="{Binding UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                 Margin="4,2" 
+                                 Grid.Column="9"/>
+                        <Button Style="{StaticResource ForegroundButton}" 
+                                Content="&lt;-&gt;" Command="{Binding SetFrameCommand}" 
+                                IsEnabled="{Binding UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                Width="26" 
+                                Margin="0,2" 
+                                Grid.Column="10"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding EndFrame, UpdateSourceTrigger=PropertyChanged}" 
+                                 IsEnabled="{Binding UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                 Margin="4,2" 
+                                 Grid.Column="11"/>
+                        <Button Style="{StaticResource ForegroundButton}" 
+                                Content="&lt;" 
+                                Command="{Binding SetEndFrameCommand}" 
+                                IsEnabled="{Binding UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                Width="16" 
+                                Margin="0,2" 
+                                Grid.Column="12"/>
+                        <CheckBox IsChecked="{Binding UseFrameRange, Mode=TwoWay}" 
+                                  VerticalAlignment="Center" 
+                                  Margin="10,2" 
+                                  Grid.Column="13" 
+                                  ToolTip="Will use definition's time range if not enabled."/>
+                    </Grid>
+
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type local:RotationExporterProperty}">
+                <Grid Style="{StaticResource SubGrid}" Margin="4,4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="0,0,0,6" Grid.Row="0"/>
+
+                    <Grid Style="{StaticResource SubGrid}" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Style="{StaticResource SelectedGrid}" Grid.Column="0">
+                            <TextBlock Text="{Binding PropertyType, UpdateSourceTrigger=PropertyChanged}" 
+                               FontWeight="Bold" 
+                               VerticalAlignment="Center" 
+                               Margin="10,2"/>
+                        </Grid>
+
+                        <Grid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Remove" 
+                                      Command="{Binding Data.RemovePropertyCommand, Source={StaticResource dataContextProxy}}" 
+                                      CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                      IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Axis:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="0"/>
+
+                        <RadioButton Content="X" 
+                                     GroupName="{Binding AxisID, Mode=OneWay}" 
+                                     IsChecked="{Binding XAxis, Mode=TwoWay}" 
+                                     VerticalAlignment="Center"
+                                     Margin="4,2,0,4"
+                                     Grid.Column="1"/>
+                        <RadioButton Content="Y" 
+                                     GroupName="{Binding AxisID, Mode=OneWay}" 
+                                     IsChecked="{Binding YAxis, Mode=TwoWay}" 
+                                     VerticalAlignment="Center"
+                                     Margin="4,2,0,4" 
+                                     Grid.Column="2"/>
+                        <RadioButton Content="Z" 
+                                     GroupName="{Binding AxisID, Mode=OneWay}" 
+                                     IsChecked="{Binding ZAxis, Mode=TwoWay}" 
+                                     VerticalAlignment="Center"
+                                     Margin="4,2,0,4" 
+                                     Grid.Column="3"/>
+
+
+                        <TextBlock Text="Barrel Joint:" VerticalAlignment="Center" Margin="20,2,5,2" Grid.Column="4"/>
+                        <TextBox Text="{Binding TargetName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,2,10,2" Grid.Column="5"/>
+
+                        <Grid Grid.Column="6">
+                            <Button Command="{Binding PickControlCommand}" Margin="5,0,5,5" Width="24">
+                                <Image Source="pack://application:,,,/HelixResources;component/Resources/pick.ico"/>
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*" MaxWidth="200"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="50"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Attribute Name:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="0"/>
+                        <TextBox Text="{Binding AttributeName, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="0,2,10,2" Grid.Column="1"/>
+
+                        <TextBlock Text="Rotation Value:" VerticalAlignment="Center" Margin="10,2,5,2" Grid.Column="2"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding RotateValue, UpdateSourceTrigger=PropertyChanged}" 
+                                 Margin="4,2" 
+                                 Grid.Column="3"/>
+                    </Grid>
+
+                </Grid>
+
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource PreviousData}}" Value="{x:Null}">
+                        <Setter Property="Visibility" TargetName="propertySeparator" Value="Collapsed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+            </DataTemplate>
+
+            <ControlTemplate x:Key="definitionTemplate">
+                <Grid Style="{StaticResource SubGrid}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="26"/>
+                        <RowDefinition Height="26"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Margin="0,0,0,3" Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="60"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Name:" 
+                                   VerticalAlignment="Center" 
+                                   IsEnabled="{Binding SelectedDefinition.UseSceneName, Converter={StaticResource InverseBooleanConverter}}"
+                                   Margin="10,2,0,2" 
+                                   Grid.Column="0"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedDefinition.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                 IsEnabled="{Binding SelectedDefinition.UseSceneName, Converter={StaticResource InverseBooleanConverter}}"
+                                 Margin="4,2,10,2"
+                                 Grid.Column="1"/>
+
+                        <CheckBox Content="Use Scene Name" 
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding SelectedDefinition.UseSceneName}" 
+                                  Margin="4,2"
+                                  Grid.Column="2"/>
+
+                        <TextBlock Text="Frame Range:" 
+                                   VerticalAlignment="Center" 
+                                   Margin="10,2,4,2" 
+                                   Grid.Column="3">
+                            <TextBlock.ToolTip>
+                                <TextBlock Text="Will use current time range if not enabled."/>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
+                        <Button Style="{StaticResource ForegroundButton}" 
+                                Content="&gt;" 
+                                Command="{Binding SelectedDefinition.SetStartFrameCommand}" 
+                                IsEnabled="{Binding SelectedDefinition.UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                Width="16" 
+                                Margin="0,2" 
+                                Grid.Column="4"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedDefinition.StartFrame, UpdateSourceTrigger=PropertyChanged}" 
+                                 IsEnabled="{Binding SelectedDefinition.UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                 Margin="4,2" 
+                                 Grid.Column="5"/>
+                        <Button Style="{StaticResource ForegroundButton}" 
+                                Content="&lt;-&gt;" 
+                                Command="{Binding SelectedDefinition.SetFrameCommand}" 
+                                IsEnabled="{Binding SelectedDefinition.UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                Width="26" 
+                                Margin="0,2" 
+                                Grid.Column="6"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedDefinition.EndFrame, UpdateSourceTrigger=PropertyChanged}" 
+                                 IsEnabled="{Binding SelectedDefinition.UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                 Margin="4,2" 
+                                 Grid.Column="7"/>
+                        <Button Style="{StaticResource ForegroundButton}" 
+                                Content="&lt;" 
+                                Command="{Binding SelectedDefinition.SetEndFrameCommand}" 
+                                IsEnabled="{Binding SelectedDefinition.UseFrameRange, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                Width="16" 
+                                Margin="0,2" 
+                                Grid.Column="8"/>
+                        <CheckBox IsChecked="{Binding SelectedDefinition.UseFrameRange, Mode=TwoWay}" 
+                                  VerticalAlignment="Center"
+                                  Margin="10,2" 
+                                  Grid.Column="9">
+                            <CheckBox.ToolTip>
+                                <TextBlock Text="Will use current time range if not enabled."/>
+                            </CheckBox.ToolTip>
+                        </CheckBox>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,3" Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="260"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="Folder Path:" 
+                                   VerticalAlignment="Center"
+                                   Margin="10,2,0,2" 
+                                   Grid.Column="0"/>
+                        <TextBox Style="{StaticResource ForegroundTextBox}" 
+                                 Text="{Binding SelectedDefinition.FolderPath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                 Margin="4,2,10,2"
+                                 Grid.Column="1"/>
+                    </Grid>
+                </Grid>
+            </ControlTemplate>
+
+            <ControlTemplate x:Key="definitionDetailsTemplate">
+                <Control x:Name="definitionControl" Template="{StaticResource emptyTemplate}"/>
+                <ControlTemplate.Triggers>
+                    <DataTrigger Binding="{Binding SelectedDefinition.IsSelected}" Value="True">
+                        <Setter TargetName="definitionControl" Property="Template" Value="{StaticResource definitionTemplate}"/>
+                    </DataTrigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+
+            <ControlTemplate x:Key="assetDetailsTemplate">
+                <Control x:Name="assetControl" Template="{StaticResource emptyTemplate}"/>
+                <ControlTemplate.Triggers>
+                    <DataTrigger Binding="{Binding SelectedAsset.IsSelected}" Value="True">
+                        <Setter TargetName="assetControl" Property="Template" Value="{StaticResource assetTemplate}"/>
+                    </DataTrigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+        </Grid.Resources>
+
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" MinWidth="200"/>
+                <ColumnDefinition Width="3*" MinWidth="300"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Tag="export_group"
+                  Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="4*" MaxWidth="180"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Filter: " Margin="10,2,0,2" HorizontalAlignment="Left" Grid.Column="0"/>
+                    <TextBox Text="{Binding ExportDefinitionFilter, UpdateSourceTrigger=PropertyChanged}" 
+                             HorizontalAlignment="Stretch"
+                             Margin="10,4,10,0" 
+                             Grid.Column="1"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="3">
+                        <Button Command="{Binding MoveGroupCommand}" Width="22" Margin="2,2,2,0">
+                            <Button.CommandParameter>
+                                <s:Int16>-1</s:Int16>
+                            </Button.CommandParameter>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/up_icon.ico" Margin="2"/>
+                        </Button>
+                        <Button Command="{Binding MoveGroupCommand}" Width="22" Margin="2,2,2,0">
+                            <Button.CommandParameter>
+                                <s:Int16>1</s:Int16>
+                            </Button.CommandParameter>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/down_icon.ico" Margin="2"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,3" Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <ListBox SelectionMode="Single" 
+                             HorizontalContentAlignment="Stretch" 
+                             ItemsSource="{Binding Path=ExportDefinitionListViewSource.View}" 
+                             SelectedItem="{Binding Path=SelectedDefinition, UpdateSourceTrigger=PropertyChanged}" 
+                             Grid.Row="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.Resources>
+                                        <v1:BindingProxy x:Key="definitionContextProxy" Data="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"/>
+                                    </Grid.Resources>
+                                    <Grid.Style>
+                                        <MultiBinding Converter="{StaticResource StyleConverter}">
+                                            <MultiBinding.Bindings>
+                                                <Binding RelativeSource="{RelativeSource Self}"/>
+                                                <Binding Path="GridStyle"/>
+                                            </MultiBinding.Bindings>
+                                        </MultiBinding>
+                                    </Grid.Style>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MinWidth="100"/>
+                                        <ColumnDefinition Width="*" MinWidth="80"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Sort By...">
+                                                <MenuItem Header="User Order"
+                                                          Command="{Binding Data.SetDefinitionSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="Index"/>
+                                                <MenuItem Header="Name"
+                                                          Command="{Binding Data.SetDefinitionSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="Name"/>
+                                                <MenuItem Header="Date"
+                                                          Command="{Binding Data.SetDefinitionSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="DateCreated"/>
+                                                <MenuItem Header="Timeline"
+                                                          Command="{Binding Data.SetDefinitionSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="StartFrame"/>
+                                            </MenuItem>
+                                            <MenuItem Header="Remove" 
+                                                        Command="{Binding Data.RemoveDefinitionCommand, Source={StaticResource dataContextProxy}}" 
+                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                                        IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                                            <MenuItem Header="Export" 
+                                                        Command="{Binding Data.ExportDefinitionCommand, Source={StaticResource dataContextProxy}}" 
+                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                            
+                                            <MenuItem Header="Add Export Property..."
+                                                      ItemsSource="{Binding Data.ExportPropertyList, Source={StaticResource dataContextProxy}}">
+                                                <MenuItem.ItemContainerStyle>
+                                                    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource V1MenuItem}">
+                                                        <Setter Property="MenuItem.Header"
+                                                                Value="{Binding DisplayName}"/>
+                                                        <Setter Property="MenuItem.Command"
+                                                                Value="{Binding PropertyCommand}"/>
+                                                        <Setter Property="MenuItem.CommandParameter"
+                                                                Value="{Binding Path=Data, Source={StaticResource definitionContextProxy}}"/>
+                                                        <Setter Property="MenuItem.Visibility"
+                                                                Value="{Binding MaxDisabled, Converter={StaticResource BoolToVis}}"/>
+                                                    </Style>
+                                                </MenuItem.ItemContainerStyle>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
+
+                                    <Border BorderBrush="{x:Null}" HorizontalAlignment="Left" Margin="8,0" Grid.Column="0">
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                                    Opacity="{Binding TextOpacity, UpdateSourceTrigger=PropertyChanged}"
+                                                    VerticalAlignment="Center"/>
+                                    </Border>
+                                    <CheckBox Content="Export" 
+                                                IsChecked="{Binding DoExport, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                                Margin="8,0" 
+                                                Grid.Column="1"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListBoxItem}">
+                                <Setter Property="IsSelected" Value="{Binding Path=IsSelected, Mode=TwoWay}"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+                </Grid>
+
+                <Grid Grid.Row="2" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Style="{StaticResource TrimButton}" 
+                                    Content="Create Export Group" 
+                                    Command="{Binding CreateNewDefinitionCommand}" 
+                                    IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}" 
+                                    Margin="20,2" 
+                                    Grid.Column="0"/>
+                </Grid>
+            </Grid>
+
+            <Grid Tag="export_asset"
+                  Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="4*" MaxWidth="180"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Filter: " Margin="10,2,0,2" HorizontalAlignment="Left" Grid.Column="0"/>
+                    <TextBox Text="{Binding ExportAssetFilter, UpdateSourceTrigger=PropertyChanged}" 
+                             HorizontalAlignment="Stretch" 
+                             Margin="10,4,10,0" 
+                             Grid.Column="1"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="3">
+                        <Button Command="{Binding MoveAssetCommand}" Width="22" Margin="2,2,2,0">
+                            <Button.CommandParameter>
+                                <s:Int16>-1</s:Int16>
+                            </Button.CommandParameter>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/up_icon.ico" Margin="2"/>
+                        </Button>
+                        <Button Command="{Binding MoveAssetCommand}" Width="22" Margin="2,2,2,0">
+                            <Button.CommandParameter>
+                                <s:Int16>1</s:Int16>
+                            </Button.CommandParameter>
+                            <Image Source="pack://application:,,,/HelixResources;component/Resources/down_icon.ico" Margin="2"/>
+                        </Button>
+                    </StackPanel>
+
+                    <TextBlock Style="{StaticResource HighlightTextBlock}"
+                               Text="?"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="8,0,8,0"
+                               Grid.Column="4">
+                        <TextBlock.ToolTip>
+                            <ToolTip>
+                                <TextBlock Style="{StaticResource HighlightTextBlock}">
+                                    Pressing Alt+H with the UI in focus will open the <LineBreak/>
+                                    documentation website to the relevant page based on <LineBreak/>
+                                    what UI is under the mouse.
+                                </TextBlock>
+                            </ToolTip>
+                        </TextBlock.ToolTip>
+            </TextBlock>
+                </Grid>
+
+                <Grid Margin="0,3" Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="28"/>
+                    </Grid.RowDefinitions>
+                    <ListBox SelectionMode="Single" 
+                                HorizontalContentAlignment="Stretch" 
+                                ItemsSource="{Binding Path=AssetListViewSource.View}" 
+                                SelectedItem="{Binding Path=SelectedAsset, UpdateSourceTrigger=PropertyChanged}" 
+                                Grid.Row="0" 
+                                Grid.IsSharedSizeScope="True">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.Resources>
+                                        <v1:BindingProxy x:Key="assetContextProxy" Data="{Binding Path=DataContext, RelativeSource={RelativeSource AncestorType={x:Type ListBoxItem}}}"/>
+                                    </Grid.Resources>
+                                    <Grid.Style>
+                                        <MultiBinding Converter="{StaticResource StyleConverter}">
+                                            <MultiBinding.Bindings>
+                                                <Binding RelativeSource="{RelativeSource Self}"/>
+                                                <Binding Path="GridStyle"/>
+                                            </MultiBinding.Bindings>
+                                        </MultiBinding>
+                                    </Grid.Style>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition Width="*" MinWidth="100" SharedSizeGroup="AssetNameGroup"/>
+                                        <ColumnDefinition Width="*" MinWidth="80" SharedSizeGroup="AssetTypeGroup"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Sort By...">
+                                                <MenuItem Header="User Order"
+                                                          Command="{Binding Data.SetAssetSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="Index"/>
+                                                <MenuItem Header="Name"
+                                                          Command="{Binding Data.SetAssetSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="Name"/>
+                                                <MenuItem Header="Date"
+                                                          Command="{Binding Data.SetAssetSortOrderCommand, Source={StaticResource dataContextProxy}}"
+                                                          CommandParameter="DateCreated"/>
+                                            </MenuItem>
+                                            <MenuItem Header="Remove" 
+                                                        Command="{Binding Data.RemoveAssetCommand, Source={StaticResource dataContextProxy}}" 
+                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}" 
+                                                        IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}"/>
+                                            <MenuItem Header="Export" 
+                                                        Command="{Binding Data.ExportAssetCommand, Source={StaticResource dataContextProxy}}" 
+                                                        CommandParameter="{Binding Path=Parent.DataContext, RelativeSource={RelativeSource Self}}"/>
+                                            
+                                            <MenuItem Header="Add Export Property..."
+                                                      ItemsSource="{Binding Data.ExportPropertyList, Source={StaticResource dataContextProxy}}">
+                                                <MenuItem.ItemContainerStyle>
+                                                    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource V1MenuItem}">
+                                                        <Setter Property="MenuItem.Header"
+                                                                Value="{Binding DisplayName}"/>
+                                                        <Setter Property="MenuItem.Command"
+                                                                Value="{Binding PropertyCommand}"/>
+                                                        <Setter Property="MenuItem.CommandParameter"
+                                                                Value="{Binding Path=Data, Source={StaticResource assetContextProxy}}"/>
+                                                        <Setter Property="MenuItem.Visibility"
+                                                                Value="{Binding MaxDisabled, Converter={StaticResource BoolToVis}}"/>
+                                                    </Style>
+                                                </MenuItem.ItemContainerStyle>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Grid.ContextMenu>
+
+                                    <Border BorderBrush="{x:Null}" HorizontalAlignment="Left" Margin="6,0" Grid.Column="0">
+                                        <TextBlock Text="{Binding FileType, UpdateSourceTrigger=PropertyChanged}" 
+                                                    Opacity="{Binding TextOpacity, UpdateSourceTrigger=PropertyChanged}"
+                                                    VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border BorderBrush="{x:Null}" HorizontalAlignment="Left" Margin="6,0" Grid.Column="1">
+                                        <TextBlock Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                                                    TextTrimming="CharacterEllipsis" 
+                                                    Opacity="{Binding TextOpacity, UpdateSourceTrigger=PropertyChanged}"
+                                                    VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Type, UpdateSourceTrigger=PropertyChanged}" 
+                                                Opacity="{Binding TextOpacity, UpdateSourceTrigger=PropertyChanged}"
+                                                Margin="6,0" 
+                                                Grid.Column="2"/>
+                                    <CheckBox Content="Export" 
+                                                IsChecked="{Binding AssetExport, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                                Margin="6,0" 
+                                                Grid.Column="3"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListBoxItem}">
+                                <Setter Property="IsSelected" Value="{Binding Path=IsSelected, Mode=TwoWay}"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                    </ListBox>
+
+                    <Grid Grid.Row="1" Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*" MinWidth="100"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Style="{StaticResource TrimButton}" 
+                                Content="Create Asset" 
+                                Command="{Binding CreateNewAssetCommand}" 
+                                IsEnabled="{Binding Data.MaxDisabled, Source={StaticResource dataContextProxy}}" 
+                                Margin="20,2,4,2" 
+                                Grid.Column="0"/>
+                        <ComboBox ItemsSource="{Binding AssetTypeList}" SelectedItem="{Binding SelectedAssetType}" Margin="4,2,20,2" Grid.Column="1"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Expander Header="Asset Details" 
+                  IsExpanded="True" 
+                  ExpandDirection="Down" 
+                  Tag="export_details"
+                  Grid.Row="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <ItemsControl Template="{StaticResource assetDetailsTemplate}" Grid.Row="0"/>
+                <ItemsControl Template="{StaticResource definitionDetailsTemplate}" Grid.Row="1"/>
+            </Grid>
+        </Expander>
+
+        <Expander HorizontalAlignment="Stretch" 
+                  HorizontalContentAlignment="Stretch" 
+                  IsExpanded="False" 
+                  ExpandDirection="Down" 
+                  MaxHeight="120" 
+                  Tag="export_properties"
+                  Grid.Row="2">
+            <Expander.Header>
+                <Grid Style="{StaticResource SelectedGrid}" 
+                      Height="20" 
+                      MaxHeight="20" 
+                      Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Expander}}, Path=ActualWidth}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Style="{StaticResource HeaderTextBlock}" Text="Export Properties" Grid.Column="0"/>
+
+                    <ItemsControl Style="{StaticResource SelectedItemsControl}" ItemsSource="{Binding SelectedDefinition.ExportProperties}" Grid.Column="1">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Icon}" Height="16" Margin="4,0"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl Style="{StaticResource SelectedItemsControl}" ItemsSource="{Binding SelectedAsset.ExportProperties}" Margin="0,0,40,0" Grid.Column="2">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Icon}" Height="16" Margin="4,0"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Expander.Header>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Vertical">
+                    <ItemsControl ItemsSource="{Binding SelectedDefinition.ExportProperties}"/>
+                    <Separator Background="{StaticResource HighlightColor}" x:Name="propertySeparator" Margin="4,2,4,4"/>
+                    <ItemsControl ItemsSource="{Binding SelectedAsset.ExportProperties}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Expander>
+
+        <Expander Header="Export Layers" 
+                  HorizontalAlignment="Stretch" 
+                  HorizontalContentAlignment="Stretch" 
+                  IsExpanded="False" 
+                  ExpandDirection="Down" 
+                  MaxHeight="120" 
+                  Tag="export_layers"
+                  Grid.Row="3">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Vertical">
+                    <ItemsControl ItemsSource="{Binding ExportLayerList}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="4,0" Height="20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource HighlightTextBlock}"
+                                                Text="{Binding NodeName}" 
+                                                Margin="4,0" 
+                                                Grid.Column="0"/>
+                                    <CheckBox Content="Export" 
+                                              IsChecked="{Binding Export}"
+                                              Margin="4,0" 
+                                              Grid.Column="1"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Expander>
+
+        <Grid Height="34" 
+              Tag="exporter_run"
+              Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Content="  Auto Setup  " 
+                    Command="{Binding AutoSetupCommand}" 
+                    Margin="10,4" 
+                    Grid.Column="0"/>
+
+            <Button Style="{StaticResource TrimButton}" 
+                    Content="Export Assets" 
+                    Command="{Binding ExportCommand}" 
+                    Margin="10,4" 
+                    Grid.Column="1" 
+                    Grid.ColumnSpan="2"/>
+        </Grid>
+
+    </Grid>
+</Window>

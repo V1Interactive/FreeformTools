@@ -9,6 +9,8 @@ For Maya 2018.x-2020.x using Python 2.7
 For Maya 2022.x using Python 3.7 see Releases or the python3_update branch.
 
 
+For Maya 2022.x using Python 3.9
+
 Home of an open source freeform rigging and animation toolset for Maya, made for games development.  These tools are built 
 off of my experience working with animators that wanted flexibility in their rigs so that they could animate how they wanted
 and have the rig respond to their work rather than dictate how they work.

@@ -1,0 +1,153 @@
+﻿<!--Freeform Rigging and Animation Tools
+Copyright (C) 2020  Micah Zahm
+
+Freeform Rigging and Animation Tools is free software: you can redistribute it 
+and/or modify it under the terms of the GNU General Public License as published 
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Freeform Rigging and Animation Tools is distributed in the hope that it will 
+be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Freeform Rigging and Animation Tools.  
+If not, see <https://www.gnu.org/licenses/>.-->
+
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:v1="clr-namespace:HelixResources.Style;assembly=HelixResources" 
+        xmlns:local="clr-namespace:Freeform.Rigging.ParticleConstraintDialogue"
+        x:Class="Freeform.Rigging.ParticleConstraintDialogue.ParticleConstraintDialogue" 
+        WindowStartupLocation="CenterScreen"
+        Title="Particle Constraint" 
+        Height="130" MinHeight="130" MaxHeight="130"
+        Width="400" MinWidth="400" MaxWidth="400"
+        WindowStyle="ToolWindow">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <v1:StyleConverter  x:Key="StyleConverter"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/HelixResources;component/Style/V1ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Margin="4" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Offset Amount:"
+                       Margin="2"
+                       Grid.Column="0"/>
+            <TextBox Text="{Binding OffsetAmount}"
+                     PreviewTextInput="TextInputFilter"
+                     IsEnabled="False"
+                     Width="50" MinWidth="50" MaxWidth="50"
+                     Margin="2"
+                     Grid.Column="1"/>
+            <Slider Value="{Binding OffsetAmount}"
+                    IsEnabled="{Binding UseOffset}"
+                    Minimum="0.1"
+                    Maximum="1"
+                    IsMoveToPointEnabled="True"
+                    IsSnapToTickEnabled="True"
+                    TickFrequency="0.1"
+                    Margin="2"
+                    Grid.Column="2"/>
+            <CheckBox Content="Adv." 
+                      IsChecked="{Binding UseOffset}"
+                      Margin="2"
+                      Grid.Column="3"/>
+        </Grid>
+
+        <Separator Grid.Row="1"/>
+
+        <Grid Margin="4" 
+              VerticalAlignment="Center"
+              IsEnabled="{Binding NotUseOffset}" 
+              Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid VerticalAlignment="Center" 
+                  HorizontalAlignment="Center" 
+                  Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Weight:" 
+                           Margin="2" 
+                           Grid.Column="0"/>
+                <TextBox Text="{Binding Weight}" 
+                         PreviewTextInput="TextInputFilter"
+                         MinWidth="50"
+                         Margin="2" 
+                         Grid.Column="1"/>
+            </Grid>
+
+            <Grid VerticalAlignment="Center" 
+                  HorizontalAlignment="Center" 
+                  Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Smoothness:" 
+                           Margin="2" 
+                           Grid.Column="0"/>
+                <TextBox Text="{Binding Smoothness}" 
+                         PreviewTextInput="TextInputFilter"
+                         MinWidth="50"
+                         Margin="2" 
+                         Grid.Column="1"/>
+            </Grid>
+
+            <Grid VerticalAlignment="Center" 
+                  HorizontalAlignment="Center" 
+                  Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Frame Offset:" 
+                           Margin="2" 
+                           Grid.Column="0"/>
+                <TextBox Text="{Binding FrameOffset}" 
+                         PreviewTextInput="TextInputFilter"
+                         MinWidth="50"
+                         Margin="2" 
+                         Grid.Column="1"/>
+            </Grid>
+
+        </Grid>
+
+        <Separator Grid.Row="3"/>
+
+        <Button Content="Apply" Command="{Binding BuildConstraintCommand}" Grid.Row="4"/>
+    </Grid>
+</Window>
