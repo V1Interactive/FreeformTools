@@ -1,6 +1,7 @@
 # freeform-tools
 - Beta Tutorials - https://www.youtube.com/channel/UCHXLfl9y2os_gvCzhR7UFlQ
 - User Documentation - https://sites.google.com/view/v1freeformtools/home
+- Installation Instructions - https://sites.google.com/view/v1freeformtools/installation?authuser=0
 
 For Maya 2023 and 2024 using Python 3.9
 
