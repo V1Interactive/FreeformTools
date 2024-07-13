@@ -43,6 +43,30 @@ def undoable(undo_method):
     return undo_chunk
 
 
+def disable_for_ui(disable_method):
+    '''
+    Decorator to place code in an undo chunk
+    '''
+    @wraps(disable_method) # needed for sphinx autodoc to document decorated methods
+    def disable_for_ui_internal(*args, **kwargs):
+        # Used to turn on/off functionality when UI methods are run
+        for method in v1_shared.decorators.DecoratorManager.pre_ui_call_method_list:
+            method()
+
+        try:
+            print_args = [x for x in args if (not type(x) == dict) and (not type(x) == list)]
+            process = System.Diagnostics.Process.GetCurrentProcess()
+            v1_core.v1_logging.get_logger().debug("{0} - {1} - Disable For UI ---> {2}.{3} ~~ Args:{4} Kwargs:{5}".format(process.ProcessName, process.Id, disable_method.__module__, disable_method.__name__, print_args, kwargs))
+
+            disable_method(*args, **kwargs)
+        finally:
+            # Used to turn on/off functionality when UI methods are run
+            for method in v1_shared.decorators.DecoratorManager.post_ui_call_method_list:
+                method()
+
+    return disable_for_ui_internal
+
+
 def project_only(project_method):
     '''
     Decorator to check for valid project setup before running project_method

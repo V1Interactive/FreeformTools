@@ -98,7 +98,7 @@ def setup():
     v1_core.environment.set_environment()
     _init_except_hook()
     v1_core.v1_logging.setup_logging('maya')
-    v1_core.dotnet_setup.init_dotnet(["HelixResources", "Freeform.Core", "Freeform.Rigging"])
+    v1_core.dotnet_setup.init_dotnet(["HelixDCCTools", "HelixResources", "Freeform.Core", "Freeform.Rigging"])
 
     import System.Diagnostics
     process = System.Diagnostics.Process.GetCurrentProcess()

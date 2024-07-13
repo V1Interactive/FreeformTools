@@ -1,4 +1,5 @@
-﻿namespace Freeform.Rigging.ControlColorSet
+﻿using System;
+namespace Freeform.Rigging.ControlColorSet
 {
     using System;
     using System.ComponentModel;
